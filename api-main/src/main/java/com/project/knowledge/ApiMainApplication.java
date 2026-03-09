@@ -1,4 +1,4 @@
-package navigator.apimain;
+package com.project.knowledge;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
