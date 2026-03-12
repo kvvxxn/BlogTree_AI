@@ -1,9 +1,11 @@
 import json
+import logging
 from typing import Optional, Dict, Any
 
 from fastapi_worker.app.services.llm.summarize import analyze_with_llm
 from fastapi_worker.app.services.scraper.scraping import scrape_blog_text
 
+logger = logging.getLogger(__name__)
 
 def analyze_blog_content(url: str, knowledge_graph: str) -> Optional[Dict[str, None]]:
     """
@@ -13,20 +15,25 @@ def analyze_blog_content(url: str, knowledge_graph: str) -> Optional[Dict[str, N
     :param knowledge_graph: 페이로드에서 전달받은 지식 그래프 데이터
     :return: 분석된 결과 딕셔너리 (실패 시 None)
     """
+    logger.info(f"[Pipeline Start] URL: {url} 분석 파이프라인 시작")
 
     # 1. 스크래핑 
     blog_text = scrape_blog_text(url=url)
     if not blog_text:
+        logger.warning(f"[Pipeline Stop] URL: {url} 스크래핑 실패로 파이프라인 중단")
         return None
 
     # 2. LLM 분석 
     llm_result_dict = analyze_with_llm(
+        url=url,
         blog_text=blog_text, 
         knowledge_graph=knowledge_graph
     )
     
     if not llm_result_dict:
+        logger.warning(f"[Pipeline Stop] URL: {url} LLM 분석 실패로 파이프라인 중단")
         return None
     
     # 3. 결과 반환
+    logger.info(f"[Pipeline Success] URL: {url} 분석 파이프라인 완료")
     return llm_result_dict
