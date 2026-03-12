@@ -5,9 +5,9 @@ summarize_sys_prompt = """
 [OUTPUT FORMAT]    
 {
     "summary": "글의 핵심 내용을 3줄로 요약",
-    "keywords": ["핵심", "기술", "키워드", "3~5개"]
+    "keywords": ["카테고리", "토픽", "키워드" 순으로 각 하나씩 (','로 구분)]
 }
 """
 
 def make_summarize_user_prompt(blog_text: str, knowledge_graph: str):
-    return f"{summarize_sys_prompt}\n\n[블로그 본문]\n{blog_text}"
+    return f"[블로그 본문]\n{blog_text}"
