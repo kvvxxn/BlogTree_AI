@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 
 from fastapi_worker.app.services.scraper.configs import TARGET_TAGS
 
-def clean_and_format_html(html_element):
+def clean_and_format_html(html_element: BeautifulSoup) -> str:
     """
     HTML 요소에서 불필요한 줄바꿈을 방지하고 가독성 좋은 텍스트로 변환합니다.
     """
@@ -27,11 +27,17 @@ def clean_and_format_html(html_element):
     return text_clean.strip()
 
 def is_nested_target(tag) -> bool:
-    """부모 태그가 이미 추출 대상(TARGET_TAGS)에 포함되어 있는지 확인하여 중복 추출 방지"""
+    """
+    부모 태그가 이미 추출 대상(TARGET_TAGS)에 포함되어 있는지 확인하여 중복 추출 방지
+    """
+
     return any(p.name in TARGET_TAGS for p in tag.parents)
 
 def format_tag_text(tag_name: str, text: str) -> str:
-    """태그 종류에 따른 가독성(마크다운) 포맷팅 적용"""
+    """
+    태그 종류에 따른 가독성(마크다운) 포맷팅 적용
+    """
+
     if tag_name == 'pre':
         return f"```\n{text}\n```"
     elif tag_name in ['h1', 'h2', 'h3', 'h4']:
@@ -43,7 +49,10 @@ def format_tag_text(tag_name: str, text: str) -> str:
     return text
 
 def remove_unwanted_tags(content_element, extra_targets=None):
-    """script, style 등 불필요한 공통 태그 및 추가 타겟 제거"""
+    """
+    script, style 등 불필요한 공통 태그 및 추가 타겟 제거
+    """
+    
     remove_targets = ['script', 'style', 'header', 'footer', 'nav', 'aside']
     
     if extra_targets:

@@ -10,4 +10,9 @@ summarize_sys_prompt = """
 """
 
 def make_summarize_user_prompt(blog_text: str, knowledge_graph: str):
-    return f"[블로그 본문]\n{blog_text}"
+    user_prompt = """
+[블로그 본문]
+
+[현재 사용자가 공부한 지식 그래프]
+"""
+    return user_prompt

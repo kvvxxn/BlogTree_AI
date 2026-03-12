@@ -7,18 +7,17 @@ def truncate_text_by_token(text: str, model_name: str = "gpt-4o", max_tokens: in
     텍스트의 토큰 수를 계산하고, max_tokens를 초과하면 초과분은 잘라내고 반환합니다.
     """
     try:
-        # 1. 모델에 맞는 인코더 가져오기
+        # 모델에 맞는 인코더 로드
         encoding = tiktoken.encoding_for_model(model_name)
     except KeyError:
-        # 모델명을 찾지 못하면 기본적으로 gpt-4o의 인코더인 o200k_base 등을 사용하도록 폴백(Fallback)
+        # 모델명을 찾지 못하면 기본적으로 gpt-4o의 인코더인 o200k_base 등을 사용
         encoding = tiktoken.get_encoding("cl100k_base")
 
-    # 2. 텍스트를 토큰으로 변환 (인코딩)
+    # 텍스트를 토큰으로 변환 
     tokens = encoding.encode(text)
     
-    # 3. 토큰 개수 확인 및 절삭
+    # 토큰 개수 확인 및 초과시 # max_tokens 만큼만 슬라이싱
     if len(tokens) > max_tokens:
-        # max_tokens 만큼만 슬라이싱한 후 다시 텍스트로 변환 (디코딩)
         truncated_text = encoding.decode(tokens[:max_tokens])
         return truncated_text
     
@@ -36,6 +35,7 @@ def safe_parse_summary_json(raw_content: str) -> dict:
 
     # 마크다운 코드 스페닛 제거
     clean_content = raw_content.strip()
+    
     if clean_content.startswith("```json"):
         clean_content = clean_content[7:]
     elif clean_content.startswith("```"):
