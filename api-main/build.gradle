@@ -24,9 +24,6 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
 
-    // oauth 를 위한 라이브러리
-    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
-
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
     compileOnly 'org.projectlombok:lombok'

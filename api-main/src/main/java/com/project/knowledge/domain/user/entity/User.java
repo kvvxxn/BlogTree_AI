@@ -1,7 +1,14 @@
 package com.project.knowledge.domain.user.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
+@Getter
+@Builder
+@AllArgsConstructor
 @Entity
 @Table(name = "users") // DB에 생성될 테이블 이름 (user는 예약어라 users로 씁니다)
 public class User {

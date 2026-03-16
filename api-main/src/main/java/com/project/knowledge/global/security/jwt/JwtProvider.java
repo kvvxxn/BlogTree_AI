@@ -39,6 +39,7 @@ public class JwtProvider {
                 .compact(); // 토큰 압축해서 문자열로 반환
     }
 
+    // 3. Refresh Token 발급 버튼
     private final long REFRESH_TOKEN_VALIDITY = 1000L * 60 * 60 * 24 * 7;
 
     public String createRefreshToken(String email) {
@@ -52,4 +53,6 @@ public class JwtProvider {
                 .signWith(key) // 똑같은 비밀키로 암호화 도장 쾅!
                 .compact();
     }
+    
+    // 4. API 요청 시 토큰 진위 판별 로직
 }

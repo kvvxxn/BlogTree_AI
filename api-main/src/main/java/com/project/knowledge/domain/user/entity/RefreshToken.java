@@ -1,7 +1,17 @@
 package com.project.knowledge.domain.user.entity;
 
 import jakarta.persistence.*;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+import lombok.AccessLevel;
 
+@Getter
+@Setter
+@AllArgsConstructor // ⭐ 이게 핵심! 모든 필드(id, email, token)를 받는 생성자를 만듭니다.
+@Builder
 @Entity
 @Table(name = "refresh_tokens")
 public class RefreshToken {
