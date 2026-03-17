@@ -16,11 +16,11 @@ public class KnowledgeService {
     private final UserNodeRepository userNodeRepository;
 
     @Transactional
-    public void addKnoledgePath(Long userId, String categoryName, String topicName, String keywordName) {
+    public void addKnowledgePath(Long userId, String categoryName, String topicName, String keywordName) {
         userNodeRepository.addKnowledge(userId, categoryName, topicName, keywordName);
     }
 
-    public Map<String, Map<String, List<String>>> getUserKnowledgeTree(Long userId) {
+    public Map<String, Map<String, List<String>>> getKnowledgeTree(Long userId) {
         List<KnowledgePathDto> paths = userNodeRepository.findAllKnowledgeByUserId(userId);
 
         return paths.stream()

@@ -38,7 +38,7 @@ class KnowledgeServiceTest {
         String keyword = "MySQL";
 
         // When
-        knowledgeService.addKnoledgePath(userId, category, topic, keyword);
+        knowledgeService.addKnowledgePath(userId, category, topic, keyword);
 
         // Then
         verify(userNodeRepository).addKnowledge(eq(userId), eq(category), eq(topic), eq(keyword));
@@ -46,7 +46,7 @@ class KnowledgeServiceTest {
 
     @Test
     @DisplayName("사용자 지식 트리 조회 테스트")
-    void getUserKnowledgeTreeTest() {
+    void getKnowledgeTreeTest() {
         // Given
         Long userId = 1L;
         List<KnowledgePathDto> mockPaths = Arrays.asList(
@@ -59,7 +59,7 @@ class KnowledgeServiceTest {
         when(userNodeRepository.findAllKnowledgeByUserId(userId)).thenReturn(mockPaths);
 
         // When
-        Map<String, Map<String, List<String>>> result = knowledgeService.getUserKnowledgeTree(userId);
+        Map<String, Map<String, List<String>>> result = knowledgeService.getKnowledgeTree(userId);
 
         // Then
         assertThat(result).containsKeys("Backend", "Frontend");
@@ -74,7 +74,7 @@ class KnowledgeServiceTest {
 
     @Test
     @DisplayName("사용자 지식 트리 조회 - Topic이 없는 경우")
-    void getUserKnowledgeTree_NoTopicTest() {
+    void getKnowledgeTree_NoTopicTest() {
         // Given
         Long userId = 1L;
         List<KnowledgePathDto> mockPaths = Arrays.asList(
@@ -84,7 +84,7 @@ class KnowledgeServiceTest {
         when(userNodeRepository.findAllKnowledgeByUserId(userId)).thenReturn(mockPaths);
 
         // When
-        Map<String, Map<String, List<String>>> result = knowledgeService.getUserKnowledgeTree(userId);
+        Map<String, Map<String, List<String>>> result = knowledgeService.getKnowledgeTree(userId);
 
         // Then
         assertThat(result).containsKeys("Backend");
