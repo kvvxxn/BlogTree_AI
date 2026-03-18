@@ -1,9 +1,8 @@
-package com.project.knowledge.domain.user.dto;
+package com.project.knowledge.domain.auth.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 public class AuthDto {
     // 1. FE가 BE로 보낼 때 쓰는 상자

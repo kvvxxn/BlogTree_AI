@@ -1,13 +1,12 @@
-package com.project.knowledge.domain.user.presentation;
+package com.project.knowledge.domain.auth.presentation;
 
-import com.project.knowledge.domain.user.dto.AuthDto;
-import com.project.knowledge.domain.user.service.OAuth2Service;
+import com.project.knowledge.domain.auth.dto.AuthDto;
+import com.project.knowledge.domain.auth.service.OAuth2Service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -23,5 +22,11 @@ public class AuthController {
         
         // 서비스가 만들어온 토큰(access, refresh)을 200 ok 상태코드와 함께 프론트에 던져줌
         return ResponseEntity.ok(response);
+    }
+
+    // HashMap 테스트용 메서드
+    @GetMapping("/test/refresh-tokens")
+    public ResponseEntity<Map<String, String>> checkTokens() {
+        return ResponseEntity.ok(oAuth2Service.getAllTokensForTest());
     }
 }

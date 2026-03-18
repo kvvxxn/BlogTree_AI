@@ -1,10 +1,10 @@
-package com.project.knowledge.domain.user.service;
+package com.project.knowledge.domain.auth.service;
 
-import com.project.knowledge.domain.user.dto.AuthDto;
-import com.project.knowledge.domain.user.entity.RefreshToken;
+import com.project.knowledge.domain.auth.dto.AuthDto;
+import com.project.knowledge.domain.auth.repository.InMemoryRefreshTokenRepository;
 import com.project.knowledge.domain.user.entity.Role;
 import com.project.knowledge.domain.user.entity.User;
-import com.project.knowledge.domain.user.repository.RefreshTokenRepository;
+import com.project.knowledge.domain.auth.repository.RefreshTokenRepository;
 import com.project.knowledge.domain.user.repository.UserRepository;
 import com.project.knowledge.global.security.jwt.JwtProvider;
 import com.project.knowledge.global.security.oauth2.GoogleAuthClient;
@@ -12,6 +12,9 @@ import com.project.knowledge.global.security.oauth2.dto.GoogleTokenResponse;
 import com.project.knowledge.global.security.oauth2.dto.GoogleUserInfoDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.util.Collections;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -52,29 +55,24 @@ public class OAuth2Service {
                 });
 
         // 4. 우리 서비스 전용 JWT (Access / Refresh) 토큰 생성
-        // (JwtProvider의 파라미터는 태규님이 어제 만드신 규격에 맞게 넣어주세요!)
+        // (JwtProvider의 파라미터는 어제 만드신 규격에 맞게 넣어주세요!)
         String accessToken = jwtProvider.createAccessToken(user.getEmail(), user.getRole().name());
         String refreshToken = jwtProvider.createRefreshToken(user.getEmail());
 
-        // 5. Refresh Token을 DB에 저장 (또는 갱신)
-        refreshTokenRepository.findByEmail(user.getEmail())
-                .map(existingToken -> {
-                    existingToken.updateToken(refreshToken);
-
-                    return refreshTokenRepository.save(existingToken);
-                })
-                .orElseGet(() -> {
-                    RefreshToken newToken = RefreshToken.builder()
-                            .email(user.getEmail())
-                            .token(refreshToken)
-                            .build();
-                    return refreshTokenRepository.save(newToken);
-                });
-        // RefreshToken tokenEntity = new RefreshToken(user.getEmail(), refreshToken);
-        // refreshTokenRepository.save(tokenEntity);
+        // 5. Refresh Token을 메모리에 저장 (ConcurrentHashMap)
+        // Map 구조이므로 이미 이메일(key)이 존재하면 알아서 새 토큰으로 덮어씌움
+        refreshTokenRepository.save(user.getEmail(), refreshToken);
 
         // 6. 프론트엔드에게 줄 택배 상자에 포장해서 반환!
         String message = "구글 로그인 및 토큰 발급 성공!";
         return new AuthDto.LoginResponse(message, accessToken, refreshToken);
+    }
+
+    // HashMap 테스트용 메서드
+    public Map<String, String> getAllTokensForTest() {
+        if (refreshTokenRepository instanceof InMemoryRefreshTokenRepository inMemoryRepo) {
+            return inMemoryRepo.getTokenMap();
+        }
+        return Collections.emptyMap();
     }
 }

@@ -31,6 +31,7 @@ public class SecurityConfig {
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/login/oauth2/code/**").permitAll()
+                        .requestMatchers("/api/auth/test/**").permitAll()
                         .anyRequest().authenticated()
                 );
 
