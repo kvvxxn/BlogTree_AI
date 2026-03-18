@@ -7,10 +7,11 @@ from fastapi_worker.app.services.scraper.scraping import scrape_blog_text
 
 logger = logging.getLogger(__name__)
 
-def analyze_blog_content(url: str, knowledge_tree: str) -> Optional[Dict[str, None]]:
+def analyze_blog_content(career_goal: str, url: str, knowledge_tree: str) -> Optional[Dict[str, None]]:
     """
     주어진 URL의 블로그 글을 스크래핑하고 LLM을 통해 요약 및 분석합니다.
     
+    :param career_goal: 사용자의 경력 목표 (예: AI Engineer)
     :param url: 스크래핑할 블로그 URL
     :param knowledge_tree: 페이로드에서 전달받은 지식 그래프 데이터
     :return: 분석된 결과 딕셔너리 (실패 시 None)
@@ -25,6 +26,7 @@ def analyze_blog_content(url: str, knowledge_tree: str) -> Optional[Dict[str, No
 
     # 2. LLM 분석 
     llm_result_dict = analyze_with_llm(
+        career_goal=career_goal,
         url=url,
         blog_text=blog_text, 
         knowledge_tree=knowledge_tree
