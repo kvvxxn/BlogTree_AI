@@ -1,4 +1,4 @@
-package com.navigator.knowledge.domain.task.dto.producer;
+package com.navigator.knowledge.domain.task.producer;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
