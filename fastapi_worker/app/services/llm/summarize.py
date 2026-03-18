@@ -7,7 +7,7 @@ from typing import Optional, Dict, Any
 
 from fastapi_worker.app.services.llm.prompts import summarize_sys_prompt, make_summarize_user_prompt
 from fastapi_worker.app.services.llm.configs import T, OUTPUT_MAX_TOKENS, INPUT_MAX_TOKENS, MODEL_NAME
-from fastapi_worker.app.services.llm.utils import truncate_text_by_token, safe_parse_summary_json
+from fastapi_worker.app.services.llm.utils import safe_parse_json, truncate_text_by_token
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 load_dotenv() 
 api_key = os.getenv("OPENAI_API_KEY")
 
-def analyze_with_llm(career_goal: str, url: str, blog_text: str, knowledge_tree: str) -> Optional[Dict[str, Any]]: # None 대신 Any로 힌트 수정
+def summarize_with_llm(career_goal: str, url: str, blog_text: str, knowledge_tree: str) -> Optional[Dict[str, Any]]: # None 대신 Any로 힌트 수정
     client = OpenAI(api_key=api_key)
 
     logger.info(f"[{url}] LLM 분석을 위한 텍스트 전처리 및 프롬프트 생성을 시작합니다.")
@@ -54,8 +54,9 @@ def analyze_with_llm(career_goal: str, url: str, blog_text: str, knowledge_tree:
         raw_content = response.choices[0].message.content
 
         # 안전하게 JSON 파싱
-        result_json = safe_parse_summary_json(
-            raw_content=raw_content
+        result_json = safe_parse_json(
+            raw_content=raw_content,
+            schema_type="summary"
         )
 
         # JSON 파싱 실패 시
