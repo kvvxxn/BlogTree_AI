@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 load_dotenv() 
 api_key = os.getenv("OPENAI_API_KEY")
 
-def analyze_with_llm(url: str, blog_text: str, knowledge_graph: str) -> Optional[Dict[str, Any]]: # None 대신 Any로 힌트 수정
+def analyze_with_llm(url: str, blog_text: str, knowledge_tree: str) -> Optional[Dict[str, Any]]: # None 대신 Any로 힌트 수정
     client = OpenAI(api_key=api_key)
 
     logger.info(f"[{url}] LLM 분석을 위한 텍스트 전처리 및 프롬프트 생성을 시작합니다.")
@@ -30,7 +30,7 @@ def analyze_with_llm(url: str, blog_text: str, knowledge_graph: str) -> Optional
     # 스크래핑한 결과와 Knowledge Graph를 바탕으로 User prompt 생성
     summarize_user_prompt = make_summarize_user_prompt(
         blog_text=truncated_text, 
-        knowledge_graph=knowledge_graph
+        knowledge_tree=knowledge_tree
     )
 
     try:
