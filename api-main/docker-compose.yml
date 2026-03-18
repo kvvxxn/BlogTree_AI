@@ -1,0 +1,11 @@
+services:
+  neo4j:
+    image: neo4j:latest
+    container_name: neo4j_knowledge_tree
+    ports:
+      - "7474:7474" # 웹 대시보드 (HTTP)
+      - "7687:7687" # Bolt 프로토콜 (Spring Boot 연결용)
+    volumes:
+      - ./neo4j/data:/data
+    environment:
+      - NEO4J_AUTH=neo4j_user/neo4j_password
