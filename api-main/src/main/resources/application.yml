@@ -1,8 +1,6 @@
 spring:
   application:
     name: api-main
-  profiles:
-    include: oauth
 
   # 1. H2 콘솔 설정 (spring.h2.console)
   h2:
@@ -26,3 +24,19 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.H2Dialect
+
+oauth2:
+  google:
+    client-id: ${GOOGLE_CLIENT_ID}
+    # 유출하면 안됨.
+    client-secret: ${GOOGLE_CLIENT_SECRET}
+    # ⭐ 주의: 프론트엔드가 구글에서 설정한 리다이렉트 URI와 똑같이 맞춰야 합니다! (일단 예시로 적어둠)
+    redirect-uri: http://localhost:8080/login/oauth2/code/google
+    # 구글과 직접 통신할 때 찌를 API 주소들 (고정값)
+    token-uri: https://oauth2.googleapis.com/token
+    user-info-uri: https://www.googleapis.com/oauth2/v2/userinfo
+
+# 2. JWT 설정 (어제 만든 것 100% 그대로 유지)
+jwt:
+  secret: ${JWT_SECRET}
+  access-expiration: 3600000
