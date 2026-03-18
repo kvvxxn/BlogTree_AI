@@ -9,3 +9,14 @@ services:
       - ./neo4j/data:/data
     environment:
       - NEO4J_AUTH=neo4j_user/neo4j_password
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"    # rabbitMQ 접속 포트
+      - "15672:15672"  # rabbitMQ UI 접속 포트
+    environment:
+      RABBITMQ_DEFAULT_USER: rabbitmq_user
+      RABBITMQ_DEFAULT_PASS: rabbitmq_password
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq

@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: api-main
+
+  # Neo4j ??
+  neo4j:
+    uri: bolt://neo4j_knowledge_tree:7687
+    authentication:
+      username: neo4j_user
+      password: neo4j_password
+
+  # RabbitMQ ??
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: rabbitmq_user
+    password: rabbitmq_password
+
+# ?? ?? ??
+logging:
+  level:
+    org.springframework.data.neo4j: DEBUG

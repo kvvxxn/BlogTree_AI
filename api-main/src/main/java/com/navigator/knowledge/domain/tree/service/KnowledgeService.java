@@ -1,8 +1,8 @@
-package navigator.apimain.domain.tree.service;
+package com.navigator.knowledge.domain.tree.service;
 
 import lombok.RequiredArgsConstructor;
-import navigator.apimain.domain.tree.dto.KnowledgePathDto;
-import navigator.apimain.domain.tree.repository.UserNodeRepository;
+import com.navigator.knowledge.domain.tree.dto.KnowledgePathDto;
+import com.navigator.knowledge.domain.tree.repository.UserNodeRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

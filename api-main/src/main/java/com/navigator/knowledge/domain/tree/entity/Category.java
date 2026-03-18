@@ -1,4 +1,4 @@
-package navigator.apimain.domain.tree.entity;
+package com.navigator.knowledge.domain.tree.entity;
 
 import org.springframework.data.neo4j.core.schema.GeneratedValue;
 import org.springframework.data.neo4j.core.schema.Id;

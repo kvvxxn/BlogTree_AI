@@ -1,4 +1,4 @@
-package navigator.apimain;
+package com.navigator.knowledge;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
