@@ -1,7 +1,7 @@
-package navigator.apimain.domain.tree.service;
+package com.navigator.knowledge.domain.tree.service;
 
-import navigator.apimain.domain.tree.dto.KnowledgePathDto;
-import navigator.apimain.domain.tree.repository.UserNodeRepository;
+import com.navigator.knowledge.domain.tree.dto.KnowledgePathDto;
+import com.navigator.knowledge.domain.tree.repository.UserNodeRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

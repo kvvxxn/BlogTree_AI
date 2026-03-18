@@ -1,7 +1,7 @@
-package navigator.apimain.domain.tree.repository;
+package com.navigator.knowledge.domain.tree.repository;
 
-import navigator.apimain.domain.tree.dto.KnowledgePathDto;
-import navigator.apimain.domain.tree.entity.UserNode;
+import com.navigator.knowledge.domain.tree.dto.KnowledgePathDto;
+import com.navigator.knowledge.domain.tree.entity.UserNode;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 
