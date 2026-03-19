@@ -31,8 +31,8 @@ public class SecurityConfig {
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/login/oauth2/code/**").permitAll()
-                        .requestMatchers("/api/auth/test/**").permitAll()
-                        .anyRequest().authenticated()
+                        .anyRequest().permitAll() // [임시 개방] JWT 필터 구현 전까지 허용
+                        // 추후 반드시 .authenticated로 복귀시키기
                 );
 
         return http.build();
