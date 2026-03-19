@@ -1,4 +1,4 @@
-package com.navigator.knowledge.domain.task.dto;
+package com.navigator.knowledge.domain.task.mq.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

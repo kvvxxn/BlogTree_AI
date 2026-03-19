@@ -1,6 +1,6 @@
-package com.navigator.knowledge.domain.task.consumer;
+package com.navigator.knowledge.domain.task.mq.consumer;
 
-import com.navigator.knowledge.domain.task.dto.SummaryTaskResponseDto;
+import com.navigator.knowledge.domain.task.mq.dto.SummaryTaskResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
