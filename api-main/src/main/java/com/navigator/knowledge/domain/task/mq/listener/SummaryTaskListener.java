@@ -1,6 +1,6 @@
 package com.navigator.knowledge.domain.task.mq.consumer;
 
-import com.navigator.knowledge.domain.task.mq.dto.SummaryTaskResponseDto;
+import com.navigator.knowledge.domain.task.mq.dto.SummaryTaskResponseMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -14,7 +14,7 @@ public class SummaryTaskListener {
     private static final String RESPONSE_QUEUE = "summary.response.queue";
 
     @RabbitListener(queues = RESPONSE_QUEUE)
-    public void receiveSummaryResponse(SummaryTaskResponseDto responseDto) {
+    public void receiveSummaryResponse(SummaryTaskResponseMessage responseDto) {
         log.info("Receive a summary task result from FastAPI. Task ID: {}, Status: {}",
             responseDto.taskId(), responseDto.status());
 
@@ -26,7 +26,7 @@ public class SummaryTaskListener {
         }
     }
 
-    private void handleSuccess(SummaryTaskResponseDto responseDto) {
+    private void handleSuccess(SummaryTaskResponseMessage responseDto) {
         var data = responseDto.data();
 
         // 1. MySQL: Task 상태를 '완료'로 업데이트
@@ -36,7 +36,7 @@ public class SummaryTaskListener {
         log.info("Summary and keyword extraction successful. Category: {}, Topic: {}, Keywords: {}", data.knowledgeTree().category(), data.knowledgeTree().topic(), data.knowledgeTree().keyword());
     }
 
-    private void handlePartialSuccess(SummaryTaskResponseDto responseDto) {
+    private void handlePartialSuccess(SummaryTaskResponseMessage responseDto) {
         var data = responseDto.data();
 
         // 1. MySQL: Task 상태를 '부분 완료'로 업데이트
@@ -46,7 +46,7 @@ public class SummaryTaskListener {
         log.warn("Summary succeeded but keyword extraction failed. (Task ID: {})", responseDto.taskId());
     }
 
-    private void handleFailure(SummaryTaskResponseDto responseDto) {
+    private void handleFailure(SummaryTaskResponseMessage responseDto) {
         var error = responseDto.error();
 
         // 1. MySQL: Task 상태를 '실패'로 업데이트하고, 에러 코드와 메시지 기록

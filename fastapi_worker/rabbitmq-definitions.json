@@ -1,0 +1,27 @@
+{
+  "rabbit_version": "3.12",
+  "users": [
+    { "name": "rabbitmq_user", "password": "rabbitmq_password", "tags": "administrator" }
+  ],
+  "vhosts": [ { "name": "/" } ],
+  "permissions": [
+    { "user": "rabbitmq_user", "vhost": "/", "configure": ".*", "write": ".*", "read": ".*" }
+  ],
+  "exchanges": [
+    { "name": "summary.exchange", "vhost": "/", "type": "topic", "durable": true }
+  ],
+  "queues": [
+    { "name": "summary.request.queue", "vhost": "/", "durable": true },
+    { "name": "summary.response.queue", "vhost": "/", "durable": true }
+  ],
+  "bindings": [
+    {
+      "source": "summary.exchange", "vhost": "/", "destination": "summary.request.queue",
+      "destination_type": "queue", "routing_key": "summary.request"
+    },
+    {
+      "source": "summary.exchange", "vhost": "/", "destination": "summary.response.queue",
+      "destination_type": "queue", "routing_key": "summary.response"
+    }
+  ]
+}
