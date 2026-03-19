@@ -4,7 +4,7 @@ plugins {
     id 'io.spring.dependency-management' version '1.1.7'
 }
 
-group = 'navigator'
+group = 'com.navigator.knowledge'
 version = '0.0.1-SNAPSHOT'
 description = 'api-main'
 
@@ -34,6 +34,13 @@ dependencies {
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    // JWT 토큰 생성을 위한 라이브러리
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.5'
+
+    runtimeOnly 'com.h2database:h2'
 }
 
 tasks.named('test') {
