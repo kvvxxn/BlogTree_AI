@@ -49,6 +49,7 @@ public class OAuth2Service {
                     User newUser = User.builder()
                             .email(email)
                             .name(userInfoDto.getName())
+                            .profileImageUrl(userInfoDto.getPicture())
                             .role(Role.USER)
                             .build();
                     return userRepository.save(newUser);
@@ -60,6 +61,7 @@ public class OAuth2Service {
         String refreshToken = jwtProvider.createRefreshToken(user.getEmail());
 
         // 5. Refresh Token을 메모리에 저장 (ConcurrentHashMap)
+        // 추후 운영, 배포 시 Redis 등으로 변경 예정
         // Map 구조이므로 이미 이메일(key)이 존재하면 알아서 새 토큰으로 덮어씌움
         refreshTokenRepository.save(user.getEmail(), refreshToken);
 
@@ -69,10 +71,10 @@ public class OAuth2Service {
     }
 
     // HashMap 테스트용 메서드
-    public Map<String, String> getAllTokensForTest() {
-        if (refreshTokenRepository instanceof InMemoryRefreshTokenRepository inMemoryRepo) {
-            return inMemoryRepo.getTokenMap();
-        }
-        return Collections.emptyMap();
-    }
+    //public Map<String, String> getAllTokensForTest() {
+    //    if (refreshTokenRepository instanceof InMemoryRefreshTokenRepository inMemoryRepo) {
+    //        return inMemoryRepo.getTokenMap();
+    //    }
+    //    return Collections.emptyMap();
+    //}
 }

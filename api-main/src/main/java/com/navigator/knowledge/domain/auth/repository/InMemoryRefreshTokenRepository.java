@@ -27,7 +27,7 @@ public class InMemoryRefreshTokenRepository implements RefreshTokenRepository {
     }
 
     // HashMap 테스트용 메서드
-    public Map<String, String> getTokenMap() {
-        return this.tokenMap;
-    }
+    //public Map<String, String> getTokenMap() {
+    //    return this.tokenMap;
+    //}
 }

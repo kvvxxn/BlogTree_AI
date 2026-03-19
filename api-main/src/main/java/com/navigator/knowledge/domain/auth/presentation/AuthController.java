@@ -25,8 +25,8 @@ public class AuthController {
     }
 
     // HashMap 테스트용 메서드
-    @GetMapping("/test/refresh-tokens")
-    public ResponseEntity<Map<String, String>> checkTokens() {
-        return ResponseEntity.ok(oAuth2Service.getAllTokensForTest());
-    }
+    //@GetMapping("/test/refresh-tokens")
+    //public ResponseEntity<Map<String, String>> checkTokens() {
+    //    return ResponseEntity.ok(oAuth2Service.getAllTokensForTest());
+    //}
 }
