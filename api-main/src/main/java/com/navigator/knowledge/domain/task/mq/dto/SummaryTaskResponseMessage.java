@@ -2,7 +2,7 @@ package com.navigator.knowledge.domain.task.mq.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public record SummaryTaskResponseDto(
+public record SummaryTaskResponseMessage(
     @JsonProperty("task_id") String taskId,
     @JsonProperty("user_id") String userId,
     @JsonProperty("status") String status, // SUCCESS, PARTIAL_SUCCESS, FAILED

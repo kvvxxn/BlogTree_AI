@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.Map;
 
-public record SummaryTaskRequestDto(
+public record SummaryTaskRequestMessage(
     @JsonProperty("task_id") String taskId,
     @JsonProperty("user_id") String userId,
     @JsonProperty("career_goal") String career_goal,

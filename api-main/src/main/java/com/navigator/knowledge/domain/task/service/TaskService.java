@@ -4,7 +4,7 @@ import com.navigator.knowledge.domain.task.dto.TaskRequestDto;
 import com.navigator.knowledge.domain.task.dto.TaskResponseDto;
 import com.navigator.knowledge.domain.task.entity.Task;
 import com.navigator.knowledge.domain.task.entity.TaskStatus;
-import com.navigator.knowledge.domain.task.mq.dto.SummaryTaskRequestDto;
+import com.navigator.knowledge.domain.task.mq.dto.SummaryTaskRequestMessage;
 import com.navigator.knowledge.domain.task.repository.TaskRepository;
 import com.navigator.knowledge.domain.tree.service.KnowledgeService;
 import com.navigator.knowledge.global.config.rabbitmq.RabbitSummaryProperties;
@@ -55,7 +55,7 @@ public class TaskService {
         Map<String, Map<String, List<String>>> knowledgeTree = knowledgeService.getKnowledgeTree(numericUserId);
 
         // 4. RabbitMQ에 보낼 메시지 DTO 생성
-        SummaryTaskRequestDto message = new SummaryTaskRequestDto(
+        SummaryTaskRequestMessage message = new SummaryTaskRequestMessage(
                 taskId,
                 userId,
                 "Backend Developer", // TODO: 실제 유저의 career_goal 가져오기

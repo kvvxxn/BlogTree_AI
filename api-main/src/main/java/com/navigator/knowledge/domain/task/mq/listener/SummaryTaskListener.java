@@ -1,4 +1,4 @@
-package com.navigator.knowledge.domain.task.mq.consumer;
+package com.navigator.knowledge.domain.task.mq.listener;
 
 import com.navigator.knowledge.domain.task.mq.dto.SummaryTaskResponseMessage;
 import lombok.RequiredArgsConstructor;
