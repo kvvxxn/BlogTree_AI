@@ -1,25 +1,24 @@
+# 실제 운영 기본 설정
+# 기본적으로는 위쪽(전체 설정)을 다 믿되, 아래쪽에 같은 이름의 설정이 있으면 그것만 골라서 덮어씀.
+
 spring:
   application:
     name: api-main
+  profiles:
+    active: dev
 
-  # 1. H2 콘솔 설정 (spring.h2.console)
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
-
-  # 2. 데이터소스 설정 (spring.datasource) - 밖으로 삐져나왔던 걸 안으로 넣었습니다.
+  # 데이터소스 설정 (spring.datasource) - 밖으로 삐져나왔던 걸 안으로 넣었습니다.
   datasource:
-    url: jdbc:h2:mem:testdb;MODE=MySQL
+    url: jdbc:h2:mem:testdb;MODE=MySQL # 임시로 H2를 둔 상태. 추후 실제 DB로 변경 예정
     driver-class-name: org.h2.Driver
     username: sa
     password:
 
-  # 3. JPA/Hibernate 설정 (spring.jpa)
+  # JPA/Hibernate 설정 (spring.jpa)
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: none #update 였음
+    show-sql: false
     properties:
       hibernate:
         format_sql: true
@@ -30,7 +29,7 @@ oauth2:
     client-id: ${GOOGLE_CLIENT_ID}
     # 유출하면 안됨.
     client-secret: ${GOOGLE_CLIENT_SECRET}
-    # ⭐ 주의: 프론트엔드가 구글에서 설정한 리다이렉트 URI와 똑같이 맞춰야 합니다! (일단 예시로 적어둠)
+    # 주의: 프론트엔드가 구글에서 설정한 리다이렉트 URI와 똑같이 맞춰야 합니다! (일단 예시로 적어둠)
     redirect-uri: http://localhost:8080/login/oauth2/code/google
     # 구글과 직접 통신할 때 찌를 API 주소들 (고정값)
     token-uri: https://oauth2.googleapis.com/token
@@ -40,3 +39,23 @@ oauth2:
 jwt:
   secret: ${JWT_SECRET}
   access-expiration: 3600000
+  refresh-expiration: 604800000
+
+---
+
+# 개발 환경 전용 설정
+
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
