@@ -1,0 +1,16 @@
+services:
+  rabbitmq:
+  image: rabbitmq:3-management
+  container_name: rabbitmq
+  ports:
+    - "5672:5672"    # rabbitMQ 접속 포트
+    - "15672:15672"  # rabbitMQ UI 접속 포트
+  environment:
+    RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: "-rabbitmq_management load_definitions \"/etc/rabbitmq/definitions.json\""
+  volumes:
+    - rabbitmq_data:/var/lib/rabbitmq
+    - ./rabbitmq-definitions.json:/etc/rabbitmq/definitions.json:ro
+
+volumes:
+  rabbitmq_data:
+  rabbitmq_log:
