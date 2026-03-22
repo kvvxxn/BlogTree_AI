@@ -8,15 +8,12 @@ from typing import Optional, Dict, Any
 from fastapi_worker.app.services.llm.prompts import summarize_sys_prompt, make_summarize_user_prompt
 from fastapi_worker.app.services.llm.configs import T, OUTPUT_MAX_TOKENS, INPUT_MAX_TOKENS, MODEL_NAME
 from fastapi_worker.app.services.llm.utils import safe_parse_json, truncate_text_by_token
+from fastapi_worker.app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-# LLM API Key 로드
-load_dotenv() 
-api_key = os.getenv("OPENAI_API_KEY")
-
 def summarize_with_llm(career_goal: str, url: str, blog_text: str, knowledge_tree: str) -> Optional[Dict[str, Any]]: # None 대신 Any로 힌트 수정
-    client = OpenAI(api_key=api_key)
+    client = OpenAI(api_key=settings.LLM_API_KEY)
 
     logger.info(f"[{url}] LLM 분석을 위한 텍스트 전처리 및 프롬프트 생성을 시작합니다.")
 
