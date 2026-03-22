@@ -8,11 +8,52 @@
     { "user": "rabbitmq_user", "vhost": "/", "configure": ".*", "write": ".*", "read": ".*" }
   ],
   "exchanges": [
-    { "name": "summary.exchange", "vhost": "/", "type": "topic", "durable": true }
+    { "name": "summary.exchange", "vhost": "/", "type": "topic", "durable": true },
+    { "name": "recommend.exchange", "vhost": "/", "type": "topic", "durable": true },
+    { "name": "dlx.exchange", "vhost": "/", "type": "direct", "durable": true }
   ],
   "queues": [
-    { "name": "summary.request.queue", "vhost": "/", "durable": true },
-    { "name": "summary.response.queue", "vhost": "/", "durable": true }
+    {
+      "name": "summary.request.queue",
+      "vhost": "/",
+      "durable": true,
+      "arguments": {
+        "x-dead-letter-exchange": "dlx.exchange",
+        "x-dead-letter-routing-key": "summary.request.dead"
+      }
+    },
+    {
+      "name": "summary.response.queue",
+      "vhost": "/",
+      "durable": true,
+      "arguments": {
+        "x-dead-letter-exchange": "dlx.exchange",
+        "x-dead-letter-routing-key": "summary.response.dead"
+      }
+    },
+    { "name": "summary.request.dlq", "vhost": "/", "durable": true },
+    { "name": "summary.response.dlq", "vhost": "/", "durable": true },
+
+    {
+      "name": "recommend.request.queue",
+      "vhost": "/",
+      "durable": true,
+      "arguments": {
+        "x-dead-letter-exchange": "dlx.exchange",
+        "x-dead-letter-routing-key": "recommend.request.dead"
+      }
+    },
+    {
+      "name": "recommend.response.queue",
+      "vhost": "/",
+      "durable": true,
+      "arguments": {
+        "x-dead-letter-exchange": "dlx.exchange",
+        "x-dead-letter-routing-key": "recommend.response.dead"
+      }
+    },
+    { "name": "recommend.request.dlq", "vhost": "/", "durable": true },
+    { "name": "recommend.response.dlq", "vhost": "/", "durable": true }
   ],
   "bindings": [
     {
@@ -22,6 +63,30 @@
     {
       "source": "summary.exchange", "vhost": "/", "destination": "summary.response.queue",
       "destination_type": "queue", "routing_key": "summary.response"
+    },
+    {
+      "source": "dlx.exchange", "vhost": "/", "destination": "summary.request.dlq",
+      "destination_type": "queue", "routing_key": "summary.request.dead"
+    },
+    {
+      "source": "dlx.exchange", "vhost": "/", "destination": "summary.response.dlq",
+      "destination_type": "queue", "routing_key": "summary.response.dead"
+    },
+    {
+      "source": "recommend.exchange", "vhost": "/", "destination": "recommend.request.queue",
+      "destination_type": "queue", "routing_key": "recommend.request"
+    },
+    {
+      "source": "recommend.exchange", "vhost": "/", "destination": "recommend.response.queue",
+      "destination_type": "queue", "routing_key": "recommend.response"
+    },
+    {
+      "source": "dlx.exchange", "vhost": "/", "destination": "recommend.request.dlq",
+      "destination_type": "queue", "routing_key": "recommend.request.dead"
+    },
+    {
+      "source": "dlx.exchange", "vhost": "/", "destination": "recommend.response.dlq",
+      "destination_type": "queue", "routing_key": "recommend.response.dead"
     }
   ]
 }
