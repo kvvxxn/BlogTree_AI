@@ -8,15 +8,12 @@ from typing import Optional, Dict, Any
 from fastapi_worker.app.services.llm.prompts import recommend_sys_prompt, make_recommend_user_prompt
 from fastapi_worker.app.services.llm.configs import T, OUTPUT_MAX_TOKENS, MODEL_NAME
 from fastapi_worker.app.services.llm.utils import safe_parse_json
+from fastapi_worker.app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-# LLM API Key 로드
-load_dotenv() 
-api_key = os.getenv("OPENAI_API_KEY")
-
 def recommend_with_llm(career_goal: str, knowledge_tree: str) -> Optional[Dict[str, Any]]: 
-    client = OpenAI(api_key=api_key)
+    client = OpenAI(api_key=settings.LLM_API_KEY)
 
     logger.info("사용자의 커리어 목표 기반 맞춤형 키워드 추천 분석을 시작합니다.")
 
