@@ -1,6 +1,7 @@
 import json
 import logging
 import tiktoken
+from typing import Optional
 
 def truncate_text_by_token(text: str, model_name: str = "gpt-4o", max_tokens: int = 6000) -> str:
     """
@@ -24,9 +25,6 @@ def truncate_text_by_token(text: str, model_name: str = "gpt-4o", max_tokens: in
     # 제한을 넘지 않으면 원본 텍스트 반환
     return text
 
-import json
-import logging
-from typing import Optional
 
 def safe_parse_json(raw_content: str, schema_type: str = "summary") -> Optional[dict]:
     """
