@@ -56,7 +56,6 @@ public class OAuth2Service {
                 });
 
         // 4. 우리 서비스 전용 JWT (Access / Refresh) 토큰 생성
-        // (JwtProvider의 파라미터는 어제 만드신 규격에 맞게 넣어주세요!)
         String accessToken = jwtProvider.createAccessToken(user.getEmail(), user.getRole().name());
         String refreshToken = jwtProvider.createRefreshToken(user.getEmail());
 
@@ -65,7 +64,7 @@ public class OAuth2Service {
         // Map 구조이므로 이미 이메일(key)이 존재하면 알아서 새 토큰으로 덮어씌움
         refreshTokenRepository.save(user.getEmail(), refreshToken);
 
-        // 6. 프론트엔드에게 줄 택배 상자에 포장해서 반환!
+        // 6. 프론트엔드에게 줄 택배 상자에 포장해서 반환
         String message = "구글 로그인 및 토큰 발급 성공!";
         return new AuthDto.LoginResponse(message, accessToken, refreshToken);
     }

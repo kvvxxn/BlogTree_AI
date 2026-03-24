@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Repository // 스프링이 이 구현체를 빈(Bean)으로 등록합니다.
+@Repository // 스프링이 이 구현체를 빈(Bean)으로 등록.
 public class InMemoryRefreshTokenRepository implements RefreshTokenRepository {
 
     // 실질적인 메모리 저장소
