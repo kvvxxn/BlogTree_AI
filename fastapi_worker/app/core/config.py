@@ -7,7 +7,7 @@ class Settings(BaseSettings):
 
     # RabbiMQ 연결 정보
     RABBITMQ_USER: str = "rabbitmq_user"
-    RABBITMQ_PASSWORD: str = "your_rabbitmq_password_here"
+    RABBITMQ_PASSWORD: str = "rabbitmq_password"
     RABBITMQ_HOST: str = "localhost"
     RABBITMQ_PORT: int = 5672
     
