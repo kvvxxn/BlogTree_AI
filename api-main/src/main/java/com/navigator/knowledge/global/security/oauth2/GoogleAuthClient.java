@@ -5,6 +5,7 @@ import com.navigator.knowledge.global.security.oauth2.dto.GoogleUserInfoDto;
 import com.navigator.knowledge.global.security.oauth2.properties.GoogleOAuthProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
@@ -14,6 +15,7 @@ import org.springframework.web.client.RestTemplate;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@EnableConfigurationProperties(GoogleOAuthProperties.class)
 public class GoogleAuthClient {
 
     private final RestTemplate restTemplate;
