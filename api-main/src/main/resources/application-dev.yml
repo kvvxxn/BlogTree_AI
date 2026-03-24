@@ -2,21 +2,38 @@ spring:
   application:
     name: api-main
 
-  # Neo4j ??
+  # Neo4j
   neo4j:
     uri: bolt://neo4j_knowledge_tree:7687
     authentication:
       username: neo4j_user
       password: neo4j_password
 
-  # RabbitMQ ??
+  # RabbitMQ
   rabbitmq:
     host: localhost
     port: 5672
     username: rabbitmq_user
     password: rabbitmq_password
+    summary:
+      exchange: summary.exchange
+      queue:
+        request: summary.request.queue
+        response: summary.response.queue
+      routing-key:
+        request: summary.request
+        response: summary.response
+    listener:
+      simple:
+        retry:
+          enabled: true
+          max-attempts: 3          # 최대 3번까지 재시도
+          initial-interval: 3s     # 처음 실패 후 3초 대기
+          multiplier: 2.0          # 대기 시간을 2배씩 늘림 (3초 -> 6초 -> 12초)
+          max-interval: 15s        # 최대 대기 시간은 15초까지만
+        default-requeue-rejected: false
 
-# ?? ?? ??
+# Logging level
 logging:
   level:
     org.springframework.data.neo4j: DEBUG
