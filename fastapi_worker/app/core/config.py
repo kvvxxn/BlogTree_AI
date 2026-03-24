@@ -1,19 +1,37 @@
-from pydantic_settings import BaseSettings
+from pydantic import computed_field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
+    # GPT API Key
     LLM_API_KEY: str = "your_default_api_key_here"
-    
-    # RabbitMQ 설정 (docker-compose 기준)
-    # FastAPI를 로컬에서 실행한다면 localhost, Docker 내부라면 rabbitmq를 사용합니다.
-    RABBITMQ_URL: str = "amqp://guest:guest@localhost:5672/"
-    
-    # 큐 이름 설정
-    SUMMARIZE_INPUT_QUEUE: str = "task_input_queue"
-    SUMMARIZE_OUTPUT_QUEUE: str = "task_output_queue"
-    RECOMMEND_INPUT_QUEUE: str = "recommend_input_queue"
-    RECOMMEND_OUTPUT_QUEUE: str = "recommend_output_queue"
 
-    class Config:
-        env_file = ".env"   
+    # RabbiMQ 연결 정보
+    RABBITMQ_USER: str = "rabbitmq_user"
+    RABBITMQ_PASSWORD: str = "rabbitmq_password"
+    RABBITMQ_HOST: str = "localhost"
+    RABBITMQ_PORT: int = 5672
+    
+    @computed_field
+    @property
+    def RABBITMQ_URL(self) -> str:
+        return f"amqp://{self.RABBITMQ_USER}:{self.RABBITMQ_PASSWORD}@{self.RABBITMQ_HOST}:{self.RABBITMQ_PORT}/"
+    
+    # Exchange 이름 설정
+    SUMMARY_EXCHANGE: str = "summary.exchange"
+    RECOMMEND_EXCHANGE: str = "recommend.exchange"
+    
+    # Queue 이름 설정
+    SUMMARIZE_INPUT_QUEUE: str = "summary.request.queue"
+    SUMMARIZE_OUTPUT_QUEUE: str = "summary.response.queue"
+    RECOMMEND_INPUT_QUEUE: str = "recommend.request.queue"
+    RECOMMEND_OUTPUT_QUEUE: str = "recommend.response.queue"
+
+    # Routing Key 설정
+    SUMMARIZE_INPUT_ROUTING_KEY: str = "summary.request"
+    SUMMARIZE_OUTPUT_ROUTING_KEY: str = "summary.response"
+    RECOMMEND_INPUT_ROUTING_KEY: str = "recommend.request"
+    RECOMMEND_OUTPUT_ROUTING_KEY: str = "recommend.response"
+
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 settings = Settings()

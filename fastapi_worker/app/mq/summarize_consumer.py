@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import aio_pika
 from pydantic import ValidationError
 
@@ -11,9 +12,20 @@ from fastapi_worker.app.schemas.summarize_input import SummarizeInputPayload
 from fastapi_worker.app.schemas.summarize_response import (
     SummarizeResponsePayload, 
     ResponseData, 
+    KnowledgeTree,
     StatusEnum, 
     ErrorData
 )
+
+logger = logging.getLogger(__name__)
+
+
+def _to_knowledge_tree(raw_keywords) -> KnowledgeTree | None:
+    if not isinstance(raw_keywords, list) or len(raw_keywords) != 3:
+        return None
+    if not all(isinstance(item, str) and item.strip() for item in raw_keywords):
+        return None
+    return KnowledgeTree(category=raw_keywords[0], topic=raw_keywords[1], keyword=raw_keywords[2])
 
 # Consumer: Input 검증 -> 파이프라인 처리 -> Output 조립 및 검증 -> 전송
 async def consume_message(message: aio_pika.IncomingMessage):
@@ -33,9 +45,9 @@ async def consume_message(message: aio_pika.IncomingMessage):
             
             # LLM 답변 실패 시 최대 3회 재시도 (for문 구조로 깔끔하게 통합)
             for attempt in range(max_retries):
-                llm_result = await summarize_blog_content(
+                llm_result = await asyncio.to_thread(
+                    summarize_blog_content,
                     career_goal=payload.career_goal, 
-                    # HttpUrl 객체이므로 문자열(str)로 변환해서 넘겨주는 것이 안전합니다.
                     url=str(payload.source_url), 
                     knowledge_tree=payload.knowledge_tree
                 )
@@ -52,8 +64,11 @@ async def consume_message(message: aio_pika.IncomingMessage):
             if llm_result is None:
                 raise ValueError("LLM 요약 엔진에서 3회 재시도했으나 응답 생성에 실패했습니다.")
             
-            # [단계 3] LLM 결과를 ResponseData 스키마로 1차 검증 (형식 강제 변환)
-            response_data = ResponseData(**llm_result)
+            # [단계 3] summarize LLM 결과(summary, keywords)를 응답 스키마로 매핑
+            response_data = ResponseData(
+                summary_content=llm_result["summary"],
+                knowledge_tree=_to_knowledge_tree(llm_result.get("keywords"))
+            )
             
             # [단계 4] 지식 트리 존재 여부에 따른 상태(Status) 결정 로직 추가
             # 요약은 성공했으나 지식 트리가 안 뽑혔다면 PARTIAL_SUCCESS로 처리합니다.
@@ -72,7 +87,7 @@ async def consume_message(message: aio_pika.IncomingMessage):
             )
             
             # [단계 6] Output Queue로 최종 전송
-            await publish_message(settings.OUTPUT_QUEUE, response_payload)
+            await publish_message(settings.SUMMARIZE_OUTPUT_QUEUE, response_payload)
             print(f"[Consumer] {final_status.value} 메시지 전송 완료: {response_payload.task_id}")
             
             await message.ack() 
@@ -96,7 +111,7 @@ async def consume_message(message: aio_pika.IncomingMessage):
                         message=str(e)
                     )
                 )
-                await publish_message(settings.OUTPUT_QUEUE, error_payload)
+                await publish_message(settings.SUMMARIZE_OUTPUT_QUEUE, error_payload)
                 print(f"[Consumer] FAILED 상태 메시지 전송 완료: {payload.task_id}")
                 await message.ack() 
             else:
@@ -113,9 +128,9 @@ async def start_consuming():
     # prefetch_count를 1로 설정하여 한 번에 하나의 메시지만 처리하도록 최적화
     await channel.set_qos(prefetch_count=1)
     
-    queue = await channel.declare_queue(settings.INPUT_QUEUE, durable=True)
+    queue = await channel.declare_queue(settings.SUMMARIZE_INPUT_QUEUE, durable=True)
     
-    print(f"[*] '{settings.INPUT_QUEUE}' 큐에서 메시지 대기 중...")
+    logger.info("[*] '%s' 큐에서 메시지 대기 중...", settings.SUMMARIZE_INPUT_QUEUE)
     await queue.consume(consume_message)
     
     # 커넥션 유지를 위해 무한 대기

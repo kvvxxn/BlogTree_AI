@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import aio_pika
 from pydantic import ValidationError
 
@@ -12,6 +13,8 @@ from fastapi_worker.app.schemas.recommend_response import (
     StatusEnum, 
     ErrorData
 )
+
+logger = logging.getLogger(__name__)
 
 
 # Consumer: Input 검증 -> 파이프라인 처리 -> Output 조립 및 검증 -> 전송
@@ -27,16 +30,11 @@ async def consume_message(message: aio_pika.IncomingMessage):
             payload = RecommendInputPayload.model_validate_json(message.body)
             print(f"[Consumer] 요청 수신 - Task ID: {payload.task_id}")
             
-            # [단계 2] 파이프라인 호출 
-            # (llm_result는 LLM이 반환한 딕셔너리 형태라고 가정: {"recommend_reason": "...", "knowledge_tree": {...}})
-            llm_result = await recommend_keywords(
-                career_goal=payload.career_goal, 
-                knowledge_tree=payload.knowledge_tree
-            )
-            
             # LLM 답변 실패 시 최대 3회 재시도
+            llm_result = None
             for attempt in range(max_retries):
-                llm_result = await recommend_keywords(
+                llm_result = await asyncio.to_thread(
+                    recommend_keywords,
                     career_goal=payload.career_goal, 
                     knowledge_tree=payload.knowledge_tree
                 )
@@ -68,7 +66,7 @@ async def consume_message(message: aio_pika.IncomingMessage):
             )
             
             # [단계 5] Output Queue로 최종 전송
-            await publish_message(settings.OUTPUT_QUEUE, response_payload)
+            await publish_message(settings.RECOMMEND_OUTPUT_QUEUE, response_payload)
             print(f"[Consumer] SUCCESS 메시지 전송 완료: {response_payload.task_id}")
             
             await message.ack() 
@@ -92,7 +90,7 @@ async def consume_message(message: aio_pika.IncomingMessage):
                         message=str(e)
                     )
                 )
-                await publish_message(settings.OUTPUT_QUEUE, error_payload)
+                await publish_message(settings.RECOMMEND_OUTPUT_QUEUE, error_payload)
                 print(f"[Consumer] FAILED 상태 메시지 전송 완료: {payload.task_id}")
                 await message.ack() # 서버에 실패 응답을 보냈으므로 MQ에서는 삭제 처리
             else:
@@ -109,9 +107,9 @@ async def start_consuming():
     # prefetch_count를 1로 설정하여 한 번에 하나의 메시지만 처리하도록 최적화
     await channel.set_qos(prefetch_count=1)
     
-    queue = await channel.declare_queue(settings.INPUT_QUEUE, durable=True)
+    queue = await channel.declare_queue(settings.RECOMMEND_INPUT_QUEUE, durable=True)
     
-    print(f"[*] '{settings.INPUT_QUEUE}' 큐에서 메시지 대기 중...")
+    logger.info("[*] '%s' 큐에서 메시지 대기 중...", settings.RECOMMEND_INPUT_QUEUE)
     await queue.consume(consume_message)
     
     # 커넥션 유지를 위해 무한 대기
