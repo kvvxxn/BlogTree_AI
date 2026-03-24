@@ -107,7 +107,14 @@ async def start_consuming():
     # prefetch_count를 1로 설정하여 한 번에 하나의 메시지만 처리하도록 최적화
     await channel.set_qos(prefetch_count=1)
     
-    queue = await channel.declare_queue(settings.RECOMMEND_INPUT_QUEUE, durable=True)
+    queue = await channel.declare_queue(
+        settings.RECOMMEND_INPUT_QUEUE, 
+        durable=True,
+        arguments={
+            "x-dead-letter-exchange": "dlx.exchange",
+            "x-dead-letter-routing-key": "recommend.request.dead"  # <- 이 줄을 추가!
+        }
+    )
     
     logger.info("[*] '%s' 큐에서 메시지 대기 중...", settings.RECOMMEND_INPUT_QUEUE)
     await queue.consume(consume_message)
