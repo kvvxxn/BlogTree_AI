@@ -33,21 +33,23 @@ async def consume_message(message: aio_pika.IncomingMessage):
             # LLM 답변 실패 시 최대 3회 재시도
             llm_result = None
             for attempt in range(max_retries):
-                llm_result = await asyncio.to_thread(
-                    recommend_keywords,
-                    career_goal=payload.career_goal, 
-                    knowledge_tree=payload.knowledge_tree
-                )
-                
-                # 결과가 성공적으로 나왔다면 루프를 즉시 탈출!
-                if llm_result is not None:
-                    break 
+                try:
+                    llm_result = await asyncio.to_thread(
+                        recommend_keywords,
+                        career_goal=payload.career_goal, 
+                        knowledge_tree=payload.knowledge_tree
+                    )
                     
-                # 실패했을 경우 로그를 남기고 다음 루프로 넘어감
-                print(f"[Consumer] LLM에서 유효한 결과가 나오지 않았습니다. 재시도 {attempt + 1}/{max_retries}...")
+                    # 결과가 성공적으로 나왔다면 루프를 즉시 탈출!
+                    if llm_result is not None:
+                        break 
+                        
+                except Exception as api_err:
+                    print(f"[Consumer] LLM 요청 중 에러 발생: {api_err}")
                 
-                # API 일시 오류일 수 있으므로 1초 정도 쉬었다가 다시 요청
-                await asyncio.sleep(1) 
+                # 실패했을 경우 (에러가 났거나 llm_result가 여전히 None인 경우)
+                print(f"[Consumer] LLM에서 유효한 결과가 나오지 않았습니다. 재시도 {attempt + 1}/{max_retries}...")
+                await asyncio.sleep(1)
 
             # 3번을 모두 시도했는데도 결국 None이라면 에러 발생
             if llm_result is None:
@@ -107,7 +109,14 @@ async def start_consuming():
     # prefetch_count를 1로 설정하여 한 번에 하나의 메시지만 처리하도록 최적화
     await channel.set_qos(prefetch_count=1)
     
-    queue = await channel.declare_queue(settings.RECOMMEND_INPUT_QUEUE, durable=True)
+    queue = await channel.declare_queue(
+        settings.RECOMMEND_INPUT_QUEUE, 
+        durable=True,
+        arguments={
+            "x-dead-letter-exchange": "dlx.exchange",
+            "x-dead-letter-routing-key": "recommend.request.dead" 
+        }
+    )
     
     logger.info("[*] '%s' 큐에서 메시지 대기 중...", settings.RECOMMEND_INPUT_QUEUE)
     await queue.consume(consume_message)

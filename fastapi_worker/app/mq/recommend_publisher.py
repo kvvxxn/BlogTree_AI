@@ -11,7 +11,33 @@ async def publish_message(queue_name: str, message_body: BaseModel):
     
     async with connection:
         channel = await connection.channel()
-        queue = await channel.declare_queue(queue_name, durable=True)
+        
+        # JSON 설정 규칙에 맞춘 동적 이름 생성 
+        # 예: queue_name이 "recommend.response.queue" 인 경우
+        # prefix = "recommend", msg_type = "response"
+        parts = queue_name.split(".")
+        prefix = parts[0]
+        msg_type = parts[1]
+        
+        exchange_name = f"{prefix}.exchange"              # 결과: recommend.exchange
+        publish_routing_key = f"{prefix}.{msg_type}"      # 결과: recommend.response
+        dlx_routing_key = f"{prefix}.{msg_type}.dead"     # 결과: recommend.response.dead
+        
+        # 1. 기존 Exchange 가져오기 (속성 충돌 에러 방지)
+        exchange = await channel.get_exchange(name=exchange_name)
+        
+        # 2. Queue 선언 (JSON의 queues 설정 반영: dlx.exchange 및 라우팅 키 설정)
+        queue = await channel.declare_queue(
+            name=queue_name, 
+            durable=True,
+            arguments={
+                "x-dead-letter-exchange": "dlx.exchange",
+                "x-dead-letter-routing-key": dlx_routing_key  
+            }
+        )
+        
+        # 3. Queue와 Exchange 바인딩 (JSON의 bindings 설정 반영)
+        await queue.bind(exchange, routing_key=publish_routing_key)
         
         message = aio_pika.Message(
             # Pydantic 모델을 JSON 문자열로 변환 후 바이트로 인코딩
@@ -19,8 +45,9 @@ async def publish_message(queue_name: str, message_body: BaseModel):
             delivery_mode=aio_pika.DeliveryMode.PERSISTENT 
         )
         
-        await channel.default_exchange.publish(
+        # 4. Default exchange가 아닌, 가져온 Topic Exchange를 통해 발행
+        await exchange.publish(
             message,
-            routing_key=queue.name,
+            routing_key=publish_routing_key,
         )
-        print(f"[Publisher] 큐 '{queue_name}'로 스키마 전송 완료")
+        print(f"[Publisher] 익스체인지 '{exchange_name}' (라우팅 키: '{publish_routing_key}')로 스키마 전송 완료")
