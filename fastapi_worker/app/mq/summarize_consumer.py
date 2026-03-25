@@ -43,20 +43,26 @@ async def consume_message(message: aio_pika.IncomingMessage):
             # [단계 2] 파이프라인 호출 
             llm_result = None
             
-            # LLM 답변 실패 시 최대 3회 재시도 (for문 구조로 깔끔하게 통합)
+            # LLM 답변 실패 시 최대 3회 재시도
+            llm_result = None
             for attempt in range(max_retries):
-                llm_result = await asyncio.to_thread(
-                    summarize_blog_content,
-                    career_goal=payload.career_goal, 
-                    url=str(payload.source_url), 
-                    knowledge_tree=payload.knowledge_tree
-                )
-                
-                # 결과가 성공적으로 나왔다면 루프를 즉시 탈출!
-                if llm_result is not None:
-                    break 
+                try:
+                    llm_result = await asyncio.to_thread(
+                        summarize_blog_content,
+                        career_goal=payload.career_goal, 
+                        url=str(payload.source_url), 
+                        knowledge_tree=payload.knowledge_tree
+                    )
                     
-                # 실패했을 경우 로그를 남기고 다음 루프로 넘어감
+                    # 결과가 성공적으로 나왔다면 루프를 즉시 탈출!
+                    if llm_result is not None:
+                        break 
+                        
+                except Exception as api_err:
+                    # 크롤링 실패, LLM 타임아웃 등 예외 발생 시 로그만 남기고 튕기지 않음
+                    print(f"[Consumer] 요약 엔진 요청 중 에러 발생: {api_err}")
+                    
+                # 실패했을 경우 (에러가 났거나 llm_result가 여전히 None인 경우)
                 print(f"[Consumer] LLM에서 유효한 결과가 나오지 않았습니다. 재시도 {attempt + 1}/{max_retries}...")
                 await asyncio.sleep(1) 
 
