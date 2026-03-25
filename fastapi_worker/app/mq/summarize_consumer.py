@@ -133,7 +133,7 @@ async def start_consuming():
         durable=True,
         arguments={
             "x-dead-letter-exchange": "dlx.exchange",
-            "x-dead-letter-routing-key": "summary.request.dead"  # <- 이 줄을 추가!
+            "x-dead-letter-routing-key": "summary.request.dead"  
         }
     )
     
