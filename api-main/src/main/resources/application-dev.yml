@@ -1,6 +1,12 @@
 spring:
   application:
     name: api-main
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      embedding:
+        options:
+          model: text-embedding-3-small
 
   # Neo4j
   neo4j:

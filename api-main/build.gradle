@@ -24,6 +24,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-data-neo4j'
     implementation 'org.springframework.boot:spring-boot-starter-amqp'
+    implementation 'org.springframework.boot:spring-ai-openai-spring-boot-starter'
     implementation 'com.fasterxml.jackson.core:jackson-databind'    // JSON 직렬화/역직렬화
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
 
