@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
     private final OAuth2Service oAuth2Service;
 
+    // 로그인
     @PostMapping("/google")
     public ResponseEntity<AuthDto.LoginResponse> googleLogin(@RequestBody AuthDto.LoginRequest request) {
         String authcode = request.getAuthorizationCode();
@@ -27,4 +28,27 @@ public class AuthController {
     //public ResponseEntity<Map<String, String>> checkTokens() {
     //    return ResponseEntity.ok(oAuth2Service.getAllTokensForTest());
     //}
+
+    // --- [토큰 재발급 API] ---
+    @PostMapping("/reissue")
+    public ResponseEntity<AuthDto.LoginResponse> reissue(@RequestHeader("Refresh-Token") String refreshToken) {
+        // 프론트가 HTTP Header에 'Refresh-Token'이라는 이름으로 토큰을 담아 보냅니다.
+        AuthDto.LoginResponse response = oAuth2Service.reissue(refreshToken);
+        return ResponseEntity.ok(response);
+    }
+
+    // --- [로그아웃 API] ---
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(@RequestHeader("Authorization") String authorizationHeader) {
+        // HTTP Header에서 "Bearer eyJh..." 형태로 날아오는 Access Token 추출
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            throw new IllegalArgumentException("잘못된 인증 헤더입니다.");
+        }
+
+        // 앞의 "Bearer " 문자열(7글자)을 잘라내고 순수 토큰만 서비스로 넘김
+        String accessToken = authorizationHeader.substring(7);
+        oAuth2Service.logout(accessToken);
+
+        return ResponseEntity.ok("성공적으로 로그아웃 되었습니다.");
+    }
 }

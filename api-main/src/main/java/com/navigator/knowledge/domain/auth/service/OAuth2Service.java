@@ -1,7 +1,6 @@
 package com.navigator.knowledge.domain.auth.service;
 
 import com.navigator.knowledge.domain.auth.dto.AuthDto;
-import com.navigator.knowledge.domain.auth.repository.InMemoryRefreshTokenRepository;
 import com.navigator.knowledge.domain.user.entity.Role;
 import com.navigator.knowledge.domain.user.entity.User;
 import com.navigator.knowledge.domain.auth.repository.RefreshTokenRepository;
@@ -10,11 +9,9 @@ import com.navigator.knowledge.global.security.jwt.JwtProvider;
 import com.navigator.knowledge.global.security.oauth2.GoogleAuthClient;
 import com.navigator.knowledge.global.security.oauth2.dto.GoogleTokenResponse;
 import com.navigator.knowledge.global.security.oauth2.dto.GoogleUserInfoDto;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.util.Collections;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +22,7 @@ public class OAuth2Service {
     private final JwtProvider jwtProvider;
 
     // 인가 코드를 통해 구글 로그인 처리
+    @Transactional
     public AuthDto.LoginResponse googleLogin(String code) {
         // GoogleAuthClient에게 일 시키기
         // 1. 구글 access token 받아오기
@@ -76,4 +74,36 @@ public class OAuth2Service {
     //    }
     //    return Collections.emptyMap();
     //}
+
+    // Access, Refresh Token 재발급 로직 (RTR 방식)
+    @Transactional
+    public AuthDto.LoginResponse reissue(String refreshToken) {
+        // 토큰 유효성 검증
+        jwtProvider.validateToken(refreshToken);
+
+        // 토큰에서 이메일 추출
+        String email = jwtProvider.getEmailFromToken(refreshToken);
+
+        // 유저 정보 조회
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다."));
+
+        // 새 토큰 발급
+        String newAccessToken = jwtProvider.createAccessToken(user.getEmail(), user.getRole().name());
+        String newRefreshToken = jwtProvider.createRefreshToken(user.getEmail());
+
+        // 저장소 업데이트
+        refreshTokenRepository.save(user.getEmail(), newRefreshToken);
+
+        return new AuthDto.LoginResponse("토큰 재발급 성공!", newAccessToken, newRefreshToken);
+    }
+
+    // 로그아웃 로직
+    public void logout(String accessToken) {
+        // 1. Access Token에서 이메일 추출
+        String email = jwtProvider.getEmailFromToken(accessToken);
+
+        // 2. 해당 이메일의 Refresh Token을 메모리(저장소)에서 날려버림
+        refreshTokenRepository.deleteByEmail(email);
+    }
 }
