@@ -49,30 +49,31 @@ public class OAuth2Service {
                     User newUser = User.builder()
                             .email(email)
                             .name(userInfoDto.getName())
+                            .profileImageUrl(userInfoDto.getPicture())
                             .role(Role.USER)
                             .build();
                     return userRepository.save(newUser);
                 });
 
         // 4. 우리 서비스 전용 JWT (Access / Refresh) 토큰 생성
-        // (JwtProvider의 파라미터는 어제 만드신 규격에 맞게 넣어주세요!)
         String accessToken = jwtProvider.createAccessToken(user.getEmail(), user.getRole().name());
         String refreshToken = jwtProvider.createRefreshToken(user.getEmail());
 
         // 5. Refresh Token을 메모리에 저장 (ConcurrentHashMap)
+        // 추후 운영, 배포 시 Redis 등으로 변경 예정
         // Map 구조이므로 이미 이메일(key)이 존재하면 알아서 새 토큰으로 덮어씌움
         refreshTokenRepository.save(user.getEmail(), refreshToken);
 
-        // 6. 프론트엔드에게 줄 택배 상자에 포장해서 반환!
+        // 6. 프론트엔드에게 줄 택배 상자에 포장해서 반환
         String message = "구글 로그인 및 토큰 발급 성공!";
         return new AuthDto.LoginResponse(message, accessToken, refreshToken);
     }
 
     // HashMap 테스트용 메서드
-    public Map<String, String> getAllTokensForTest() {
-        if (refreshTokenRepository instanceof InMemoryRefreshTokenRepository inMemoryRepo) {
-            return inMemoryRepo.getTokenMap();
-        }
-        return Collections.emptyMap();
-    }
+    //public Map<String, String> getAllTokensForTest() {
+    //    if (refreshTokenRepository instanceof InMemoryRefreshTokenRepository inMemoryRepo) {
+    //        return inMemoryRepo.getTokenMap();
+    //    }
+    //    return Collections.emptyMap();
+    //}
 }
