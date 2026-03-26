@@ -8,7 +8,7 @@ import lombok.AllArgsConstructor;
 
 @Getter
 @Setter
-@AllArgsConstructor // ⭐ 이게 핵심! 모든 필드(id, email, token)를 받는 생성자를 만듭니다.
+@AllArgsConstructor
 @Builder
 @Entity
 @Table(name = "refresh_tokens")
@@ -22,11 +22,11 @@ public class RefreshToken {
     @Column(nullable = false, unique = true)
     private String email;
 
-    // 발급된 Refresh Token 값 (토큰 길이가 길 수 있으므로 512자로 넉넉하게 잡습니다)
+    // 발급된 Refresh Token 값 (토큰 길이가 길 수 있으므로 512자로 넉넉하게)
     @Column(nullable = false, length = 512)
     private String token;
 
-    // JPA가 엔티티를 생성할 때 사용하는 기본 생성자 (필수!)
+    // JPA가 엔티티를 생성할 때 사용하는 기본 생성자
     protected RefreshToken() {}
 
     public RefreshToken(String email, String token) {

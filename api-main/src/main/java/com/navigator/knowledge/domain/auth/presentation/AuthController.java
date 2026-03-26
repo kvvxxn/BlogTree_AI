@@ -6,8 +6,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
-
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -25,8 +23,8 @@ public class AuthController {
     }
 
     // HashMap 테스트용 메서드
-    @GetMapping("/test/refresh-tokens")
-    public ResponseEntity<Map<String, String>> checkTokens() {
-        return ResponseEntity.ok(oAuth2Service.getAllTokensForTest());
-    }
+    //@GetMapping("/test/refresh-tokens")
+    //public ResponseEntity<Map<String, String>> checkTokens() {
+    //    return ResponseEntity.ok(oAuth2Service.getAllTokensForTest());
+    //}
 }
