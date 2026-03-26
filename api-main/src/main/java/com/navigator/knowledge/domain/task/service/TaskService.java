@@ -42,4 +42,10 @@ public class TaskService {
                 .orElseThrow(() -> new IllegalArgumentException("Task not found"));
         task.fail(errorMessage);
     }
+
+    @Transactional(readOnly = true)
+    public Task getTask(String taskId) {
+        return taskRepository.findById(taskId)
+                .orElseThrow(() -> new IllegalArgumentException("Task not found"));
+    }
 }
