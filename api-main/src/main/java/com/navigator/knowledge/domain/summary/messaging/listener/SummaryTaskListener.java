@@ -1,6 +1,6 @@
-package com.navigator.knowledge.domain.task.mq.listener;
+package com.navigator.knowledge.domain.summary.messaging.listener;
 
-import com.navigator.knowledge.domain.task.mq.dto.SummaryTaskResponseMessage;
+import com.navigator.knowledge.domain.summary.messaging.dto.SummaryTaskResponseMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -40,7 +40,7 @@ public class SummaryTaskListener {
         var data = responseDto.data();
 
         // 1. MySQL: Task 상태를 '부분 완료'로 업데이트
-        // 2. VectorDB: data.summaryContent() 와 비슷한 vector의 category-topic-keyword 가져오기
+        // 2. VectorDB: data.summaryContent()를 임베딩한 값과 가장 가까운 vector의 category-topic-keyword 가져오기
         // 3. Neo4j: 가져온 category-topic-node 생성
 
         log.warn("Summary succeeded but keyword extraction failed. (Task ID: {})", responseDto.taskId());

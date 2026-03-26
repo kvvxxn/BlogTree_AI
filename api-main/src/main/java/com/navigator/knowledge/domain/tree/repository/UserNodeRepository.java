@@ -4,6 +4,7 @@ import com.navigator.knowledge.domain.tree.dto.KnowledgePathDto;
 import com.navigator.knowledge.domain.tree.entity.UserNode;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -26,7 +27,7 @@ public interface UserNodeRepository extends Neo4jRepository<UserNode, Long> {
      * @param topicName    The name of the topic.
      * @param keywordName  The name of the keyword.
      */
-    @Query("MATCH (u:UserNode {userId: $userId}) " +
+    @Query("MATCH (u:User {userId: $userId}) " +
         "MERGE (u)-[:OWNS_CATEGORY]->(c:Category {name: $categoryName}) " +
         "MERGE (c)-[:HAS_TOPIC]->(t:Topic {name: $topicName}) " +
         "MERGE (t)-[:HAS_KEYWORD]->(k:Keyword {name: $keywordName}) " +
@@ -39,7 +40,7 @@ public interface UserNodeRepository extends Neo4jRepository<UserNode, Long> {
      * @param userId The unique identifier of the user.
      * @return A list of KnowledgePathDto containing category, topic, and keyword names.
      */
-    @Query("MATCH (u:UserNode {userId: $userId})-[:OWNS_CATEGORY]->(c:Category) " +
+    @Query("MATCH (u:User {userId: $userId})-[:OWNS_CATEGORY]->(c:Category) " +
         "OPTIONAL MATCH (c)-[:HAS_TOPIC]->(t:Topic) " +
         "OPTIONAL MATCH (t)-[:HAS_KEYWORD]->(k:Keyword) " +
         "RETURN c.name AS categoryName, t.name AS topicName, k.name AS keywordName")
