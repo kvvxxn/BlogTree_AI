@@ -10,15 +10,14 @@ import java.util.List;
 
 @Node("Summary")
 @Getter
-@Setter
 @NoArgsConstructor
-public class Summary {
+public class SummaryNode {
     @Id
     private Long summaryId;
 
     private List<Double> embedding;
 
-    public Summary(Long summaryId, List<Double> embedding) {
+    public SummaryNode(Long summaryId, List<Double> embedding) {
         this.summaryId = summaryId;
         this.embedding = embedding;
     }

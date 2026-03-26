@@ -13,17 +13,16 @@ import java.util.Set;
 
 @Node("Category")
 @Getter
-@Setter
 @NoArgsConstructor
-public class Category {
+public class CategoryNode {
     @Id @GeneratedValue
     private Long id;
     
     private String name;
 
     @Relationship(type = "HAS_TOPIC", direction = Relationship.Direction.OUTGOING)
-    private Set<Topic> topics = new HashSet<>();
+    private Set<TopicNode> topicNodes = new HashSet<>();
 
-    public Category(String name) { this.name = name; }
-    public void addTopic(Topic topic) { this.topics.add(topic); }
+    public CategoryNode(String name) { this.name = name; }
+    public void addTopic(TopicNode topicNode) { this.topicNodes.add(topicNode); }
 }

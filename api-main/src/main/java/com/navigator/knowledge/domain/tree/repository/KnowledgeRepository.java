@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
-public interface UserNodeRepository extends Neo4jRepository<UserNode, Long> {
+public interface KnowledgeRepository extends Neo4jRepository<UserNode, Long> {
 
     /**
      * Creates or updates a UserNode with the given userId.
@@ -71,4 +71,26 @@ public interface UserNodeRepository extends Neo4jRepository<UserNode, Long> {
         @Param("summaryId") Long summaryId,
         @Param("embedding") List<Double> embedding
     );
+
+    @Query("MATCH (u:User {userId: $userId})-[:OWNS_CATEGORY]->(c:Category)-[:HAS_TOPIC]->(t:Topic)-[:HAS_KEYWORD]->(k:Keyword)-[:DESCRIBED_BY]->(existing_s:Summary) " +
+        "WHERE existing_s.embedding IS NOT NULL " +
+        "WITH k, gds.similarity.cosine($embedding, existing_s.embedding) AS similarity " +
+        "ORDER BY similarity DESC " +
+        "LIMIT 1 " +
+        "RETURN k.id")
+    Optional<Long> findMostSimilarKeywordId(
+        @Param("userId") Long userId,
+        @Param("embedding") List<Double> embedding
+    );
+
+    @Query("MATCH (u:User {userId: $userId})-[:OWNS_CATEGORY]->(c:Category)-[:HAS_TOPIC]->(t:Topic)-[:HAS_KEYWORD]->(k:Keyword {id: $keywordId}) " +
+        "CREATE (new_s:Summary {summaryId: $summaryId, embedding: $embedding}) " +
+        "MERGE (k)-[:DESCRIBED_BY]->(new_s)")
+    void createAndAttachSummaryToKeyword(
+        @Param("userId") Long userId,
+        @Param("keywordId") Long keywordId,
+        @Param("summaryId") Long summaryId,
+        @Param("embedding") List<Double> embedding
+    );
+
 }

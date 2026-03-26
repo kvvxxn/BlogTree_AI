@@ -16,7 +16,7 @@ public class TaskService {
     private final TaskRepository taskRepository;
 
     @Transactional
-    public Task createTask(String userId, String sourceUrl) {
+    public Task createTask(Long userId, String sourceUrl) {
         String taskId = UUID.randomUUID().toString();
 
         Task task = Task.builder()

@@ -28,7 +28,7 @@ public class SummaryTaskService {
     public TaskResponseDto requestSummary(SummaryRequestDto request) {
         // 1. 공통 Task 생성 (DB 저장 완료)
         // 향후 사용자 인증 정보 등에서 가져올 값들
-        String userId = "test-user-id";
+        Long userId = 1L;
         Task task = taskService.createTask(userId, request.sourceUrl());
 
         // 2. 지식 트리 조회

@@ -21,7 +21,7 @@ public class TextEmbeddingService {
 
     public TextEmbeddingService(
             @Qualifier("openAiRestClient") RestClient restClient,
-            @Value("${spring.ai.openai.embedding.options.model:text-embedding-3-small}") String embeddingModel
+            @Value("${spring.ai.openai.embedding.options.model}") String embeddingModel
     ) {
         this.restClient = restClient;
         this.embeddingModel = embeddingModel;

@@ -13,9 +13,8 @@ import java.util.Set;
 
 @Node("Topic")
 @Getter
-@Setter
 @NoArgsConstructor
-public class Topic {
+public class TopicNode {
     @Id
     @GeneratedValue
     private Long id;
@@ -23,8 +22,8 @@ public class Topic {
     private String name;
 
     @Relationship(type = "HAS_KEYWORD", direction = Relationship.Direction.OUTGOING)
-    private Set<Keyword> keywords = new HashSet<>();
+    private Set<KeywordNode> keywordNodes = new HashSet<>();
 
-    public Topic(String name) { this.name = name; }
-    public void addKeyword(Keyword keyword) { this.keywords.add(keyword); }
+    public TopicNode(String name) { this.name = name; }
+    public void addKeyword(KeywordNode keywordNode) { this.keywordNodes.add(keywordNode); }
 }

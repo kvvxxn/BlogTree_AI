@@ -13,9 +13,8 @@ import java.util.Set;
 
 @Node("Keyword")
 @Getter
-@Setter
 @NoArgsConstructor
-public class Keyword {
+public class KeywordNode {
     @Id
     @GeneratedValue
     private Long id;
@@ -23,11 +22,11 @@ public class Keyword {
     private String name;
 
     @Relationship(type = "DESCRIBED_BY", direction = Relationship.Direction.OUTGOING)
-    private Set<Summary> summaries = new HashSet<>();
+    private Set<SummaryNode> summaries = new HashSet<>();
 
-    public Keyword(String name) {
+    public KeywordNode(String name) {
         this.name = name;
     }
 
-    public void addSummary(Summary summary) { this.summaries.add(summary); }
+    public void addSummary(SummaryNode summaryNode) { this.summaries.add(summaryNode); }
 }

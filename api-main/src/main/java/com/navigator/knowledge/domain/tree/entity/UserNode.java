@@ -12,20 +12,19 @@ import java.util.Set;
 
 @Node("User")
 @Getter
-@Setter
 @NoArgsConstructor
 public class UserNode {
     @Id
     private Long userId;
 
     @Relationship(type = "OWNS_CATEGORY", direction = Relationship.Direction.OUTGOING)
-    private Set<Category> categories = new HashSet<>();
+    private Set<CategoryNode> categories = new HashSet<>();
 
     public UserNode(Long userId) {
         this.userId = userId;
     }
 
-    public void addCategory(Category category) {
-        categories.add(category);
+    public void addCategory(CategoryNode categoryNode) {
+        categories.add(categoryNode);
     }
 }

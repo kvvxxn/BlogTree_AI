@@ -6,7 +6,7 @@ import com.navigator.knowledge.domain.summary.service.SummaryService;
 import com.navigator.knowledge.domain.task.entity.Task;
 import com.navigator.knowledge.domain.task.entity.TaskStatus;
 import com.navigator.knowledge.domain.task.service.TaskService;
-import com.navigator.knowledge.domain.tree.repository.UserNodeRepository;
+import com.navigator.knowledge.domain.tree.service.KnowledgeService;
 import com.navigator.knowledge.global.infra.ai.TextEmbeddingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,7 +14,6 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -26,7 +25,7 @@ public class SummaryTaskListener {
     private final TaskService taskService;
     private final SummaryService summaryService;
     private final TextEmbeddingService textEmbeddingService;
-    private final UserNodeRepository userNodeRepository;
+    private final KnowledgeService knowledgeService;
 
     @RabbitListener(queues = RESPONSE_QUEUE)
     public void receiveSummaryResponse(SummaryTaskResponseMessage responseDto) {
@@ -42,14 +41,16 @@ public class SummaryTaskListener {
     }
 
     private void handleSuccess(SummaryTaskResponseMessage responseDto) {
+        log.info("Handling success for Task ID: {}.", responseDto.taskId());
+
         var data = responseDto.data();
 
-        // 1. MySQL: Task 상태를 '완료'로 업데이트
+        // 1. MySQL: Task 상태를 'SUCCESS'로 업데이트
         taskService.updateTaskStatus(responseDto.taskId(), TaskStatus.SUCCESS);
         
         // 2. MySQL: Summary 엔티티 저장
         Task task = taskService.getTask(responseDto.taskId());
-        Long userId = Long.valueOf(responseDto.userId());
+        Long userId = responseDto.userId();
         Summary summary = summaryService.saveSummary(
                 task,
                 userId,
@@ -57,30 +58,25 @@ public class SummaryTaskListener {
                 data.summaryContent()
         );
 
-        // 3. VectorDB (Neo4j): 전달받은 요약 텍스트를 임베딩(Vectorize)
+        // 3. Embedding: 전달받은 요약 텍스트를 임베딩(Vectorize)
         List<Double> embedding = textEmbeddingService.embedText(data.summaryContent());
 
-        // 4. Neo4j: Category - Topic - Keyword 계층 데이터를 파싱하고 Summary 노드 생성 및 연결
+        // 4. Neo4j: Category - Topic - Keyword path와 Summary 노드 생성 및 연결
         String category = data.knowledgeTree().category();
         String topic = data.knowledgeTree().topic();
         String keyword = data.knowledgeTree().keyword();
 
-        userNodeRepository.addKnowledgeWithSummary(
-            userId,
-            category,
-            topic,
-            keyword,
-            summary.getSummaryId(),
-            embedding
-        );
+        knowledgeService.saveKnowledgePath(userId, category, topic, keyword, summary.getSummaryId(), embedding);
 
-        log.info("Summary and keyword extraction successful. Category: {}, Topic: {}, Keywords: {}", category, topic, keyword);
+        log.info("Success handled. Category: {}, Topic: {}, Keywords: {}, Summary ID: {}", category, topic, keyword, summary.getSummaryId());
     }
 
     private void handlePartialSuccess(SummaryTaskResponseMessage responseDto) {
+        log.info("Handling partial success for Task ID: {}.", responseDto.taskId());
+
         var data = responseDto.data();
 
-        // 1. MySQL: Task 상태를 '부분 완료'로 업데이트
+        // 1. MySQL: Task 상태를 'PARTIAL_SUCCESS'로 업데이트
         taskService.updateTaskStatus(responseDto.taskId(), TaskStatus.PARTIAL_SUCCESS);
 
         // 2. MySQL: Summary 엔티티 저장
@@ -97,21 +93,13 @@ public class SummaryTaskListener {
         List<Double> embedding = textEmbeddingService.embedText(data.summaryContent());
 
         // 4. Neo4j: 벡터 유사도 검색으로 가장 유사한 Keyword를 찾아 새 Summary 노드를 연결
-        Optional<String> keywordName = userNodeRepository.attachSummaryToMostSimilarKeyword(
-            userId,
-            summary.getSummaryId(),
-            embedding
-        );
+        knowledgeService.addSummaryToSimilarKeyword(userId, summary.getSummaryId(), embedding);
 
-        if (keywordName.isPresent()) {
-            log.info("Partial Success: Attached summary {} to existing keyword '{}'", summary.getSummaryId(), keywordName.get());
-        } else {
-            log.warn("Partial Success: Could not find a similar keyword for summary {}. It might be an orphan node.", summary.getSummaryId());
-            // TODO: 유사한 키워드를 찾지 못했을 경우의 fallback 처리 (예: 별도 관리, 관리자 알림 등)
-        }
+        log.info("Partial success handled. Summary ID: {} has been linked to the most similar existing keyword.", summary.getSummaryId());
     }
-
     private void handleFailure(SummaryTaskResponseMessage responseDto) {
+        log.info("Handling failed for Task ID: {}.", responseDto.taskId());
+
         var error = responseDto.error();
 
         // 1. MySQL: Task 상태를 '실패'로 업데이트하고, 에러 코드와 메시지 기록

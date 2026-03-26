@@ -7,7 +7,7 @@ import java.util.Map;
 
 public record SummaryTaskRequestMessage(
     @JsonProperty("task_id") String taskId,
-    @JsonProperty("user_id") String userId,
+    @JsonProperty("user_id") Long userId,
     @JsonProperty("career_goal") String career_goal,
     @JsonProperty("source_url") String sourceUrl,
     @JsonProperty("expired_at") String expiredAt,

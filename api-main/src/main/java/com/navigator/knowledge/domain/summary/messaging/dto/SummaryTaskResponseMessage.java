@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public record SummaryTaskResponseMessage(
     @JsonProperty("task_id") String taskId,
-    @JsonProperty("user_id") String userId,
+    @JsonProperty("user_id") Long userId,
     @JsonProperty("status") String status, // SUCCESS, PARTIAL_SUCCESS, FAILED
 
     // SUCCESS, PARTIAL_SUCCESS일 때 값이 들어옴 (FAILED일 땐 null)
