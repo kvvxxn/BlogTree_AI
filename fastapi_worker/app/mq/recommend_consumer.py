@@ -16,7 +16,6 @@ from fastapi_worker.app.schemas.recommend_response import (
 
 logger = logging.getLogger(__name__)
 
-
 # Consumer: Input 검증 -> 파이프라인 처리 -> Output 조립 및 검증 -> 전송
 async def consume_message(message: aio_pika.IncomingMessage):
     async with message.process(ignore_processed=True):

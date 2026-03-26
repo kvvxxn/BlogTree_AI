@@ -7,7 +7,6 @@ from fastapi_worker.app.core.config import settings
 from fastapi_worker.app.mq.summarize_publisher import publish_message 
 from fastapi_worker.app.services.content_summarize import summarize_blog_content
 
-# 새로 정의하신 스키마들을 import 합니다.
 from fastapi_worker.app.schemas.summarize_input import SummarizeInputPayload
 from fastapi_worker.app.schemas.summarize_response import (
     SummarizeResponsePayload, 
