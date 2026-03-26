@@ -7,7 +7,6 @@ class StatusEnum(str, Enum):
     작업 상태를 엄격하게 관리하기 위한 Enum 클래스
     """
     SUCCESS = "SUCCESS"
-    PARTIAL_SUCCESS = "PARTIAL_SUCCESS"
     FAILED = "FAILED"
 
 class KnowledgeTree(BaseModel):
@@ -20,10 +19,10 @@ class KnowledgeTree(BaseModel):
 
 class ResponseData(BaseModel):
     """
-    실제 결과 데이터 스키마 (SUCCESS, PARTIAL_SUCCESS 상태일 때 사용)
+    실제 결과 데이터 스키마 (SUCCESS 상태일 때 사용)
     """
     summary_content: str = Field(..., description="요약된 본문 내용")
-    knowledge_tree: Optional[KnowledgeTree] = Field(None, description="추출된 지식 트리 (PARTIAL_SUCCESS 시 null 처리)")
+    knowledge_tree: Optional[KnowledgeTree] = Field(None, description="추출된 지식 트리 (키워드)")
 
 class ErrorData(BaseModel):
     """
@@ -40,8 +39,8 @@ class SummarizeResponsePayload(BaseModel):
     user_id: UUID4 = Field(..., description="사용자 고유 ID")
     status: StatusEnum = Field(..., description="처리 결과 상태")
     
-    # SUCCESS 또는 PARTIAL_SUCCESS 일 때 존재, FAILED 일 때 null
+    # SUCCESS 일 때 존재, FAILED 일 때 null
     data: Optional[ResponseData] = Field(None, description="결과 데이터")
     
-    # FAILED 일 때 존재, SUCCESS 또는 PARTIAL_SUCCESS 일 때 null
+    # FAILED 일 때 존재, SUCCESS 일 때 null
     error: Optional[ErrorData] = Field(None, description="에러 정보")
