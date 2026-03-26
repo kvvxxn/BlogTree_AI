@@ -20,22 +20,6 @@ public interface UserNodeRepository extends Neo4jRepository<UserNode, Long> {
     UserNode saveUserNode(Long userId);
 
     /**
-     * Adds a hierarchical knowledge path (Category -> Topic -> Keyword) to a specific user.
-     * Uses MERGE to ensure nodes and relationships are created only if they do not already exist.
-     *
-     * @param userId       The unique identifier of the user.
-     * @param categoryName The name of the category.
-     * @param topicName    The name of the topic.
-     * @param keywordName  The name of the keyword.
-     */
-    @Query("MATCH (u:User {userId: $userId}) " +
-        "MERGE (u)-[:OWNS_CATEGORY]->(c:Category {name: $categoryName}) " +
-        "MERGE (c)-[:HAS_TOPIC]->(t:Topic {name: $topicName}) " +
-        "MERGE (t)-[:HAS_KEYWORD]->(k:Keyword {name: $keywordName}) " +
-        "RETURN u")
-    void addKnowledge(Long userId, String categoryName, String topicName, String keywordName);
-
-    /**
      * Retrieves all knowledge paths associated with a specific user.
      *
      * @param userId The unique identifier of the user.
