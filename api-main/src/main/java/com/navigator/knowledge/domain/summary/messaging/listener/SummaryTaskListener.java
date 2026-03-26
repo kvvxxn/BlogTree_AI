@@ -1,6 +1,8 @@
 package com.navigator.knowledge.domain.summary.messaging.listener;
 
 import com.navigator.knowledge.domain.summary.messaging.dto.SummaryTaskResponseMessage;
+import com.navigator.knowledge.domain.task.entity.TaskStatus;
+import com.navigator.knowledge.domain.task.service.TaskService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -12,6 +14,8 @@ import org.springframework.stereotype.Service;
 public class SummaryTaskListener {
 
     private static final String RESPONSE_QUEUE = "summary.response.queue";
+
+    private final TaskService taskService;
 
     @RabbitListener(queues = RESPONSE_QUEUE)
     public void receiveSummaryResponse(SummaryTaskResponseMessage responseDto) {
@@ -30,6 +34,8 @@ public class SummaryTaskListener {
         var data = responseDto.data();
 
         // 1. MySQL: Task 상태를 '완료'로 업데이트
+        taskService.updateTaskStatus(responseDto.taskId(), TaskStatus.SUCCESS);
+
         // 2. VectorDB: data.summaryContent() 저장 (유사도 검색용)
         // 3. Neo4j: data.knowledgeTree()의 카테고리-토픽-키워드 노드 및 관계 생성
 
@@ -40,6 +46,8 @@ public class SummaryTaskListener {
         var data = responseDto.data();
 
         // 1. MySQL: Task 상태를 '부분 완료'로 업데이트
+        taskService.updateTaskStatus(responseDto.taskId(), TaskStatus.PARTIAL_SUCCESS);
+
         // 2. VectorDB: data.summaryContent()를 임베딩한 값과 가장 가까운 vector의 category-topic-keyword 가져오기
         // 3. Neo4j: 가져온 category-topic-node 생성
 
@@ -50,6 +58,8 @@ public class SummaryTaskListener {
         var error = responseDto.error();
 
         // 1. MySQL: Task 상태를 '실패'로 업데이트하고, 에러 코드와 메시지 기록
+        String errorMessage = String.format("[%s] %s", error.code(), error.message());
+        taskService.updateTaskFailed(responseDto.taskId(), errorMessage);
 
         log.error("Task failed! Error Code: {}, Message: {}", error.code(), error.message());
     }
