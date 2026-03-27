@@ -13,20 +13,18 @@ async def publish_message(queue_name: str, message_body: BaseModel):
         channel = await connection.channel()
         
         # JSON 설정 규칙에 맞춘 동적 이름 생성 
-        # 예: queue_name이 "recommend.response.queue" 인 경우
-        # prefix = "recommend", msg_type = "response"
-        parts = queue_name.split(".")
-        prefix = parts[0]
-        msg_type = parts[1]
+        parts = queue_name.split(".") 
+        prefix = parts[0] # recommend
+        msg_type = parts[1] # response
         
         exchange_name = f"{prefix}.exchange"              # 결과: recommend.exchange
         publish_routing_key = f"{prefix}.{msg_type}"      # 결과: recommend.response
         dlx_routing_key = f"{prefix}.{msg_type}.dead"     # 결과: recommend.response.dead
         
-        # 1. 기존 Exchange 가져오기 (속성 충돌 에러 방지)
+        # 1. 기존 Exchange 가져오기 
         exchange = await channel.get_exchange(name=exchange_name)
         
-        # 2. Queue 선언 (JSON의 queues 설정 반영: dlx.exchange 및 라우팅 키 설정)
+        # 2. Queue 선언 
         queue = await channel.declare_queue(
             name=queue_name, 
             durable=True,
@@ -36,7 +34,7 @@ async def publish_message(queue_name: str, message_body: BaseModel):
             }
         )
         
-        # 3. Queue와 Exchange 바인딩 (JSON의 bindings 설정 반영)
+        # 3. Queue와 Exchange 바인딩 
         await queue.bind(exchange, routing_key=publish_routing_key)
         
         message = aio_pika.Message(

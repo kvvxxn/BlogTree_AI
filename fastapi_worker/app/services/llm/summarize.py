@@ -1,18 +1,18 @@
 import os
-import json
 import logging
 from openai import OpenAI
 from dotenv import load_dotenv
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 
 from fastapi_worker.app.services.llm.prompts import summarize_sys_prompt, make_summarize_user_prompt
 from fastapi_worker.app.services.llm.configs import T, OUTPUT_MAX_TOKENS, INPUT_MAX_TOKENS, MODEL_NAME
 from fastapi_worker.app.services.llm.utils import safe_parse_json, truncate_text_by_token
+from fastapi_worker.app.core.exceptions import LLMAnswerFailedError, LLMAnswerParserFailedError
 from fastapi_worker.app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-def summarize_with_llm(career_goal: str, url: str, blog_text: str, knowledge_tree: str) -> Optional[Dict[str, Any]]: # None 대신 Any로 힌트 수정
+def summarize_with_llm(career_goal: str, url: str, blog_text: str, knowledge_tree: str) -> Dict[str, Any]:
     client = OpenAI(api_key=settings.LLM_API_KEY)
 
     logger.info(f"[{url}] LLM 분석을 위한 텍스트 전처리 및 프롬프트 생성을 시작합니다.")
@@ -47,23 +47,21 @@ def summarize_with_llm(career_goal: str, url: str, blog_text: str, knowledge_tre
         )
 
         logger.info(f"[{url}] LLM API 응답을 성공적으로 수신했습니다. JSON 파싱을 시도합니다.")
-
         raw_content = response.choices[0].message.content
 
-        # 안전하게 JSON 파싱
+        # 파싱 중 에러가 발생하면 내부에서 LLMAnswerParserFailedError를 발생시킴
         result_json = safe_parse_json(
             raw_content=raw_content,
             schema_type="summary"
         )
 
-        # JSON 파싱 실패 시
-        if result_json is None:
-            logger.error(f"[{url}] LLM 응답이 올바른 JSON 형식이 아니어서 파싱에 실패했습니다.")
-            return None
-
         logger.info(f"[{url}] LLM 분석 결과 JSON 파싱 완료!")
         return result_json
 
+    except LLMAnswerParserFailedError:
+        # safe_parse_json에서 발생한 파싱 실패 에러는 그대로 상위로 던짐
+        raise
     except Exception as e:
+        # API 통신 실패, 타임아웃, 인증 에러 등
         logger.exception(f"[{url}] LLM API 호출 중 예기치 않은 오류가 발생했습니다.")
-        return None
+        raise LLMAnswerFailedError(f"LLM API 호출 실패: {str(e)}")
