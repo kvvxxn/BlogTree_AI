@@ -1,7 +1,7 @@
 import json
 import logging
 import tiktoken
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from fastapi_worker.app.core.exceptions import LLMAnswerParserFailedError
 
