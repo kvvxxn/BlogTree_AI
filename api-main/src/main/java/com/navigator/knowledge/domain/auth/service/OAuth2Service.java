@@ -54,7 +54,7 @@ public class OAuth2Service {
                 });
 
         // 4. 우리 서비스 전용 JWT (Access / Refresh) 토큰 생성
-        String accessToken = jwtProvider.createAccessToken(user.getEmail(), user.getRole().name());
+        String accessToken = jwtProvider.createAccessToken(user.getEmail(), user.getRole().getKey());
         String refreshToken = jwtProvider.createRefreshToken(user.getEmail());
 
         // 5. Refresh Token을 메모리에 저장 (ConcurrentHashMap)

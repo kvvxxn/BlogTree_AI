@@ -96,4 +96,14 @@ public class JwtProvider {
                 .getPayload()
                 .getSubject(); // 토큰 만들 때 subject에 email을 넣었으니 여기서 꺼냅니다.
     }
+
+    // 6. 정상 토큰이라면 권한(Role) 꺼내기
+    public String getRoleFromToken(String token) {
+        return Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .get("role", String.class); // "role"이라는 이름의 Claim을 String 타입으로 꺼냅니다.
+    }
 }
