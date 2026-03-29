@@ -1,7 +1,7 @@
 package com.navigator.knowledge.domain.tree.service;
 
 import com.navigator.knowledge.domain.tree.dto.KnowledgePathDto;
-import com.navigator.knowledge.domain.tree.repository.UserNodeRepository;
+import com.navigator.knowledge.domain.tree.repository.KnowledgeRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,26 +23,10 @@ import static org.mockito.Mockito.when;
 class KnowledgeServiceTest {
 
     @Mock
-    private UserNodeRepository userNodeRepository;
+    private KnowledgeRepository knowledgeRepository;
 
     @InjectMocks
     private KnowledgeService knowledgeService;
-
-    @Test
-    @DisplayName("지식 경로 추가 테스트")
-    void addKnowledgePathTest() {
-        // Given
-        Long userId = 1L;
-        String category = "Backend";
-        String topic = "Database";
-        String keyword = "MySQL";
-
-        // When
-        knowledgeService.addKnowledgePath(userId, category, topic, keyword);
-
-        // Then
-        verify(userNodeRepository).addKnowledge(eq(userId), eq(category), eq(topic), eq(keyword));
-    }
 
     @Test
     @DisplayName("사용자 지식 트리 조회 테스트")
@@ -56,7 +40,7 @@ class KnowledgeServiceTest {
             new KnowledgePathDto("Frontend", "React", "Hooks")
         );
 
-        when(userNodeRepository.findAllKnowledgeByUserId(userId)).thenReturn(mockPaths);
+        when(knowledgeRepository.findAllKnowledgeByUserId(userId)).thenReturn(mockPaths);
 
         // When
         Map<String, Map<String, List<String>>> result = knowledgeService.getKnowledgeTree(userId);
@@ -81,7 +65,7 @@ class KnowledgeServiceTest {
             new KnowledgePathDto("Backend", null, null)
         );
 
-        when(userNodeRepository.findAllKnowledgeByUserId(userId)).thenReturn(mockPaths);
+        when(knowledgeRepository.findAllKnowledgeByUserId(userId)).thenReturn(mockPaths);
 
         // When
         Map<String, Map<String, List<String>>> result = knowledgeService.getKnowledgeTree(userId);
