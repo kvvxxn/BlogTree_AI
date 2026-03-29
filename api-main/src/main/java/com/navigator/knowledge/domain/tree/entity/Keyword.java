@@ -1,8 +1,5 @@
 package com.navigator.knowledge.domain.tree.entity;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.springframework.data.neo4j.core.schema.GeneratedValue;
 import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.Node;
@@ -12,21 +9,15 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Node("Keyword")
-@Getter
-@NoArgsConstructor
-public class KeywordNode {
+public class Keyword {
     @Id
     @GeneratedValue
     private Long id;
-
     private String name;
 
-    @Relationship(type = "DESCRIBED_BY", direction = Relationship.Direction.OUTGOING)
-    private Set<SummaryNode> summaries = new HashSet<>();
+    @Relationship(type = "CONTAINS_SUMMARY", direction = Relationship.Direction.OUTGOING)
+    private Set<Summary> summaries = new HashSet<>();
 
-    public KeywordNode(String name) {
-        this.name = name;
-    }
-
-    public void addSummary(SummaryNode summaryNode) { this.summaries.add(summaryNode); }
+    public Keyword(String name) { this.name = name; }
+    public void addSummary(Summary summary) { this.summaries.add(summary); }
 }

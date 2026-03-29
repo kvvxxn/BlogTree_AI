@@ -1,6 +1,6 @@
-package com.navigator.knowledge.domain.summary.messaging.producer;
+package com.navigator.knowledge.domain.task.mq.producer;
 
-import com.navigator.knowledge.domain.summary.messaging.dto.SummaryTaskRequestMessage;
+import com.navigator.knowledge.domain.task.mq.dto.SummaryTaskRequestMessage;
 import com.navigator.knowledge.global.config.rabbitmq.RabbitSummaryProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;

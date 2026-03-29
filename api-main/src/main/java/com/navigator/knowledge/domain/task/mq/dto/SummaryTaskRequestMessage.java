@@ -1,4 +1,4 @@
-package com.navigator.knowledge.domain.summary.messaging.dto;
+package com.navigator.knowledge.domain.task.mq.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -7,7 +7,7 @@ import java.util.Map;
 
 public record SummaryTaskRequestMessage(
     @JsonProperty("task_id") String taskId,
-    @JsonProperty("user_id") Long userId,
+    @JsonProperty("user_id") String userId,
     @JsonProperty("career_goal") String career_goal,
     @JsonProperty("source_url") String sourceUrl,
     @JsonProperty("expired_at") String expiredAt,

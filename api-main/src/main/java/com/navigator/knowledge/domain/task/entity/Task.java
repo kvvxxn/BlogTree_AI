@@ -26,7 +26,7 @@ public class Task {
     private String taskId;
 
     @Column(name = "user_id", length = 36)
-    private Long userId;
+    private String userId;
 
     @Column(name = "source_url", length = 500)
     private String sourceUrl;
@@ -47,7 +47,7 @@ public class Task {
     private LocalDateTime updatedAt;
 
     @Builder
-    public Task(String taskId, Long userId, String sourceUrl, TaskStatus status) {
+    public Task(String taskId, String userId, String sourceUrl, TaskStatus status) {
         this.taskId = taskId;
         this.userId = userId;
         this.sourceUrl = sourceUrl;
