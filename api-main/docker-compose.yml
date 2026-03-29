@@ -1,4 +1,19 @@
 services:
+  # MySQL
+  mysql:
+    image: mysql:8.0
+    container_name: mysql_db
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: blogtree
+      MYSQL_USER: mysql_user
+      MYSQL_PASSWORD: mysql_password
+      TZ: Asia/Seoul
+    volumes:
+      - mysql_data:/var/lib/mysql
+
   neo4j:
     image: neo4j:latest
     container_name: neo4j_knowledge_tree
@@ -25,3 +40,4 @@ services:
 
 volumes:
   rabbitmq_data:
+  mysql_data:

@@ -2,6 +2,21 @@ spring:
   application:
     name: api-main
 
+  # MySQL
+  datasource:
+    url: jdbc:mysql://mysql:3306/blogtree?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: mysql_user
+    password: mysql_password
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
   ai:
     openai:
       api-key: ${OPENAI_API_KEY}
@@ -23,6 +38,17 @@ spring:
     port: 5672
     username: rabbitmq_user
     password: rabbitmq_password
+    # Producer 전송 보장 설정
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true # Unroutable 메시지 발생 시 예외 발생 또는 ReturnCallback 호출
+      retry:
+        enabled: true
+        initial-interval: 1000ms
+        max-attempts: 3
+        multiplier: 2.0
+        max-interval: 5000ms
     summary:
       exchange: summary.exchange
       queue:
@@ -36,9 +62,9 @@ spring:
         retry:
           enabled: true
           max-attempts: 3          # 최대 3번까지 재시도
-          initial-interval: 3s     # 처음 실패 후 3초 대기
+          initial-interval: 1000ms    # 처음 실패 후 1초 대기
           multiplier: 2.0          # 대기 시간을 2배씩 늘림 (3초 -> 6초 -> 12초)
-          max-interval: 15s        # 최대 대기 시간은 15초까지만
+          max-interval: 5000ms        # 최대 대기 시간은 15초까지만
         default-requeue-rejected: false
 
 # Logging level

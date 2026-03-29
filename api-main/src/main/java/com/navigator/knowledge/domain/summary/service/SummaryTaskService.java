@@ -28,12 +28,11 @@ public class SummaryTaskService {
     public TaskResponseDto requestSummary(SummaryRequestDto request) {
         // 1. 공통 Task 생성 (DB 저장 완료)
         // 향후 사용자 인증 정보 등에서 가져올 값들
-        Long userId = 1L;
+        Long userId = 1L; // TODO: principal에서 가져오기
         Task task = taskService.createTask(userId, request.sourceUrl());
 
         // 2. 지식 트리 조회
-        Long numericUserId = 1L; // UserNodeRepository에서 Long을 쓰므로 임시값 설정
-        Map<String, Map<String, List<String>>> knowledgeTree = knowledgeService.getKnowledgeTree(numericUserId);
+        Map<String, Map<String, List<String>>> knowledgeTree = knowledgeService.getKnowledgeTree(userId);
 
         // 3. RabbitMQ에 보낼 메시지 DTO 조립
         SummaryTaskRequestMessage message = new SummaryTaskRequestMessage(
