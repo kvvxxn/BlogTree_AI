@@ -29,7 +29,7 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
         // 2. 프론트엔드가 읽기 편하게 JSON 형태로 세팅
         response.setContentType("application/json;charset=UTF-8");
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401 상태 코드 쾅!
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401 상태 코드
 
         // 3. 응답 바디에 넣을 데이터 (Map을 써서 JSON처럼 만듦)
         Map<String, Object> responseBody = new HashMap<>();
@@ -37,7 +37,7 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
         responseBody.put("error", errorCode);
         responseBody.put("message", "인증이 필요하거나 토큰이 만료되었습니다.");
 
-        // 4. ObjectMapper를 써서 Map을 진짜 JSON 문자열로 바꿔서 프론트에게 쏩니다!
+        // 4. ObjectMapper를 써서 Map을 진짜 JSON 문자열로 바꿔서 프론트에게 쏩니다
         ObjectMapper objectMapper = new ObjectMapper();
         response.getWriter().write(objectMapper.writeValueAsString(responseBody));
     }

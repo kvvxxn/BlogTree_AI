@@ -56,7 +56,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/login/oauth2/code/**").permitAll()
 
-                        // 드디어 임시 개방 종료 나머지는 모두 신분증(토큰) 필수
+                        // 임시 개방 종료 나머지는 모두 신분증(토큰) 필수
                         .anyRequest().authenticated()
                 )
 
