@@ -1,4 +1,4 @@
-package com.navigator.knowledge.global.config;
+package com.navigator.knowledge.global.config.rest;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;

@@ -41,8 +41,6 @@ public class SummaryTaskListener {
     }
 
     private void handleSuccess(SummaryTaskResponseMessage responseDto) {
-        log.info("Handling success for Task ID: {}.", responseDto.taskId());
-
         var data = responseDto.data();
 
         // 1. MySQL: Task 상태를 'SUCCESS'로 업데이트
@@ -72,8 +70,6 @@ public class SummaryTaskListener {
     }
 
     private void handlePartialSuccess(SummaryTaskResponseMessage responseDto) {
-        log.info("Handling partial success for Task ID: {}.", responseDto.taskId());
-
         var data = responseDto.data();
 
         // 1. MySQL: Task 상태를 'PARTIAL_SUCCESS'로 업데이트
@@ -98,14 +94,12 @@ public class SummaryTaskListener {
         log.info("Partial success handled. Summary ID: {} has been linked to the most similar existing keyword.", summary.getSummaryId());
     }
     private void handleFailure(SummaryTaskResponseMessage responseDto) {
-        log.info("Handling failed for Task ID: {}.", responseDto.taskId());
-
         var error = responseDto.error();
 
         // 1. MySQL: Task 상태를 '실패'로 업데이트하고, 에러 코드와 메시지 기록
         String errorMessage = String.format("[%s] %s", error.code(), error.message());
         taskService.updateTaskFailed(responseDto.taskId(), errorMessage);
 
-        log.error("Task failed. Error Code: {}, Message: {}", error.code(), error.message());
+        log.error("Task failed handled. Error Code: {}, Message: {}", error.code(), error.message());
     }
 }
