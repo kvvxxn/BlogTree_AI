@@ -3,11 +3,10 @@ spring:
     name: api-main
 
   # MySQL
-  datasource:
-    url: jdbc:mysql://mysql:3306/blogtree?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-    username: mysql_user
-    password: mysql_password
-    driver-class-name: com.mysql.cj.jdbc.Driver
+#  datasource:
+#    url: jdbc:mysql://localhost:3307/blogtree
+#    username: mysql_user
+#    password: mysql_password
 
   jpa:
     hibernate:
@@ -27,7 +26,7 @@ spring:
 
   # Neo4j
   neo4j:
-    uri: bolt://neo4j-knowledge-tree:7687
+    uri: bolt://localhost:7687
     authentication:
       username: neo4j_user
       password: neo4j_password

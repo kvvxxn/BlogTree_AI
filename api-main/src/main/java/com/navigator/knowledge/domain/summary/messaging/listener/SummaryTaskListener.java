@@ -5,6 +5,7 @@ import com.navigator.knowledge.domain.summary.messaging.dto.SummaryTaskResponseM
 import com.navigator.knowledge.domain.summary.service.SummaryService;
 import com.navigator.knowledge.domain.task.entity.Task;
 import com.navigator.knowledge.domain.task.entity.TaskStatus;
+import com.navigator.knowledge.domain.task.service.SseEmitterService;
 import com.navigator.knowledge.domain.task.service.TaskService;
 import com.navigator.knowledge.domain.tree.service.KnowledgeService;
 import com.navigator.knowledge.global.infra.ai.TextEmbeddingService;
@@ -14,6 +15,7 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -26,6 +28,7 @@ public class SummaryTaskListener {
     private final SummaryService summaryService;
     private final TextEmbeddingService textEmbeddingService;
     private final KnowledgeService knowledgeService;
+    private final SseEmitterService sseEmitterService;
 
     @RabbitListener(queues = RESPONSE_QUEUE)
     public void receiveSummaryResponse(SummaryTaskResponseMessage responseDto) {
@@ -66,6 +69,16 @@ public class SummaryTaskListener {
 
         knowledgeService.saveKnowledgePath(userId, category, topic, keyword, summary.getSummaryId(), embedding);
 
+        // 5. SSE: 성공 이벤트 전송
+        Map<String, Object> sseData = Map.of(
+            "category", category,
+            "topic", topic,
+            "keyword", keyword,
+            "summaryContent", data.summaryContent()
+        );
+        sseEmitterService.sendEvent(responseDto.taskId(), "success", sseData);
+        sseEmitterService.complete(responseDto.taskId());
+
         log.info("Success handled. Category: {}, Topic: {}, Keywords: {}, Summary ID: {}", category, topic, keyword, summary.getSummaryId());
     }
 
@@ -77,7 +90,7 @@ public class SummaryTaskListener {
 
         // 2. MySQL: Summary 엔티티 저장
         Task task = taskService.getTask(responseDto.taskId());
-        Long userId = Long.valueOf(responseDto.userId());
+        Long userId = responseDto.userId();
         Summary summary = summaryService.saveSummary(
                 task,
                 userId,
@@ -91,14 +104,33 @@ public class SummaryTaskListener {
         // 4. Neo4j: 벡터 유사도 검색으로 가장 유사한 Keyword를 찾아 새 Summary 노드를 연결
         knowledgeService.addSummaryToSimilarKeyword(userId, summary.getSummaryId(), embedding);
 
+        // 5. SSE: 부분 성공 이벤트 전송
+        Map<String, Object> sseData = Map.of(
+            "category", data.knowledgeTree().category(),
+            "topic", data.knowledgeTree().topic(),
+            "keyword", data.knowledgeTree().keyword(),
+            "summaryContent", data.summaryContent()
+        );
+        sseEmitterService.sendEvent(responseDto.taskId(), "partial_success", sseData);
+        sseEmitterService.complete(responseDto.taskId());
+
         log.info("Partial success handled. Summary ID: {} has been linked to the most similar existing keyword.", summary.getSummaryId());
     }
+    
     private void handleFailure(SummaryTaskResponseMessage responseDto) {
         var error = responseDto.error();
 
         // 1. MySQL: Task 상태를 '실패'로 업데이트하고, 에러 코드와 메시지 기록
         String errorMessage = String.format("[%s] %s", error.code(), error.message());
         taskService.updateTaskFailed(responseDto.taskId(), errorMessage);
+
+        // 2. SSE: 실패 이벤트 전송
+        Map<String, Object> sseData = Map.of(
+            "code", error.code(),
+            "message", error.message()
+        );
+        sseEmitterService.sendEvent(responseDto.taskId(), "failed", sseData);
+        sseEmitterService.complete(responseDto.taskId());
 
         log.error("Task failed handled. Error Code: {}, Message: {}", error.code(), error.message());
     }

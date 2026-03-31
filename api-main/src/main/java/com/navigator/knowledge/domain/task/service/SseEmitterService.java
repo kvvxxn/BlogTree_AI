@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SseEmitterService {
 
     // 기본 타임아웃 1분
-    private static final Long DEFAULT_TIMEOUT = 60L * 1000;
+    private static final long DEFAULT_TIMEOUT = 60L * 1000;
 
     // todo: Redis pub/sub으로 변경
     // taskId를 키로 하여 SseEmitter를 관리
@@ -29,19 +29,26 @@ public class SseEmitterService {
         // 연결 종료, 타임아웃, 에러 발생 시 맵에서 제거하는 콜백 등록
         emitter.onCompletion(() -> {
             log.info("SSE Connection Completed for task: {}", taskId);
-            emitters.remove(taskId);
+            emitters.remove(taskId, emitter);
         });
         emitter.onTimeout(() -> {
             log.warn("SSE Connection Timeout for task: {}", taskId);
-            emitters.remove(taskId);
+            emitters.remove(taskId, emitter);
         });
         emitter.onError((e) -> {
             log.error("SSE Connection Error for task: {}", taskId, e);
-            emitters.remove(taskId);
+            emitters.remove(taskId, emitter);
         });
 
-        // 초기 연결 시 더미 데이터(이벤트)를 보내 연결되었다는 확인 보냄
-        sendEvent(taskId, "connect", "SSE 연결이 완료되었습니다. 작업 대기 중입니다.");
+        try {
+            emitter.send(SseEmitter.event()
+                .name("connect")
+                .data("SSE 연결이 완료되었습니다. 작업 대기 중입니다."));
+        } catch (IOException e) {
+            log.error("Error sending SSE event to task: {}", taskId, e);
+            emitters.remove(taskId, emitter);
+            emitter.completeWithError(e);
+        }
 
         return emitter;
     }
@@ -51,17 +58,19 @@ public class SseEmitterService {
      */
     public void sendEvent(String taskId, String eventName, Object data) {
         SseEmitter emitter = emitters.get(taskId);
-        if (emitter != null) {
-            try {
-                emitter.send(SseEmitter.event()
-                        .name(eventName)
-                        .data(data));
-            } catch (IOException e) {
-                log.error("Error sending SSE event to task: {}", taskId, e);
-                emitters.remove(taskId);
-            }
-        } else {
+        if (emitter == null) {
             log.warn("No SSE emitter found for task: {}", taskId);
+            return;
+        }
+
+        try {
+            emitter.send(SseEmitter.event()
+                .name(eventName)
+                .data(data));
+        } catch (IOException e) {
+            log.error("Error sending SSE event to task: {}", taskId, e);
+            emitters.remove(taskId);
+            emitter.completeWithError(e);
         }
     }
 
