@@ -1,5 +1,6 @@
 package com.navigator.knowledge.domain.task.service;
 
+import com.navigator.knowledge.domain.task.exception.TaskNotFoundException;
 import com.navigator.knowledge.domain.task.entity.Task;
 import com.navigator.knowledge.domain.task.entity.TaskStatus;
 import com.navigator.knowledge.domain.task.repository.TaskRepository;
@@ -32,20 +33,20 @@ public class TaskService {
     @Transactional
     public void updateTaskStatus(String taskId, TaskStatus status) {
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new IllegalArgumentException("Task not found"));
+                .orElseThrow(() -> new TaskNotFoundException(taskId));
         task.updateStatus(status);
     }
 
     @Transactional
     public void updateTaskFailed(String taskId, String errorMessage) {
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new IllegalArgumentException("Task not found"));
+                .orElseThrow(() -> new TaskNotFoundException(taskId));
         task.fail(errorMessage);
     }
 
     @Transactional(readOnly = true)
     public Task getTask(String taskId) {
         return taskRepository.findById(taskId)
-                .orElseThrow(() -> new IllegalArgumentException("Task not found"));
+                .orElseThrow(() -> new TaskNotFoundException(taskId));
     }
 }

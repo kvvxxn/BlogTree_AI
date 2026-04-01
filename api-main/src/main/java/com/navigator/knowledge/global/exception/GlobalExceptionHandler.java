@@ -1,9 +1,9 @@
-package com.navigator.knowledge.global.error;
+package com.navigator.knowledge.global.exception;
 
-import com.navigator.knowledge.domain.summary.exception.SummaryNotFoundException;
+import com.navigator.knowledge.global.exception.dto.ApiErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
-import org.springframework.http.HttpStatus;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
@@ -13,15 +13,22 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(SummaryNotFoundException.class)
-    public ResponseEntity<ApiErrorResponse> handleSummaryNotFound(SummaryNotFoundException e, HttpServletRequest request) {
-        HttpStatus status = HttpStatus.NOT_FOUND;
-        return ResponseEntity.status(status).body(ApiErrorResponse.of(
-                status.value(),
-                "SUMMARY_NOT_FOUND",
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ApiErrorResponse> handleBusinessException(BusinessException e, HttpServletRequest request) {
+        ErrorCode errorCode = e.getErrorCode();
+        log.warn(
+                "Business exception occurred. code={}, status={}, path={}, message={}",
+                errorCode.getCode(),
+                errorCode.getStatus().value(),
+                request.getRequestURI(),
+                e.getMessage()
+        );
+        return ResponseEntity.status(errorCode.getStatus()).body(ApiErrorResponse.of(
+                errorCode,
                 e.getMessage(),
                 request.getRequestURI()
         ));
@@ -35,10 +42,17 @@ public class GlobalExceptionHandler {
     })
     public ResponseEntity<ApiErrorResponse> handleBadRequest(Exception e, HttpServletRequest request) {
         String message = extractMessage(e);
-        HttpStatus status = HttpStatus.BAD_REQUEST;
-        return ResponseEntity.status(status).body(ApiErrorResponse.of(
-                status.value(),
-                "BAD_REQUEST",
+        ErrorCode errorCode = ErrorCode.BAD_REQUEST;
+        log.warn(
+                "Client error occurred. code={}, status={}, path={}, exceptionType={}, message={}",
+                errorCode.getCode(),
+                errorCode.getStatus().value(),
+                request.getRequestURI(),
+                e.getClass().getSimpleName(),
+                message
+        );
+        return ResponseEntity.status(errorCode.getStatus()).body(ApiErrorResponse.of(
+                errorCode,
                 message,
                 request.getRequestURI()
         ));
@@ -46,11 +60,17 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleInternalServerError(Exception e, HttpServletRequest request) {
-        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
-        return ResponseEntity.status(status).body(ApiErrorResponse.of(
-                status.value(),
-                "INTERNAL_SERVER_ERROR",
-                "서버 내부 오류가 발생했습니다.",
+        ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
+        log.error(
+                "Unhandled exception occurred. code={}, status={}, path={}",
+                errorCode.getCode(),
+                errorCode.getStatus().value(),
+                request.getRequestURI(),
+                e
+        );
+        return ResponseEntity.status(errorCode.getStatus()).body(ApiErrorResponse.of(
+                errorCode,
+                errorCode.getDefaultMessage(),
                 request.getRequestURI()
         ));
     }
