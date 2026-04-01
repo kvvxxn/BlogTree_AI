@@ -1,6 +1,7 @@
 package com.navigator.knowledge.domain.tree.service;
 
 import com.navigator.knowledge.domain.tree.dto.KnowledgePathDto;
+import com.navigator.knowledge.domain.tree.exception.SimilarKeywordNotFoundException;
 import com.navigator.knowledge.domain.tree.repository.KnowledgeRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -79,8 +80,8 @@ class KnowledgeServiceTest {
 
         // When & Then
         assertThatThrownBy(() -> knowledgeService.addSummaryToSimilarKeyword(userId, summaryId, embedding))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessage("No such keyword");
+            .isInstanceOf(SimilarKeywordNotFoundException.class)
+            .hasMessage("유사한 키워드를 찾을 수 없습니다. userId=" + userId);
 
         verify(knowledgeRepository).findMostSimilarKeywordId(userId, embedding);
     }

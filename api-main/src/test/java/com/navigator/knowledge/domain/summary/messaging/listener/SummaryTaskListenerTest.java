@@ -5,9 +5,13 @@ import com.navigator.knowledge.domain.summary.messaging.dto.SummaryTaskResponseM
 import com.navigator.knowledge.domain.summary.service.SummaryService;
 import com.navigator.knowledge.domain.task.entity.Task;
 import com.navigator.knowledge.domain.task.entity.TaskStatus;
+import com.navigator.knowledge.domain.task.service.TaskFailureHandler;
 import com.navigator.knowledge.domain.task.service.SseEmitterService;
 import com.navigator.knowledge.domain.task.service.TaskService;
+import com.navigator.knowledge.domain.tree.exception.SimilarKeywordNotFoundException;
 import com.navigator.knowledge.domain.tree.service.KnowledgeService;
+import com.navigator.knowledge.global.exception.BusinessException;
+import com.navigator.knowledge.global.exception.ErrorCode;
 import com.navigator.knowledge.global.infra.ai.TextEmbeddingService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,6 +25,7 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -43,6 +48,9 @@ class SummaryTaskListenerTest {
 
     @Mock
     private SseEmitterService sseEmitterService;
+
+    @Mock
+    private TaskFailureHandler taskFailureHandler;
 
     @InjectMocks
     private SummaryTaskListener summaryTaskListener;
@@ -122,15 +130,20 @@ class SummaryTaskListenerTest {
         when(taskService.getTask(taskId)).thenReturn(task);
         when(summaryService.findOrCreateSummary(task, userId, task.getSourceUrl(), "summary")).thenReturn(summary);
         when(textEmbeddingService.embedText("summary")).thenReturn(List.of(0.4, 0.5));
-        org.mockito.Mockito.doThrow(new IllegalArgumentException("No such keyword"))
+        org.mockito.Mockito.doThrow(new SimilarKeywordNotFoundException(userId))
             .when(knowledgeService).addSummaryToSimilarKeyword(userId, null, List.of(0.4, 0.5));
 
         summaryTaskListener.receiveSummaryResponse(response);
 
         verify(taskService, never()).updateTaskStatus(taskId, TaskStatus.PARTIAL_SUCCESS);
-        verify(taskService).updateTaskFailed(taskId, "[LISTENER_PROCESSING_ERROR] No such keyword");
-        verify(sseEmitterService).sendEvent(eq(taskId), eq("failed"), anyMap());
-        verify(sseEmitterService).complete(taskId);
+        verify(taskFailureHandler).handle(
+            eq(taskId),
+            eq("PARTIAL_SUCCESS"),
+            org.mockito.ArgumentMatchers.argThat(exception ->
+                exception instanceof BusinessException
+                    && ((BusinessException) exception).getErrorCode() == ErrorCode.SIMILAR_KEYWORD_NOT_FOUND
+                    && ("유사한 키워드를 찾을 수 없습니다. userId=" + userId).equals(exception.getMessage()))
+        );
     }
 
     @Test
@@ -146,8 +159,48 @@ class SummaryTaskListenerTest {
 
         summaryTaskListener.receiveSummaryResponse(response);
 
-        verify(taskService).updateTaskFailed("task-3", "[LISTENER_PROCESSING_ERROR] Unknown status in summary response: UNKNOWN");
-        verify(sseEmitterService).sendEvent(eq("task-3"), eq("failed"), anyMap());
-        verify(sseEmitterService).complete("task-3");
+        verify(taskFailureHandler).handle(
+            eq("task-3"),
+            eq("UNKNOWN"),
+            org.mockito.ArgumentMatchers.argThat(exception ->
+                exception instanceof BusinessException
+                    && ((BusinessException) exception).getErrorCode() == ErrorCode.BAD_REQUEST
+                    && "Unknown status in summary response: UNKNOWN".equals(exception.getMessage()))
+        );
+    }
+
+    @Test
+    @DisplayName("예상치 못한 예외는 상세 내용을 노출하지 않고 내부 오류로 처리한다")
+    void receiveSummaryResponse_unexpectedExceptionHandledAsInternalError() {
+        String taskId = "task-4";
+        Long userId = 13L;
+        Task task = Task.builder()
+            .taskId(taskId)
+            .userId(userId)
+            .sourceUrl("https://example.com/4")
+            .status(TaskStatus.PROCESSING)
+            .build();
+        SummaryTaskResponseMessage response = new SummaryTaskResponseMessage(
+            taskId,
+            userId,
+            "SUCCESS",
+            new SummaryTaskResponseMessage.ResultData(
+                "summary",
+                new SummaryTaskResponseMessage.KnowledgeTree("Backend", "Infra", "Redis")
+            ),
+            null
+        );
+
+        when(taskService.getTask(taskId)).thenReturn(task);
+        when(summaryService.findOrCreateSummary(task, userId, task.getSourceUrl(), "summary"))
+            .thenThrow(new RuntimeException("neo4j connection refused"));
+
+        summaryTaskListener.receiveSummaryResponse(response);
+
+        verify(taskFailureHandler).handleUnexpected(
+            eq(taskId),
+            eq("SUCCESS"),
+            isA(RuntimeException.class)
+        );
     }
 }

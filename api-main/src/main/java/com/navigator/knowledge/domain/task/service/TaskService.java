@@ -14,9 +14,11 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class TaskService {
 
+    private static final String JPA_TRANSACTION_MANAGER = "jpaTransactionManager";
+
     private final TaskRepository taskRepository;
 
-    @Transactional
+    @Transactional(transactionManager = JPA_TRANSACTION_MANAGER)
     public Task createTask(Long userId, String sourceUrl) {
         String taskId = UUID.randomUUID().toString();
 
@@ -30,21 +32,21 @@ public class TaskService {
         return taskRepository.save(task);
     }
 
-    @Transactional
+    @Transactional(transactionManager = JPA_TRANSACTION_MANAGER)
     public void updateTaskStatus(String taskId, TaskStatus status) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new TaskNotFoundException(taskId));
         task.updateStatus(status);
     }
 
-    @Transactional
+    @Transactional(transactionManager = JPA_TRANSACTION_MANAGER)
     public void updateTaskFailed(String taskId, String errorMessage) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new TaskNotFoundException(taskId));
         task.fail(errorMessage);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(transactionManager = JPA_TRANSACTION_MANAGER, readOnly = true)
     public Task getTask(String taskId) {
         return taskRepository.findById(taskId)
                 .orElseThrow(() -> new TaskNotFoundException(taskId));
