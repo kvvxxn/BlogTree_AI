@@ -25,6 +25,12 @@ public class SummaryService {
         return summaryRepository.save(summary);
     }
 
+    @Transactional
+    public Summary findOrCreateSummary(Task task, Long userId, String sourceUrl, String content) {
+        return summaryRepository.findByTask_TaskId(task.getTaskId())
+                .orElseGet(() -> saveSummary(task, userId, sourceUrl, content));
+    }
+
     @Transactional(readOnly = true)
     public SummaryResponseDto getSummary(Long summaryId) {
         Summary summary = summaryRepository.findById(summaryId)
