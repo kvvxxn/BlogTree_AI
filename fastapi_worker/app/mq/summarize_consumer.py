@@ -7,7 +7,6 @@ from fastapi_worker.app.core.config import settings
 from fastapi_worker.app.mq.summarize_publisher import publish_message 
 from fastapi_worker.app.services.content_summarize import summarize_blog_content
 
-# 새로 정의하신 스키마들을 import 합니다.
 from fastapi_worker.app.schemas.summarize_input import SummarizeInputPayload
 from fastapi_worker.app.schemas.summarize_response import (
     SummarizeResponsePayload, 
@@ -15,6 +14,12 @@ from fastapi_worker.app.schemas.summarize_response import (
     KnowledgeTree,
     StatusEnum, 
     ErrorData
+)
+from fastapi_worker.app.core.exceptions import (
+    ScrapingFailedError, 
+    ScrapingParserFailedError, 
+    LLMAnswerFailedError, 
+    LLMAnswerParserFailedError
 )
 
 logger = logging.getLogger(__name__)
@@ -30,7 +35,6 @@ def _to_knowledge_tree(raw_keywords) -> KnowledgeTree | None:
 # Consumer: Input 검증 -> 파이프라인 처리 -> Output 조립 및 검증 -> 전송
 async def consume_message(message: aio_pika.IncomingMessage):
     async with message.process(ignore_processed=True):
-        # 예외 발생 시 FAILED 처리를 위해 payload 변수를 미리 None으로 선언
         payload = None 
         
         try:
@@ -43,8 +47,6 @@ async def consume_message(message: aio_pika.IncomingMessage):
             # [단계 2] 파이프라인 호출 
             llm_result = None
             
-            # LLM 답변 실패 시 최대 3회 재시도
-            llm_result = None
             for attempt in range(max_retries):
                 try:
                     llm_result = await asyncio.to_thread(
@@ -53,75 +55,81 @@ async def consume_message(message: aio_pika.IncomingMessage):
                         url=str(payload.source_url), 
                         knowledge_tree=payload.knowledge_tree
                     )
+                    break # 성공 시 루프 탈출
                     
-                    # 결과가 성공적으로 나왔다면 루프를 즉시 탈출!
-                    if llm_result is not None:
-                        break 
-                        
+                except (ScrapingFailedError, ScrapingParserFailedError) as e:
+                    # 블로그가 막혀있거나 구조가 바뀐 경우는 재시도해도 무의미하므로 즉시 에러 던짐
+                    print(f"[Consumer] 스크래핑 에러 감지 (재시도 안 함): {e}")
+                    raise e
+                    
                 except Exception as api_err:
-                    # 크롤링 실패, LLM 타임아웃 등 예외 발생 시 로그만 남기고 튕기지 않음
-                    print(f"[Consumer] 요약 엔진 요청 중 에러 발생: {api_err}")
-                    
-                # 실패했을 경우 (에러가 났거나 llm_result가 여전히 None인 경우)
-                print(f"[Consumer] LLM에서 유효한 결과가 나오지 않았습니다. 재시도 {attempt + 1}/{max_retries}...")
-                await asyncio.sleep(1) 
+                    # LLM API 타임아웃 등의 오류는 재시도
+                    print(f"[Consumer] 파이프라인 오류 발생: {api_err}. 재시도 {attempt + 1}/{max_retries}...")
+                    await asyncio.sleep(1) 
 
-            # 3번을 모두 시도했는데도 결국 None이라면 에러 발생
+            # 3번 시도 후에도 결과가 없다면
             if llm_result is None:
-                raise ValueError("LLM 요약 엔진에서 3회 재시도했으나 응답 생성에 실패했습니다.")
+                raise LLMAnswerFailedError("LLM 요약 엔진에서 3회 재시도했으나 응답 생성에 실패했습니다.")
             
-            # [단계 3] summarize LLM 결과(summary, keywords)를 응답 스키마로 매핑
+            # [단계 3] 지식 트리 파싱 및 검증
+            parsed_knowledge_tree = _to_knowledge_tree(llm_result.get("keywords"))
+            
+            # 지식 트리 추출에 실패했다면 에러 처리 (기존 PARTIAL_SUCCESS 대체)
+            if parsed_knowledge_tree is None:
+                raise LLMAnswerParserFailedError("LLM 답변에서 올바른 형태의 지식 트리를 추출하지 못했습니다.")
+
             response_data = ResponseData(
                 summary_content=llm_result["summary"],
-                knowledge_tree=_to_knowledge_tree(llm_result.get("keywords"))
+                knowledge_tree=parsed_knowledge_tree
             )
-            
-            # [단계 4] 지식 트리 존재 여부에 따른 상태(Status) 결정 로직 추가
-            # 요약은 성공했으나 지식 트리가 안 뽑혔다면 PARTIAL_SUCCESS로 처리합니다.
-            if response_data.knowledge_tree is None:
-                final_status = StatusEnum.PARTIAL_SUCCESS
-            else:
-                final_status = StatusEnum.SUCCESS
 
-            # [단계 5] 최종 Output 스키마 조립 및 2차 검증
+            # [단계 4] 최종 Output 스키마 조립 (항상 SUCCESS)
             response_payload = SummarizeResponsePayload(
                 task_id=payload.task_id,
                 user_id=payload.user_id,
-                status=final_status,
+                status=StatusEnum.SUCCESS,
                 data=response_data
-                # error 필드는 Optional이므로 생략 시 자동으로 None 처리됨
             )
             
-            # [단계 6] Output Queue로 최종 전송
+            # [단계 5] Output Queue로 최종 전송
             await publish_message(settings.SUMMARIZE_OUTPUT_QUEUE, response_payload)
-            print(f"[Consumer] {final_status.value} 메시지 전송 완료: {response_payload.task_id}")
+            print(f"[Consumer] SUCCESS 메시지 전송 완료: {response_payload.task_id}")
             
             await message.ack() 
             
         except ValidationError as e:
-            # Input JSON 자체가 규격 미달인 경우 (치명적 에러)
             print(f"[Consumer] Input 데이터 형식 오류: {e}")
+            # 페이로드 자체를 못 읽었을 때의 처리 (원시 JSON에서 task_id 추출 로직 등을 추가할 수 있음)
             await message.reject(requeue=False)
             
         except Exception as e:
-            print(f"[Consumer] 처리 중 에러 발생: {e}")
+            print(f"[Consumer] 처리 중 FAILED 발생: {e}")
             
-            # payload가 파싱된 상태에서 에러가 났다면, FAILED 상태로 Output 큐에 응답을 보냅니다.
             if payload:
+                # [핵심] 발생한 예외 타입에 따라 우리가 정의한 에러 코드로 매핑
+                error_code = "UNKNOWN_ERROR"
+                if isinstance(e, ScrapingFailedError):
+                    error_code = "SCRAPING_FAILED"
+                elif isinstance(e, ScrapingParserFailedError):
+                    error_code = "SCRAPING_PARSER_FAILED"
+                elif isinstance(e, LLMAnswerFailedError):
+                    error_code = "LLM_ANSWER_FAILED"
+                elif isinstance(e, LLMAnswerParserFailedError):
+                    error_code = "LLM_ANSWER_PARSER_FAILED"
+
                 error_payload = SummarizeResponsePayload(
                     task_id=payload.task_id,
                     user_id=payload.user_id,
                     status=StatusEnum.FAILED,
                     error=ErrorData(
-                        code="SUMMARIZE_PROCESS_FAILED",
+                        code=error_code,
                         message=str(e)
                     )
                 )
                 await publish_message(settings.SUMMARIZE_OUTPUT_QUEUE, error_payload)
-                print(f"[Consumer] FAILED 상태 메시지 전송 완료: {payload.task_id}")
+                print(f"[Consumer] FAILED ({error_code}) 메시지 전송 완료: {payload.task_id}")
                 await message.ack() 
             else:
-                # payload조차 없는 상태의 심각한 에러라면 큐에서 버리거나 재시도
                 await message.reject(requeue=False)
 
 async def start_consuming():
