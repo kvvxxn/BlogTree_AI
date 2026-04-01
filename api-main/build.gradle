@@ -18,14 +18,22 @@ repositories {
     mavenCentral()
 }
 
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.ai:spring-ai-bom:1.0.0"
+    }
+}
+
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-data-neo4j'
     implementation 'org.springframework.boot:spring-boot-starter-amqp'
+    implementation 'org.springframework.ai:spring-ai-starter-model-openai'
     implementation 'com.fasterxml.jackson.core:jackson-databind'    // JSON 직렬화/역직렬화
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
 
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
@@ -33,6 +41,11 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation('org.neo4j.test:neo4j-harness:5.26.0') {
+        exclude group: 'org.neo4j', module: 'neo4j-slf4j-provider'
+    }
+    testImplementation 'javax.xml.bind:jaxb-api:2.3.1'
+    testRuntimeOnly 'org.glassfish.jaxb:jaxb-runtime:2.3.8'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
     // JWT 토큰 생성을 위한 라이브러리
@@ -41,6 +54,7 @@ dependencies {
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.5'
 
     runtimeOnly 'com.h2database:h2'
+    runtimeOnly 'com.mysql:mysql-connector-j'
 }
 
 tasks.named('test') {

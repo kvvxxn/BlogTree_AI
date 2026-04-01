@@ -7,24 +7,23 @@ from typing import Optional, Dict, Any
 
 from fastapi_worker.app.services.llm.prompts import recommend_sys_prompt, make_recommend_user_prompt
 from fastapi_worker.app.services.llm.configs import T, OUTPUT_MAX_TOKENS, MODEL_NAME
+from fastapi_worker.app.core.exceptions import LLMAnswerFailedError, LLMAnswerParserFailedError
 from fastapi_worker.app.services.llm.utils import safe_parse_json
 from fastapi_worker.app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-def recommend_with_llm(career_goal: str, knowledge_tree: str) -> Optional[Dict[str, Any]]: 
+def recommend_with_llm(career_goal: str, knowledge_tree: str) -> Dict[str, Any]: 
     client = OpenAI(api_key=settings.LLM_API_KEY)
 
     logger.info("사용자의 커리어 목표 기반 맞춤형 키워드 추천 분석을 시작합니다.")
 
-    # 커리어 목표와 Knowledge Tree를 바탕으로 User prompt 생성
     recommend_user_prompt = make_recommend_user_prompt(
         career_goal=career_goal, 
         knowledge_tree=knowledge_tree
     )
 
     try:
-        # LLM 응답 생성 직전 로그 
         logger.info(f"OpenAI API({MODEL_NAME})를 호출하여 지식 트리 기반 키워드 추천을 요청합니다...")
 
         response = client.chat.completions.create(
@@ -39,23 +38,20 @@ def recommend_with_llm(career_goal: str, knowledge_tree: str) -> Optional[Dict[s
         )
 
         logger.info("OpenAI API 응답을 성공적으로 수신했습니다. 추천 결과 JSON 파싱을 시도합니다.")
-
         raw_content = response.choices[0].message.content
 
-        # 안전하게 JSON 파싱 (함수명은 기존 유틸리티 함수 그대로 사용)
+        # 파싱 에러 시 내부에서 LLMAnswerParserFailedError 발생됨
         result_json = safe_parse_json(
             raw_content=raw_content,
             schema_type="recommend"
         )
 
-        # JSON 파싱 실패 시
-        if result_json is None:
-            logger.error("LLM 추천 응답이 올바른 JSON 형식이 아니어서 파싱에 실패했습니다.")
-            return None
-
         logger.info("LLM 추천 결과 JSON 파싱 완료!")
         return result_json
 
+    except LLMAnswerParserFailedError:
+        # 파싱 실패 에러는 그대로 던짐
+        raise
     except Exception as e:
         logger.exception("추천 LLM API 호출 중 예기치 않은 오류가 발생했습니다.")
-        return None
+        raise LLMAnswerFailedError(f"LLM API 호출 실패: {str(e)}")

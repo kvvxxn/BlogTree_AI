@@ -1,4 +1,19 @@
 services:
+  # MySQL
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: blogtree
+      MYSQL_USER: mysql_user
+      MYSQL_PASSWORD: mysql_password
+      TZ: Asia/Seoul
+    volumes:
+      - mysql_data:/var/lib/mysql
+
   neo4j:
     image: neo4j:latest
     container_name: neo4j_knowledge_tree
@@ -6,9 +21,9 @@ services:
       - "7474:7474" # 웹 대시보드 (HTTP)
       - "7687:7687" # Bolt 프로토콜 (Spring Boot 연결용)
     volumes:
-      - ./neo4j/data:/data
+      - neo4j_data:/data
     environment:
-      NEO4J_AUTH: neo4j_user/neo4j_password
+      NEO4J_AUTH: neo4j/neo4j_password
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -25,3 +40,5 @@ services:
 
 volumes:
   rabbitmq_data:
+  mysql_data:
+  neo4j_data:

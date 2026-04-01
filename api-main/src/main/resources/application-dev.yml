@@ -2,11 +2,33 @@ spring:
   application:
     name: api-main
 
+  # MySQL
+#  datasource:
+#    url: jdbc:mysql://localhost:3307/blogtree
+#    username: mysql_user
+#    password: mysql_password
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      base-url: https://api.openai.com
+      embedding:
+        options:
+          model: text-embedding-3-small
+
   # Neo4j
   neo4j:
-    uri: bolt://neo4j_knowledge_tree:7687
+    uri: bolt://localhost:7687
     authentication:
-      username: neo4j_user
+      username: neo4j
       password: neo4j_password
 
   # RabbitMQ
@@ -15,6 +37,17 @@ spring:
     port: 5672
     username: rabbitmq_user
     password: rabbitmq_password
+    # Producer 전송 보장 설정
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true # Unroutable 메시지 발생 시 예외 발생 또는 ReturnCallback 호출
+      retry:
+        enabled: true
+        initial-interval: 1000ms
+        max-attempts: 3
+        multiplier: 2.0
+        max-interval: 5000ms
     summary:
       exchange: summary.exchange
       queue:
@@ -28,9 +61,9 @@ spring:
         retry:
           enabled: true
           max-attempts: 3          # 최대 3번까지 재시도
-          initial-interval: 3s     # 처음 실패 후 3초 대기
+          initial-interval: 1000ms    # 처음 실패 후 1초 대기
           multiplier: 2.0          # 대기 시간을 2배씩 늘림 (3초 -> 6초 -> 12초)
-          max-interval: 15s        # 최대 대기 시간은 15초까지만
+          max-interval: 5000ms        # 최대 대기 시간은 15초까지만
         default-requeue-rejected: false
 
 # Logging level
@@ -44,3 +77,4 @@ app:
     allowed-origins:
       - http://localhost:3000 # React 기본
       - http://localhost:5173 # Vite 기본
+
