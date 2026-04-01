@@ -37,3 +37,10 @@ spring:
 logging:
   level:
     org.springframework.data.neo4j: DEBUG
+
+# CORS
+app:
+  cors:
+    allowed-origins:
+      - http://localhost:3000 # React 기본
+      - http://localhost:5173 # Vite 기본

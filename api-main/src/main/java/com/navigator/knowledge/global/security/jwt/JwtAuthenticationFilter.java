@@ -35,7 +35,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (token != null && jwtProvider.validateToken(token)) {
 
                 // 3. 토큰 안에서 이메일과 권한(Role)을 빼옵니다. (DB 조회 안 함 완벽한 무상태성)
-                String email = jwtProvider.getEmailFromToken(token);
+                Long userId = jwtProvider.getUserIdFromToken(token);
                 String role = jwtProvider.getRoleFromToken(token);
 
                 // 4. 스프링 시큐리티 형님이 읽을 수 있도록 권한을 포장합니다.
@@ -43,12 +43,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 // 5. 스프링 시큐리티 전용 임시 플라스틱 사원증(Authentication)을 발급합니다.
                 // (이메일을 principal로, 비밀번호는 없으니 "", 권한을 넣습니다)
-                Authentication authentication = new UsernamePasswordAuthenticationToken(email, "", authorities);
+                Authentication authentication = new UsernamePasswordAuthenticationToken(userId, "", authorities);
 
                 // 6. 우리 건물의 VIP 명부(SecurityContextHolder)에 이 사원증을 걸어둡니다.
                 // 이제 이 요청이 컨트롤러에 도착할 때까지 이 사람은 "인증된 유저"로 대우받습니다.
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-                log.info("인증 성공! 이메일: {}, 권한: {}", email, role);
+                log.info("인증 성공! 권한: {}", role);
             }
         } catch (IllegalArgumentException e) {
             // JwtProvider가 에러를 뱉었을 때 (만료됨, 위조됨 등)

@@ -11,7 +11,9 @@ import com.navigator.knowledge.global.security.oauth2.dto.GoogleTokenResponse;
 import com.navigator.knowledge.global.security.oauth2.dto.GoogleUserInfoDto;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -54,13 +56,13 @@ public class OAuth2Service {
                 });
 
         // 4. 우리 서비스 전용 JWT (Access / Refresh) 토큰 생성
-        String accessToken = jwtProvider.createAccessToken(user.getEmail(), user.getRole().getKey());
-        String refreshToken = jwtProvider.createRefreshToken(user.getEmail());
+        String accessToken = jwtProvider.createAccessToken(user.getId(), user.getRole().getKey());
+        String refreshToken = jwtProvider.createRefreshToken(user.getId());
 
         // 5. Refresh Token을 메모리에 저장 (ConcurrentHashMap)
         // 추후 운영, 배포 시 Redis 등으로 변경 예정
         // Map 구조이므로 이미 이메일(key)이 존재하면 알아서 새 토큰으로 덮어씌움
-        refreshTokenRepository.save(user.getEmail(), refreshToken);
+        refreshTokenRepository.save(user.getId(), refreshToken);
 
         // 6. 프론트엔드에게 줄 택배 상자에 포장해서 반환
         String message = "구글 로그인 및 토큰 발급 성공!";
@@ -81,29 +83,32 @@ public class OAuth2Service {
         // 토큰 유효성 검증
         jwtProvider.validateToken(refreshToken);
 
-        // 토큰에서 이메일 추출
-        String email = jwtProvider.getEmailFromToken(refreshToken);
+        // 토큰에서 userid 추출
+        Long id = jwtProvider.getUserIdFromToken(refreshToken);
+
+        // 저장된 Refresh Token과 요청된 Refresh Token 일치 여부 검증
+        String storedRefreshToken = refreshTokenRepository.findByUserId(id)
+                .orElseThrow(() -> new IllegalArgumentException("INVALID_TOKEN"));
+        if (!storedRefreshToken.equals(refreshToken)) {
+            throw new IllegalArgumentException("INVALID_TOKEN");
+        }
 
         // 유저 정보 조회
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다."));
 
         // 새 토큰 발급
-        String newAccessToken = jwtProvider.createAccessToken(user.getEmail(), user.getRole().name());
-        String newRefreshToken = jwtProvider.createRefreshToken(user.getEmail());
+        String newAccessToken = jwtProvider.createAccessToken(user.getId(), user.getRole().getKey());
+        String newRefreshToken = jwtProvider.createRefreshToken(user.getId());
 
         // 저장소 업데이트
-        refreshTokenRepository.save(user.getEmail(), newRefreshToken);
+        refreshTokenRepository.save(user.getId(), newRefreshToken);
 
         return new AuthDto.LoginResponse("토큰 재발급 성공!", newAccessToken, newRefreshToken);
     }
 
     // 로그아웃 로직
-    public void logout(String accessToken) {
-        // 1. Access Token에서 이메일 추출
-        String email = jwtProvider.getEmailFromToken(accessToken);
-
-        // 2. 해당 이메일의 Refresh Token을 메모리(저장소)에서 날려버림
-        refreshTokenRepository.deleteByEmail(email);
+    public void logout(Long userId) {
+        refreshTokenRepository.deleteByUserId(userId);
     }
 }

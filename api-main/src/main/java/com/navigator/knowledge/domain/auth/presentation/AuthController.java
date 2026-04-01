@@ -4,6 +4,7 @@ import com.navigator.knowledge.domain.auth.dto.AuthDto;
 import com.navigator.knowledge.domain.auth.service.OAuth2Service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -39,15 +40,8 @@ public class AuthController {
 
     // --- [로그아웃 API] ---
     @PostMapping("/logout")
-    public ResponseEntity<String> logout(@RequestHeader("Authorization") String authorizationHeader) {
-        // HTTP Header에서 "Bearer eyJh..." 형태로 날아오는 Access Token 추출
-        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-            throw new IllegalArgumentException("잘못된 인증 헤더입니다.");
-        }
-
-        // 앞의 "Bearer " 문자열(7글자)을 잘라내고 순수 토큰만 서비스로 넘김
-        String accessToken = authorizationHeader.substring(7);
-        oAuth2Service.logout(accessToken);
+    public ResponseEntity<String> logout(@AuthenticationPrincipal Long userId) {
+        oAuth2Service.logout(userId);
 
         return ResponseEntity.ok("성공적으로 로그아웃 되었습니다.");
     }

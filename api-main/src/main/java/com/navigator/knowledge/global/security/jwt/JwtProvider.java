@@ -7,9 +7,11 @@ import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
+import io.jsonwebtoken.security.SecurityException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
 
 import javax.crypto.SecretKey;
 import java.util.Date;
@@ -32,12 +34,12 @@ public class JwtProvider {
     }
 
     // 2. Access Token 발급 버튼
-    public String createAccessToken(String email, String role) {
+    public String createAccessToken(Long userId, String role) {
         Date now = new Date();
         Date validity = new Date(now.getTime() + this.accessTokenExpiration);
 
         return Jwts.builder()
-                .subject(email) // 이 토큰의 주인은 이 이메일
+                .subject(String.valueOf(userId)) // 이 토큰 주인의 ID
                 .claim("role", role) // 이 사람의 권한(USER, ADMIN 등)도 토큰에 적어둔다.
                 .issuedAt(now) // 토큰 발급 시간
                 .expiration(validity) // 토큰 만료 시간
@@ -48,12 +50,12 @@ public class JwtProvider {
     // 3. Refresh Token 발급 버튼
     private final long REFRESH_TOKEN_VALIDITY = 1000L * 60 * 60 * 24 * 7;
 
-    public String createRefreshToken(String email) {
+    public String createRefreshToken(Long userId) {
         Date now = new Date();
         Date validity = new Date(now.getTime() + REFRESH_TOKEN_VALIDITY);
 
         return Jwts.builder()
-                .subject(email)
+                .subject(String.valueOf(userId))
                 .issuedAt(now) // 발급 시간
                 .expiration(validity) // 만료 시간 (7일 뒤)
                 .signWith(key)
@@ -73,7 +75,7 @@ public class JwtProvider {
             log.warn("만료된 JWT 토큰입니다. 재발급이 필요합니다.");
             throw new IllegalArgumentException("EXPIRED_TOKEN"); // 프론트에게 만료를 알림
 
-        } catch (SecurityException | MalformedJwtException | SignatureException e) {
+        } catch (SecurityException | MalformedJwtException e) {
             log.error("잘못된 JWT 서명입니다. 위조가 의심됩니다.");
             throw new IllegalArgumentException("INVALID_TOKEN"); // 프론트에게 위조를 알림
 
@@ -87,14 +89,17 @@ public class JwtProvider {
         }
     }
 
-    // 5. 정상 토큰이라면 이메일 꺼내기
-    public String getEmailFromToken(String token) {
-        return Jwts.parser()
+    // 5. 정상 토큰이라면 UserId 꺼내기
+    public Long getUserIdFromToken(String token) {
+        String subject = Jwts.parser()
                 .verifyWith(key)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload()
-                .getSubject(); // 토큰 만들 때 subject에 email을 넣었으니 여기서 꺼냅니다.
+                .getSubject(); // 토큰 만들 때 subject에 userId를 넣었으니 여기서 꺼냅니다.
+
+        // subject는 무조건 String으로 나오니까, Long 타입으로 변환해서 리턴!
+        return Long.parseLong(subject);
     }
 
     // 6. 정상 토큰이라면 권한(Role) 꺼내기
@@ -105,5 +110,16 @@ public class JwtProvider {
                 .parseSignedClaims(token)
                 .getPayload()
                 .get("role", String.class); // "role"이라는 이름의 Claim을 String 타입으로 꺼냅니다.
+    }
+
+    // 위조 여부 검증 시 추출할 메서드
+    public String getEmailFromToken(String token) {
+
+        return Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .getSubject(); // 토큰 만들 때 subject에 email을 넣었으니 여기서 꺼냅니다.
     }
 }
