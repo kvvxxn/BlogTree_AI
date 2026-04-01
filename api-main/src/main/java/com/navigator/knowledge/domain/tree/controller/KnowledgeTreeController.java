@@ -19,7 +19,7 @@ public class KnowledgeTreeController {
     private final KnowledgeService knowledgeService;
 
     @GetMapping
-    public ResponseEntity<Map<String, Map<String, List<String>>>> getKnowledgeTree(Long userId) {
+    public ResponseEntity<Map<String, Map<String, List<String>>>> getKnowledgeTree(@PathVariable Long userId) {
         Map<String, Map<String, List<String>>> knowledgeTree = knowledgeService.getKnowledgeTree(userId);
         return ResponseEntity.ok(knowledgeTree);
     }

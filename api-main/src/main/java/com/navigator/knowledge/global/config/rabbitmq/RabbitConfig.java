@@ -1,5 +1,6 @@
 package com.navigator.knowledge.global.config.rabbitmq;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,8 +15,8 @@ public class RabbitConfig {
 
     // JSON 직렬화/역직렬화를 위한 컨버터
     @Bean
-    public MessageConverter jackson2JsonMessageConverter() {
-        return new Jackson2JsonMessageConverter();
+    public MessageConverter jackson2JsonMessageConverter(ObjectMapper objectMapper) {
+        return new Jackson2JsonMessageConverter(objectMapper);
     }
 
     // RabbitTemplate 설정 (메시지 발행용)

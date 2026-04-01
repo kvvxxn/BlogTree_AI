@@ -50,40 +50,28 @@ public interface KnowledgeRepository extends Neo4jRepository<UserNode, Long> {
         @Param("embedding") List<Double> embedding
     );
 
-    /**
-     * 벡터 유사도를 기반으로 가장 유사한 Keyword 노드의 ID를 찾고, 해당 키워드에 새 Summary 노드를 연결합니다.
-     * 
-     * 주의: 이 쿼리를 사용하려면 Neo4j 데이터베이스에 벡터 인덱스가 미리 생성되어 있어야 합니다.
-     * 인덱스가 없다면 코사인 유사도 연산 함수 (gds.similarity.cosine 또는 자체 계산 로직)를 이용한 전체 스캔 방식을 사용해야 합니다.
-     * 아래는 벡터 유사도 연산을 수동으로 수행하여 가장 가까운 Keyword를 찾는 Cypher입니다. (O(N) 탐색)
-     */
-    @Query("MATCH (u:User {userId: $userId})-[:OWNS_CATEGORY]->(c:Category)-[:HAS_TOPIC]->(t:Topic)-[:HAS_KEYWORD]->(k:Keyword)-[:DESCRIBED_BY]->(existing_s:Summary) " +
-           "WHERE existing_s.embedding IS NOT NULL " +
-           "WITH k, existing_s, " +
-           "     gds.similarity.cosine($embedding, existing_s.embedding) AS similarity " +
-           "ORDER BY similarity DESC " +
-           "LIMIT 1 " +
-           "CREATE (new_s:Summary {summaryId: $summaryId, embedding: $embedding}) " +
-           "MERGE (k)-[:DESCRIBED_BY]->(new_s) " +
-           "RETURN k.name AS keywordName")
-    Optional<String> attachSummaryToMostSimilarKeyword(
-        @Param("userId") Long userId,
-        @Param("summaryId") Long summaryId,
-        @Param("embedding") List<Double> embedding
-    );
-
-    @Query("MATCH (u:User {userId: $userId})-[:OWNS_CATEGORY]->(c:Category)-[:HAS_TOPIC]->(t:Topic)-[:HAS_KEYWORD]->(k:Keyword)-[:DESCRIBED_BY]->(existing_s:Summary) " +
+    @Query("MATCH (u:User {userId: $userId})-[:OWNS_CATEGORY]->(:Category)-[:HAS_TOPIC]->(:Topic)-[:HAS_KEYWORD]->(k:Keyword)-[:DESCRIBED_BY]->(existing_s:Summary) " +
         "WHERE existing_s.embedding IS NOT NULL " +
-        "WITH k, gds.similarity.cosine($embedding, existing_s.embedding) AS similarity " +
+        "  AND size(existing_s.embedding) = size($embedding) " +
+        "  AND size($embedding) > 0 " +
+        "WITH k, existing_s, " +
+        "     reduce(dot = 0.0, i IN range(0, size($embedding) - 1) | dot + ($embedding[i] * existing_s.embedding[i])) AS dotProduct, " +
+        "     sqrt(reduce(norm = 0.0, value IN $embedding | norm + (value * value))) AS inputNorm, " +
+        "     sqrt(reduce(norm = 0.0, value IN existing_s.embedding | norm + (value * value))) AS existingNorm " +
+        "WITH k, CASE " +
+        "          WHEN inputNorm = 0.0 OR existingNorm = 0.0 THEN -1.0 " +
+        "          ELSE dotProduct / (inputNorm * existingNorm) " +
+        "        END AS similarity " +
         "ORDER BY similarity DESC " +
         "LIMIT 1 " +
-        "RETURN k.id")
+        "RETURN id(k)")
     Optional<Long> findMostSimilarKeywordId(
         @Param("userId") Long userId,
         @Param("embedding") List<Double> embedding
     );
 
-    @Query("MATCH (u:User {userId: $userId})-[:OWNS_CATEGORY]->(c:Category)-[:HAS_TOPIC]->(t:Topic)-[:HAS_KEYWORD]->(k:Keyword {id: $keywordId}) " +
+    @Query("MATCH (u:User {userId: $userId})-[:OWNS_CATEGORY]->(:Category)-[:HAS_TOPIC]->(:Topic)-[:HAS_KEYWORD]->(k:Keyword) " +
+        "WHERE id(k) = $keywordId " +
         "CREATE (new_s:Summary {summaryId: $summaryId, embedding: $embedding}) " +
         "MERGE (k)-[:DESCRIBED_BY]->(new_s)")
     void createAndAttachSummaryToKeyword(

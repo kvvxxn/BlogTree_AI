@@ -1,6 +1,8 @@
 package com.navigator.knowledge.domain.summary.service;
 
+import com.navigator.knowledge.domain.summary.dto.SummaryResponseDto;
 import com.navigator.knowledge.domain.summary.entity.Summary;
+import com.navigator.knowledge.domain.summary.exception.SummaryNotFoundException;
 import com.navigator.knowledge.domain.summary.repository.SummaryRepository;
 import com.navigator.knowledge.domain.task.entity.Task;
 import lombok.RequiredArgsConstructor;
@@ -22,5 +24,18 @@ public class SummaryService {
                 .content(content)
                 .build();
         return summaryRepository.save(summary);
+    }
+
+    @Transactional
+    public Summary findOrCreateSummary(Task task, Long userId, String sourceUrl, String content) {
+        return summaryRepository.findByTask_TaskId(task.getTaskId())
+                .orElseGet(() -> saveSummary(task, userId, sourceUrl, content));
+    }
+
+    @Transactional(readOnly = true)
+    public SummaryResponseDto getSummary(Long summaryId) {
+        Summary summary = summaryRepository.findById(summaryId)
+                .orElseThrow(() -> new SummaryNotFoundException(summaryId));
+        return SummaryResponseDto.from(summary);
     }
 }
