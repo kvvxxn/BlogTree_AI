@@ -12,18 +12,18 @@ public class InMemoryRefreshTokenRepository implements RefreshTokenRepository {
     private final Map<String, String> tokenMap = new ConcurrentHashMap<>();
 
     @Override
-    public void save(String email, String refreshToken) {
-        tokenMap.put(email, refreshToken);
+    public void save(Long userId, String refreshToken) {
+        tokenMap.put(String.valueOf(userId), refreshToken);
     }
 
     @Override
-    public Optional<String> findByEmail(String email) {
-        return Optional.ofNullable(tokenMap.get(email));
+    public Optional<String> findByUserId(Long userId) {
+        return Optional.ofNullable(tokenMap.get(String.valueOf(userId)));
     }
 
     @Override
-    public void deleteByEmail(String email) {
-        tokenMap.remove(email);
+    public void deleteByUserId(Long userId) {
+        tokenMap.remove(String.valueOf(userId));
     }
 
     // HashMap 테스트용 메서드

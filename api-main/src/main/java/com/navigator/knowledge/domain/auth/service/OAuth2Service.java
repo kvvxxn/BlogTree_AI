@@ -1,7 +1,6 @@
 package com.navigator.knowledge.domain.auth.service;
 
 import com.navigator.knowledge.domain.auth.dto.AuthDto;
-import com.navigator.knowledge.domain.auth.repository.InMemoryRefreshTokenRepository;
 import com.navigator.knowledge.domain.user.entity.Role;
 import com.navigator.knowledge.domain.user.entity.User;
 import com.navigator.knowledge.domain.auth.repository.RefreshTokenRepository;
@@ -10,11 +9,11 @@ import com.navigator.knowledge.global.security.jwt.JwtProvider;
 import com.navigator.knowledge.global.security.oauth2.GoogleAuthClient;
 import com.navigator.knowledge.global.security.oauth2.dto.GoogleTokenResponse;
 import com.navigator.knowledge.global.security.oauth2.dto.GoogleUserInfoDto;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-
-import java.util.Collections;
-import java.util.Map;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +24,7 @@ public class OAuth2Service {
     private final JwtProvider jwtProvider;
 
     // 인가 코드를 통해 구글 로그인 처리
+    @Transactional
     public AuthDto.LoginResponse googleLogin(String code) {
         // GoogleAuthClient에게 일 시키기
         // 1. 구글 access token 받아오기
@@ -56,13 +56,13 @@ public class OAuth2Service {
                 });
 
         // 4. 우리 서비스 전용 JWT (Access / Refresh) 토큰 생성
-        String accessToken = jwtProvider.createAccessToken(user.getEmail(), user.getRole().name());
-        String refreshToken = jwtProvider.createRefreshToken(user.getEmail());
+        String accessToken = jwtProvider.createAccessToken(user.getId(), user.getRole().getKey());
+        String refreshToken = jwtProvider.createRefreshToken(user.getId());
 
         // 5. Refresh Token을 메모리에 저장 (ConcurrentHashMap)
         // 추후 운영, 배포 시 Redis 등으로 변경 예정
         // Map 구조이므로 이미 이메일(key)이 존재하면 알아서 새 토큰으로 덮어씌움
-        refreshTokenRepository.save(user.getEmail(), refreshToken);
+        refreshTokenRepository.save(user.getId(), refreshToken);
 
         // 6. 프론트엔드에게 줄 택배 상자에 포장해서 반환
         String message = "구글 로그인 및 토큰 발급 성공!";
@@ -76,4 +76,39 @@ public class OAuth2Service {
     //    }
     //    return Collections.emptyMap();
     //}
+
+    // Access, Refresh Token 재발급 로직 (RTR 방식)
+    @Transactional
+    public AuthDto.LoginResponse reissue(String refreshToken) {
+        // 토큰 유효성 검증
+        jwtProvider.validateToken(refreshToken);
+
+        // 토큰에서 userid 추출
+        Long id = jwtProvider.getUserIdFromToken(refreshToken);
+
+        // 저장된 Refresh Token과 요청된 Refresh Token 일치 여부 검증
+        String storedRefreshToken = refreshTokenRepository.findByUserId(id)
+                .orElseThrow(() -> new IllegalArgumentException("INVALID_TOKEN"));
+        if (!storedRefreshToken.equals(refreshToken)) {
+            throw new IllegalArgumentException("INVALID_TOKEN");
+        }
+
+        // 유저 정보 조회
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다."));
+
+        // 새 토큰 발급
+        String newAccessToken = jwtProvider.createAccessToken(user.getId(), user.getRole().getKey());
+        String newRefreshToken = jwtProvider.createRefreshToken(user.getId());
+
+        // 저장소 업데이트
+        refreshTokenRepository.save(user.getId(), newRefreshToken);
+
+        return new AuthDto.LoginResponse("토큰 재발급 성공!", newAccessToken, newRefreshToken);
+    }
+
+    // 로그아웃 로직
+    public void logout(Long userId) {
+        refreshTokenRepository.deleteByUserId(userId);
+    }
 }
