@@ -20,8 +20,8 @@ public class KnowledgeService {
     private final KnowledgeRepository knowledgeRepository;
 
     @Transactional(transactionManager = NEO4J_TRANSACTION_MANAGER)
-    public void saveKnowledgePath(Long userId, String category, String Topic, String Keyword, Long summaryId, List<Double> embedding) {
-        knowledgeRepository.addKnowledgeWithSummary(userId, category, Topic, Keyword, summaryId, embedding);
+    public void saveKnowledgePath(Long userId, String category, String topic, String keyword, Long summaryId, List<Double> embedding) {
+        knowledgeRepository.addKnowledgeWithSummary(userId, category, topic, keyword, summaryId, embedding);
     }
 
     @Transactional(transactionManager = NEO4J_TRANSACTION_MANAGER)
