@@ -8,6 +8,7 @@ import com.navigator.knowledge.domain.task.entity.TaskStatus;
 import com.navigator.knowledge.domain.task.service.TaskFailureHandler;
 import com.navigator.knowledge.domain.task.service.SseEmitterService;
 import com.navigator.knowledge.domain.task.service.TaskService;
+import com.navigator.knowledge.domain.tree.exception.SimilarKeywordNotFoundException;
 import com.navigator.knowledge.domain.tree.service.KnowledgeService;
 import com.navigator.knowledge.global.exception.BusinessException;
 import com.navigator.knowledge.global.exception.ErrorCode;
@@ -128,7 +129,7 @@ class SummaryTaskListenerTest {
         when(taskService.getTask(taskId)).thenReturn(task);
         when(summaryService.findOrCreateSummary(task, userId, task.getSourceUrl(), "summary")).thenReturn(summary);
         when(textEmbeddingService.embedText("summary")).thenReturn(List.of(0.4, 0.5));
-        org.mockito.Mockito.doThrow(new IllegalArgumentException("No such keyword"))
+        org.mockito.Mockito.doThrow(new SimilarKeywordNotFoundException(userId))
             .when(knowledgeService).addSummaryToSimilarKeyword(userId, null, List.of(0.4, 0.5));
 
         summaryTaskListener.receiveSummaryResponse(response);
@@ -139,8 +140,8 @@ class SummaryTaskListenerTest {
             eq("PARTIAL_SUCCESS"),
             org.mockito.ArgumentMatchers.argThat(exception ->
                 exception instanceof BusinessException
-                    && ((BusinessException) exception).getErrorCode() == ErrorCode.INTERNAL_SERVER_ERROR
-                    && "No such keyword".equals(exception.getMessage()))
+                    && ((BusinessException) exception).getErrorCode() == ErrorCode.SIMILAR_KEYWORD_NOT_FOUND
+                    && ("유사한 키워드를 찾을 수 없습니다. userId=" + userId).equals(exception.getMessage()))
         );
     }
 

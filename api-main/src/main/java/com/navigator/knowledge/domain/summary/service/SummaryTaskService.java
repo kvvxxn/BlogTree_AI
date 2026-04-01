@@ -20,11 +20,13 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class SummaryTaskService {
 
+    private static final String JPA_TRANSACTION_MANAGER = "jpaTransactionManager";
+
     private final TaskService taskService;
     private final SummaryTaskProducer summaryTaskProducer;
     private final KnowledgeService knowledgeService;
 
-    @Transactional
+    @Transactional(transactionManager = JPA_TRANSACTION_MANAGER)
     public TaskResponseDto requestSummary(SummaryRequestDto request) {
         // 1. 공통 Task 생성 (DB 저장 완료)
         // 향후 사용자 인증 정보 등에서 가져올 값들

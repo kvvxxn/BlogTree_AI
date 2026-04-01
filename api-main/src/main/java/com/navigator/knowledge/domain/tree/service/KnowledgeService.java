@@ -1,5 +1,6 @@
 package com.navigator.knowledge.domain.tree.service;
 
+import com.navigator.knowledge.domain.tree.exception.SimilarKeywordNotFoundException;
 import lombok.RequiredArgsConstructor;
 import com.navigator.knowledge.domain.tree.dto.KnowledgePathDto;
 import com.navigator.knowledge.domain.tree.repository.KnowledgeRepository;
@@ -13,22 +14,25 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class KnowledgeService {
+
+    private static final String NEO4J_TRANSACTION_MANAGER = "neo4jTransactionManager";
+
     private final KnowledgeRepository knowledgeRepository;
 
-    @Transactional
+    @Transactional(transactionManager = NEO4J_TRANSACTION_MANAGER)
     public void saveKnowledgePath(Long userId, String category, String Topic, String Keyword, Long summaryId, List<Double> embedding) {
         knowledgeRepository.addKnowledgeWithSummary(userId, category, Topic, Keyword, summaryId, embedding);
     }
 
-    @Transactional
+    @Transactional(transactionManager = NEO4J_TRANSACTION_MANAGER)
     public void addSummaryToSimilarKeyword(Long userId, Long summaryId, List<Double> embedding) {
         Long keywordId = knowledgeRepository.findMostSimilarKeywordId(userId, embedding)
-            .orElseThrow(() -> new IllegalArgumentException("No such keyword"));
+            .orElseThrow(() -> new SimilarKeywordNotFoundException(userId));
 
         knowledgeRepository.createAndAttachSummaryToKeyword(userId, keywordId, summaryId, embedding);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(transactionManager = NEO4J_TRANSACTION_MANAGER, readOnly = true)
     public Map<String, Map<String, List<String>>> getKnowledgeTree(Long userId) {
         List<KnowledgePathDto> paths = knowledgeRepository.findAllKnowledgeByUserId(userId);
 
