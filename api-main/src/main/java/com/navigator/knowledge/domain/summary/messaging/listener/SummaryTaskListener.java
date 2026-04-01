@@ -44,11 +44,7 @@ public class SummaryTaskListener {
         } catch (BusinessException e) {
             taskFailureHandler.handle(responseDto.taskId(), responseDto.status(), e);
         } catch (Exception e) {
-            taskFailureHandler.handle(
-                responseDto.taskId(),
-                responseDto.status(),
-                toBusinessException(e)
-            );
+            taskFailureHandler.handleUnexpected(responseDto.taskId(), responseDto.status(), e);
         }
     }
 
@@ -146,18 +142,6 @@ public class SummaryTaskListener {
 
     private String normalizeStatus(String status) {
         return requireText(status, "status");
-    }
-
-    private BusinessException toBusinessException(Exception e) {
-        if (e instanceof BusinessException businessException) {
-            return businessException;
-        }
-
-        String message = e.getMessage();
-        if (message == null || message.isBlank()) {
-            return new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR);
-        }
-        return new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR, message);
     }
 
     private Long requireUserId(SummaryTaskResponseMessage responseDto) {

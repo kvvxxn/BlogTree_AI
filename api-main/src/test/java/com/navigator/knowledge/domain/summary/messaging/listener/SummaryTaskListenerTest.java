@@ -25,6 +25,7 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -165,6 +166,41 @@ class SummaryTaskListenerTest {
                 exception instanceof BusinessException
                     && ((BusinessException) exception).getErrorCode() == ErrorCode.BAD_REQUEST
                     && "Unknown status in summary response: UNKNOWN".equals(exception.getMessage()))
+        );
+    }
+
+    @Test
+    @DisplayName("예상치 못한 예외는 상세 내용을 노출하지 않고 내부 오류로 처리한다")
+    void receiveSummaryResponse_unexpectedExceptionHandledAsInternalError() {
+        String taskId = "task-4";
+        Long userId = 13L;
+        Task task = Task.builder()
+            .taskId(taskId)
+            .userId(userId)
+            .sourceUrl("https://example.com/4")
+            .status(TaskStatus.PROCESSING)
+            .build();
+        SummaryTaskResponseMessage response = new SummaryTaskResponseMessage(
+            taskId,
+            userId,
+            "SUCCESS",
+            new SummaryTaskResponseMessage.ResultData(
+                "summary",
+                new SummaryTaskResponseMessage.KnowledgeTree("Backend", "Infra", "Redis")
+            ),
+            null
+        );
+
+        when(taskService.getTask(taskId)).thenReturn(task);
+        when(summaryService.findOrCreateSummary(task, userId, task.getSourceUrl(), "summary"))
+            .thenThrow(new RuntimeException("neo4j connection refused"));
+
+        summaryTaskListener.receiveSummaryResponse(response);
+
+        verify(taskFailureHandler).handleUnexpected(
+            eq(taskId),
+            eq("SUCCESS"),
+            isA(RuntimeException.class)
         );
     }
 }

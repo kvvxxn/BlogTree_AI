@@ -1,6 +1,7 @@
 package com.navigator.knowledge.domain.task.service;
 
 import com.navigator.knowledge.global.exception.BusinessException;
+import com.navigator.knowledge.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -38,6 +39,37 @@ public class TaskFailureHandler {
             Map<String, Object> sseData = Map.of(
                     "code", errorCode,
                     "message", exception.getMessage()
+            );
+            sseEmitterService.sendEvent(taskId, "failed", sseData);
+            sseEmitterService.complete(taskId);
+        } catch (Exception sseException) {
+            log.error("Failed to send failure SSE event. Task ID: {}", taskId, sseException);
+        }
+    }
+
+    public void handleUnexpected(String taskId, String status, Exception exception) {
+        ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
+        String userMessage = errorCode.getDefaultMessage();
+        String errorMessage = String.format("[%s] %s", errorCode.getCode(), userMessage);
+
+        log.error(
+                "Unexpected exception while processing summary response. code={}, taskId={}, status={}",
+                errorCode.getCode(),
+                taskId,
+                status,
+                exception
+        );
+
+        try {
+            taskService.updateTaskFailed(taskId, errorMessage);
+        } catch (Exception taskUpdateException) {
+            log.error("Failed to mark task as failed. Task ID: {}", taskId, taskUpdateException);
+        }
+
+        try {
+            Map<String, Object> sseData = Map.of(
+                    "code", errorCode.getCode(),
+                    "message", userMessage
             );
             sseEmitterService.sendEvent(taskId, "failed", sseData);
             sseEmitterService.complete(taskId);
