@@ -5,9 +5,12 @@ import com.navigator.knowledge.domain.summary.messaging.dto.SummaryTaskResponseM
 import com.navigator.knowledge.domain.summary.service.SummaryService;
 import com.navigator.knowledge.domain.task.entity.Task;
 import com.navigator.knowledge.domain.task.entity.TaskStatus;
+import com.navigator.knowledge.domain.task.service.TaskFailureHandler;
 import com.navigator.knowledge.domain.task.service.SseEmitterService;
 import com.navigator.knowledge.domain.task.service.TaskService;
 import com.navigator.knowledge.domain.tree.service.KnowledgeService;
+import com.navigator.knowledge.global.exception.BusinessException;
+import com.navigator.knowledge.global.exception.ErrorCode;
 import com.navigator.knowledge.global.infra.ai.TextEmbeddingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +19,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 @Slf4j
 @Service
@@ -30,6 +32,7 @@ public class SummaryTaskListener {
     private final TextEmbeddingService textEmbeddingService;
     private final KnowledgeService knowledgeService;
     private final SseEmitterService sseEmitterService;
+    private final TaskFailureHandler taskFailureHandler;
 
     @RabbitListener(queues = RESPONSE_QUEUE)
     public void receiveSummaryResponse(SummaryTaskResponseMessage responseDto) {
@@ -37,14 +40,27 @@ public class SummaryTaskListener {
             responseDto.taskId(), responseDto.status());
 
         try {
-            switch (normalizeStatus(responseDto.status())) {
-                case "SUCCESS" -> handleSuccess(responseDto);
-                case "PARTIAL_SUCCESS" -> handlePartialSuccess(responseDto);
-                case "FAILED" -> handleFailure(responseDto);
-                default -> throw new IllegalArgumentException("Unknown status in summary response: " + responseDto.status());
-            }
+            process(responseDto);
+        } catch (BusinessException e) {
+            taskFailureHandler.handle(responseDto.taskId(), responseDto.status(), e);
         } catch (Exception e) {
-            handleProcessingError(responseDto, e);
+            taskFailureHandler.handle(
+                responseDto.taskId(),
+                responseDto.status(),
+                toBusinessException(e)
+            );
+        }
+    }
+
+    private void process(SummaryTaskResponseMessage responseDto) {
+        switch (normalizeStatus(responseDto.status())) {
+            case "SUCCESS" -> handleSuccess(responseDto);
+            case "PARTIAL_SUCCESS" -> handlePartialSuccess(responseDto);
+            case "FAILED" -> handleFailure(responseDto);
+            default -> throw new BusinessException(
+                ErrorCode.BAD_REQUEST,
+                "Unknown status in summary response: " + responseDto.status()
+            );
         }
     }
 
@@ -128,44 +144,32 @@ public class SummaryTaskListener {
         log.error("Task failed handled. Error Code: {}, Message: {}", error.code(), error.message());
     }
 
-    private void handleProcessingError(SummaryTaskResponseMessage responseDto, Exception e) {
-        String taskId = responseDto.taskId();
-        String errorMessage = String.format("[LISTENER_PROCESSING_ERROR] %s", e.getMessage());
-
-        log.error("Failed to process summary response. Task ID: {}, Status: {}", taskId, responseDto.status(), e);
-
-        try {
-            taskService.updateTaskFailed(taskId, errorMessage);
-        } catch (Exception taskUpdateException) {
-            log.error("Failed to mark task as failed. Task ID: {}", taskId, taskUpdateException);
-        }
-
-        try {
-            Map<String, Object> sseData = Map.of(
-                "code", "LISTENER_PROCESSING_ERROR",
-                "message", Objects.requireNonNullElse(e.getMessage(), "Failed to process summary response")
-            );
-            sseEmitterService.sendEvent(taskId, "failed", sseData);
-            sseEmitterService.complete(taskId);
-        } catch (Exception sseException) {
-            log.error("Failed to send failure SSE event. Task ID: {}", taskId, sseException);
-        }
-    }
-
     private String normalizeStatus(String status) {
         return requireText(status, "status");
     }
 
+    private BusinessException toBusinessException(Exception e) {
+        if (e instanceof BusinessException businessException) {
+            return businessException;
+        }
+
+        String message = e.getMessage();
+        if (message == null || message.isBlank()) {
+            return new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+        return new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR, message);
+    }
+
     private Long requireUserId(SummaryTaskResponseMessage responseDto) {
         if (responseDto.userId() == null) {
-            throw new IllegalArgumentException("userId must not be null");
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "userId must not be null");
         }
         return responseDto.userId();
     }
 
     private SummaryTaskResponseMessage.ResultData requireResultData(SummaryTaskResponseMessage responseDto) {
         if (responseDto.data() == null) {
-            throw new IllegalArgumentException("data must not be null");
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "data must not be null");
         }
 
         requireText(responseDto.data().summaryContent(), "summaryContent");
@@ -174,14 +178,14 @@ public class SummaryTaskListener {
 
     private SummaryTaskResponseMessage.KnowledgeTree requireKnowledgeTree(SummaryTaskResponseMessage.ResultData data) {
         if (data.knowledgeTree() == null) {
-            throw new IllegalArgumentException("knowledgeTree must not be null");
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "knowledgeTree must not be null");
         }
         return data.knowledgeTree();
     }
 
     private SummaryTaskResponseMessage.ErrorData requireErrorData(SummaryTaskResponseMessage responseDto) {
         if (responseDto.error() == null) {
-            throw new IllegalArgumentException("error must not be null");
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "error must not be null");
         }
 
         requireText(responseDto.error().code(), "error.code");
@@ -191,7 +195,7 @@ public class SummaryTaskListener {
 
     private String requireText(String value, String fieldName) {
         if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException(fieldName + " must not be blank");
+            throw new BusinessException(ErrorCode.BAD_REQUEST, fieldName + " must not be blank");
         }
         return value;
     }
