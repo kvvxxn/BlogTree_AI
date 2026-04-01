@@ -26,6 +26,7 @@ dependencyManagement {
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-data-neo4j'
@@ -43,6 +44,8 @@ dependencies {
     testImplementation('org.neo4j.test:neo4j-harness:5.26.0') {
         exclude group: 'org.neo4j', module: 'neo4j-slf4j-provider'
     }
+    testImplementation 'javax.xml.bind:jaxb-api:2.3.1'
+    testRuntimeOnly 'org.glassfish.jaxb:jaxb-runtime:2.3.8'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
     // JWT 토큰 생성을 위한 라이브러리

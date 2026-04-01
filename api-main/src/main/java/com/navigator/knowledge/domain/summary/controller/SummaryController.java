@@ -5,6 +5,7 @@ import com.navigator.knowledge.domain.summary.dto.SummaryResponseDto;
 import com.navigator.knowledge.domain.summary.service.SummaryService;
 import com.navigator.knowledge.domain.task.dto.TaskResponseDto;
 import com.navigator.knowledge.domain.summary.service.SummaryTaskService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +20,7 @@ public class SummaryController {
     private final SummaryService summaryService;
 
     @PostMapping
-    public ResponseEntity<TaskResponseDto> requestSummary(@RequestBody SummaryRequestDto request) {
+    public ResponseEntity<TaskResponseDto> requestSummary(@Valid @RequestBody SummaryRequestDto request) {
         TaskResponseDto response = summaryTaskService.requestSummary(request);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
     }

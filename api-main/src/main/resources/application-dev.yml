@@ -28,7 +28,7 @@ spring:
   neo4j:
     uri: bolt://localhost:7687
     authentication:
-      username: neo4j_user
+      username: neo4j
       password: neo4j_password
 
   # RabbitMQ
