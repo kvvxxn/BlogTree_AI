@@ -36,7 +36,7 @@ class SummarizeResponsePayload(BaseModel):
     MQ로 다시 보낼 최종 Output 스키마
     """
     task_id: UUID4 = Field(..., description="작업 고유 ID")
-    user_id: UUID4 = Field(..., description="사용자 고유 ID")
+    user_id: int = Field(..., description="사용자 고유 ID")
     status: StatusEnum = Field(..., description="처리 결과 상태")
     
     # SUCCESS 일 때 존재, FAILED 일 때 null
