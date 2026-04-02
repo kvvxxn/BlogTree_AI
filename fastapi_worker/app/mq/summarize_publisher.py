@@ -1,8 +1,10 @@
 import aio_pika
 from pydantic import BaseModel
+from langfuse.decorators import observe
 
 from fastapi_worker.app.core.config import settings
-    
+
+@observe("Summarization Publish")    
 async def publish_message(queue_name: str, message_body: BaseModel):
     """
     지정된 큐로 Pydantic 객체를 직렬화하여 전송합니다.

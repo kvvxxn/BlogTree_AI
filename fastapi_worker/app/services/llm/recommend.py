@@ -1,9 +1,10 @@
 import os
 import json
 import logging
-from openai import OpenAI
 from dotenv import load_dotenv
 from typing import Optional, Dict, Any
+from langfuse.decorators import observe
+from langfuse.openai import OpenAI
 
 from fastapi_worker.app.services.llm.prompts import recommend_sys_prompt, make_recommend_user_prompt
 from fastapi_worker.app.services.llm.configs import T, OUTPUT_MAX_TOKENS, MODEL_NAME
@@ -13,6 +14,7 @@ from fastapi_worker.app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
+@observe("Recommendation using LLM")
 def recommend_with_llm(career_goal: str, knowledge_tree: str) -> Dict[str, Any]: 
     client = OpenAI(api_key=settings.LLM_API_KEY)
 

@@ -2,6 +2,7 @@ import asyncio
 import logging
 import aio_pika
 from pydantic import ValidationError
+from langfuse.decorators import observe, langfuse_context
 
 from fastapi_worker.app.core.config import settings
 from fastapi_worker.app.mq.recommend_publisher import publish_message
@@ -18,6 +19,7 @@ from fastapi_worker.app.schemas.recommend_response import (
 logger = logging.getLogger(__name__)
 
 # Consumer: Input 검증 -> 파이프라인 처리 -> Output 조립 및 검증 -> 전송
+@observe(name="Recommendation Consume")
 async def consume_message(message: aio_pika.IncomingMessage):
     async with message.process(ignore_processed=True):
         payload = None 
@@ -26,6 +28,13 @@ async def consume_message(message: aio_pika.IncomingMessage):
             max_retries = 3
             payload = RecommendInputPayload.model_validate_json(message.body)
             print(f"[Consumer] 요청 수신 - Task ID: {payload.task_id}")
+
+            # Langfuse Trace Context 업데이트
+            langfuse_context.update_current_trace(
+                id=payload.task_id,
+                user_id=payload.user_id,
+                tags=["recommend"]
+            )
             
             llm_result = None
             for attempt in range(max_retries):

@@ -1,6 +1,7 @@
 aio-pika>=9.4.0
 beautifulsoup4>=4.12.3
 fastapi>=0.115.0
+langfuse>=2.0.0
 openai>=1.40.0
 pydantic>=2.8.0
 pydantic-settings>=2.4.0

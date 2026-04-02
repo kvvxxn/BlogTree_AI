@@ -2,6 +2,7 @@ import asyncio
 import logging
 import aio_pika
 from pydantic import ValidationError
+from langfuse.decorators import observe, langfuse_context
 
 from fastapi_worker.app.core.config import settings
 from fastapi_worker.app.mq.summarize_publisher import publish_message 
@@ -33,6 +34,7 @@ def _to_knowledge_tree(raw_keywords) -> KnowledgeTree | None:
     return KnowledgeTree(category=raw_keywords[0], topic=raw_keywords[1], keyword=raw_keywords[2])
 
 # Consumer: Input 검증 -> 파이프라인 처리 -> Output 조립 및 검증 -> 전송
+@observe("Summarization Consume")
 async def consume_message(message: aio_pika.IncomingMessage):
     async with message.process(ignore_processed=True):
         payload = None 
@@ -43,6 +45,13 @@ async def consume_message(message: aio_pika.IncomingMessage):
             # [단계 1] Input schema 파싱 및 검증
             payload = SummarizeInputPayload.model_validate_json(message.body)
             print(f"[Consumer] 요청 수신 - Task ID: {payload.task_id}")
+
+            # Langfuse Trace Context 업데이트
+            langfuse_context.update_current_trace(
+                id=payload.task_id,
+                user_id=payload.user_id,
+                tags=["summarize"]
+            )
             
             # [단계 2] 파이프라인 호출 
             llm_result = None

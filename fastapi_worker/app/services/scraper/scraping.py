@@ -2,6 +2,7 @@ import requests
 import logging
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
+from langfuse.decorators import observe
 
 from fastapi_worker.app.services.scraper.parsers import scrape_for_else, scrape_for_tistory, scrape_for_velog
 from fastapi_worker.app.services.scraper.configs import TARGET_TAGS, headers
@@ -9,6 +10,7 @@ from fastapi_worker.app.core.exceptions import ScrapingFailedError, ScrapingPars
 
 logger = logging.getLogger(__name__)
 
+@observe("Blog Text Scraping Attempt")
 def scrape_blog_text(url: str) -> str:
     """
     URL에서 본문을 추출합니다.
