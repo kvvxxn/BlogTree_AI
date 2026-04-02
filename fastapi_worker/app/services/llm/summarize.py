@@ -2,7 +2,7 @@ import os
 import logging
 from dotenv import load_dotenv
 from typing import Dict, Any
-from langfuse.decorators import observe
+from langfuse import observe
 from langfuse.openai import OpenAI
 
 
@@ -14,7 +14,7 @@ from fastapi_worker.app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-@observe("Summarization using LLM")
+@observe(name="Summarization using LLM")
 def summarize_with_llm(career_goal: str, url: str, blog_text: str, knowledge_tree: str) -> Dict[str, Any]:
     client = OpenAI(api_key=settings.LLM_API_KEY)
 

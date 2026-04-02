@@ -2,7 +2,7 @@ import asyncio
 import logging
 import aio_pika
 from pydantic import ValidationError
-from langfuse.decorators import observe, langfuse_context
+from langfuse import observe, get_client
 
 from fastapi_worker.app.core.config import settings
 from fastapi_worker.app.mq.recommend_publisher import publish_message
@@ -30,10 +30,11 @@ async def consume_message(message: aio_pika.IncomingMessage):
             print(f"[Consumer] 요청 수신 - Task ID: {payload.task_id}")
 
             # Langfuse Trace Context 업데이트
-            langfuse_context.update_current_trace(
-                id=payload.task_id,
+            langfuse = get_client()
+            langfuse.update_current_trace(
+                session_id=payload.task_id,
                 user_id=payload.user_id,
-                tags=["recommend"]
+                tags=["recommend", f"task:{payload.task_id}"]
             )
             
             llm_result = None

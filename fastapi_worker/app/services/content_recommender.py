@@ -1,13 +1,13 @@
 import json
 import logging
 from typing import Optional, Dict, Any
-from langfuse.decorators import observe
+from langfuse import observe
 
 from fastapi_worker.app.services.llm.recommend import recommend_with_llm
 
 logger = logging.getLogger(__name__)
 
-@observe("Recommendation Wrapper function called")
+@observe(name="Recommendation Wrapper function called")
 def recommend_keywords(career_goal: str, knowledge_tree: str) -> Dict[str, Any]:
     """
     사용자의 커리어 목표와 기존 지식 트리를 바탕으로 LLM을 통해 맞춤형 키워드를 추천합니다.

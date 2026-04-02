@@ -1,6 +1,8 @@
+import os
 import asyncio
 import logging
 from contextlib import asynccontextmanager
+from dotenv import load_dotenv
 
 from fastapi import FastAPI
 
@@ -15,6 +17,8 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
+
+load_dotenv()  # .env 파일에서 환경 변수 로드
 
 # Background Task의에러를 출력하는 함수
 def task_error_handler(task: asyncio.Task):

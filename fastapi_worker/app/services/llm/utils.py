@@ -2,13 +2,13 @@ import json
 import logging
 import tiktoken
 from typing import Optional, Dict, Any
-from langfuse.decorators import observe
+from langfuse import observe
 
 from fastapi_worker.app.core.exceptions import LLMAnswerParserFailedError
 
 logger = logging.getLogger(__name__)
 
-@observe("Check # Tokens and Truncate Text if Exceeds Limit")
+@observe(name="Check # Tokens and Truncate Text if Exceeds Limit")
 def truncate_text_by_token(text: str, model_name: str = "gpt-4o", max_tokens: int = 6000) -> str:
     """
     텍스트의 토큰 수를 계산하고, max_tokens를 초과하면 초과분은 잘라내고 반환합니다.
@@ -31,7 +31,7 @@ def truncate_text_by_token(text: str, model_name: str = "gpt-4o", max_tokens: in
     # 제한을 넘지 않으면 원본 텍스트 반환
     return text
 
-@observe("LLM Answer JSON Parsing Attempt")
+@observe(name="LLM Answer JSON Parsing Attempt")
 def safe_parse_json(raw_content: str, schema_type: str = "summary") -> Dict[str, Any]:
     """
     LLM의 JSON 응답을 파싱하고, 지정된 스키마(schema_type)에 맞게 검증합니다.

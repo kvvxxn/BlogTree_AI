@@ -2,7 +2,7 @@ import asyncio
 import logging
 import aio_pika
 from pydantic import ValidationError
-from langfuse.decorators import observe, langfuse_context
+from langfuse import observe, get_client
 
 from fastapi_worker.app.core.config import settings
 from fastapi_worker.app.mq.summarize_publisher import publish_message 
@@ -34,7 +34,7 @@ def _to_knowledge_tree(raw_keywords) -> KnowledgeTree | None:
     return KnowledgeTree(category=raw_keywords[0], topic=raw_keywords[1], keyword=raw_keywords[2])
 
 # Consumer: Input 검증 -> 파이프라인 처리 -> Output 조립 및 검증 -> 전송
-@observe("Summarization Consume")
+@observe(name="Summarization Consume")
 async def consume_message(message: aio_pika.IncomingMessage):
     async with message.process(ignore_processed=True):
         payload = None 
@@ -47,10 +47,12 @@ async def consume_message(message: aio_pika.IncomingMessage):
             print(f"[Consumer] 요청 수신 - Task ID: {payload.task_id}")
 
             # Langfuse Trace Context 업데이트
-            langfuse_context.update_current_trace(
-                id=payload.task_id,
+            langfuse = get_client()
+            langfuse.update_current_trace(
+                # v4부터는 id= 를 맘대로 지정할 수 없으므로, session_id나 태그로 관리합니다.
+                session_id=payload.task_id, 
                 user_id=payload.user_id,
-                tags=["summarize"]
+                tags=["summarize", f"task:{payload.task_id}"] # 검색 편의를 위해 태그 추가
             )
             
             # [단계 2] 파이프라인 호출 
