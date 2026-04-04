@@ -7,7 +7,7 @@ class RecommendInputPayload(BaseModel):
     MQ에서 전달받는 추천 작업 Input 스키마
     """
     task_id: UUID4 = Field(..., description="작업 고유 ID")
-    user_id: UUID4 = Field(..., description="사용자 고유 ID")
+    user_id: int = Field(..., description="사용자 고유 ID")
     
     career_goal: str = Field(..., description="사용자의 커리어 목표 (예: AI Engineer)")
     

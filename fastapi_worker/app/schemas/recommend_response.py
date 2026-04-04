@@ -27,7 +27,7 @@ class ErrorData(BaseModel):
 
 class RecommendResponsePayload(BaseModel):
     task_id: UUID4 = Field(..., description="작업 고유 ID")
-    user_id: UUID4 = Field(..., description="사용자 고유 ID")
+    user_id: int = Field(..., description="사용자 고유 ID")
     status: StatusEnum = Field(..., description="처리 결과 상태")
     
     data: Optional[RecommendData] = Field(None, description="추천 결과 데이터")

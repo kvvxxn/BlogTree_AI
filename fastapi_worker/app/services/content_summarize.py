@@ -1,12 +1,14 @@
 import json
 import logging
 from typing import Optional, Dict, Any
+from langfuse import observe
 
 from fastapi_worker.app.services.llm.summarize import summarize_with_llm
 from fastapi_worker.app.services.scraper.scraping import scrape_blog_text
 
 logger = logging.getLogger(__name__)
 
+@observe(name="Summarization Wrapper function called")
 def summarize_blog_content(career_goal: str, url: str, knowledge_tree: str) -> Optional[Dict[str, None]]:
     """
     주어진 URL의 블로그 글을 스크래핑하고 LLM을 통해 요약 및 분석합니다.
