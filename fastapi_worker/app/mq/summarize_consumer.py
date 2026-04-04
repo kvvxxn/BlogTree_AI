@@ -49,8 +49,7 @@ async def consume_message(message: aio_pika.IncomingMessage):
             # Langfuse Trace Context 업데이트
             langfuse = get_client()
             langfuse.update_current_trace(
-                # v4부터는 id= 를 맘대로 지정할 수 없으므로, session_id나 태그로 관리합니다.
-                session_id=payload.task_id, 
+                session_id=str(payload.task_id),
                 user_id=payload.user_id,
                 tags=["summarize", f"task:{payload.task_id}"] # 검색 편의를 위해 태그 추가
             )

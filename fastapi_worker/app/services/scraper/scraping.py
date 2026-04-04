@@ -1,5 +1,6 @@
 import requests
 import logging
+import time
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 from langfuse import observe
@@ -39,17 +40,23 @@ def scrape_blog_text(url: str) -> str:
         # Velog 맞춤형 스크래핑 
         if 'velog.io' in domain:
             logger.info(f"[VELOG] 플랫폼 감지 - 맞춤형 파서 실행")
+            started_at = time.perf_counter()
             text_clean = scrape_for_velog(soup)
+            logger.info("[VELOG] 파서 실행 시간: %.3fs", time.perf_counter() - started_at)
             
         # Tistory 맞춤형 스크래핑 
         elif 'tistory.com' in domain:
             logger.info(f"[TISTORY] 플랫폼 감지 - 맞춤형 파서 실행")
+            started_at = time.perf_counter()
             text_clean = scrape_for_tistory(soup)
+            logger.info("[TISTORY] 파서 실행 시간: %.3fs", time.perf_counter() - started_at)
 
         # 그 외 일반 블로그 공통 스크래핑 
         else:
             logger.info(f"[일반 블로그] 플랫폼 감지 - 공통 파서 실행")
+            started_at = time.perf_counter()
             text_clean = scrape_for_else(soup)
+            logger.info("[일반 블로그] 파서 실행 시간: %.3fs", time.perf_counter() - started_at)
 
         # 검증: 파서가 동작했으나 텍스트가 빈 문자열인 경우
         if not text_clean or not text_clean.strip():

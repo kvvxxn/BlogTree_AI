@@ -3,6 +3,7 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
+from langfuse import get_client
 
 from fastapi import FastAPI
 
@@ -20,6 +21,56 @@ logger = logging.getLogger(__name__)
 
 load_dotenv()  # .env 파일에서 환경 변수 로드
 
+def _mask_secret(value: str | None) -> str:
+    if not value:
+        return "MISSING"
+    if len(value) <= 10:
+        return value[:2] + "***"
+    return value[:6] + "..." + value[-4:]
+
+def _debug_langfuse() -> None:
+    public_key = os.getenv("LANGFUSE_PUBLIC_KEY")
+    secret_key = os.getenv("LANGFUSE_SECRET_KEY")
+    host = os.getenv("LANGFUSE_HOST")
+    base_url = os.getenv("LANGFUSE_BASE_URL")
+
+    logger.info(
+        "[Langfuse Debug] PUBLIC=%s SECRET=%s HOST=%s BASE_URL=%s",
+        _mask_secret(public_key),
+        _mask_secret(secret_key),
+        host or "MISSING",
+        base_url or "MISSING",
+    )
+
+    try:
+        langfuse = get_client()
+        logger.info("[Langfuse Debug] auth_check=%s", langfuse.auth_check())
+    except Exception:
+        logger.exception("[Langfuse Debug] auth_check failed")
+
+
+async def _shutdown_langfuse() -> None:
+    """Flush pending telemetry and then shutdown Langfuse client gracefully."""
+    try:
+        langfuse = get_client()
+    except Exception:
+        logger.exception("Langfuse client initialization failed during shutdown")
+        return
+
+    try:
+        flush = getattr(langfuse, "flush", None)
+        if callable(flush):
+            await asyncio.to_thread(flush)
+            logger.info("Langfuse client flush completed")
+    except Exception:
+        logger.exception("Langfuse client flush failed")
+
+    try:
+        await asyncio.to_thread(langfuse.shutdown)
+        logger.info("Langfuse client shutdown completed")
+    except Exception:
+        logger.exception("Langfuse client shutdown failed")
+
 # Background Task의에러를 출력하는 함수
 def task_error_handler(task: asyncio.Task):
     try:
@@ -31,6 +82,8 @@ def task_error_handler(task: asyncio.Task):
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    _debug_langfuse()
+
     summarize_task = asyncio.create_task(start_summarize_consumer(), name="mq-summarize-consumer")
     recommend_task = asyncio.create_task(start_recommend_consumer(), name="mq-recommend-consumer")
     
@@ -45,6 +98,7 @@ async def lifespan(_: FastAPI):
         summarize_task.cancel()
         recommend_task.cancel()
         await asyncio.gather(summarize_task, recommend_task, return_exceptions=True)
+        await asyncio.shield(_shutdown_langfuse())
         logger.info("MQ consumers stopped")
 
 app = FastAPI(title="BlogTree Worker", lifespan=lifespan)

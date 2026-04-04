@@ -32,7 +32,7 @@ async def consume_message(message: aio_pika.IncomingMessage):
             # Langfuse Trace Context 업데이트
             langfuse = get_client()
             langfuse.update_current_trace(
-                session_id=payload.task_id,
+                session_id=str(payload.task_id),
                 user_id=payload.user_id,
                 tags=["recommend", f"task:{payload.task_id}"]
             )

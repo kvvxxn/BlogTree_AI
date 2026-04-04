@@ -9,7 +9,7 @@ from fastapi_worker.app.services.scraper.utils import (
     TARGET_TAGS
 )
 
-@observe(name="Scraping for Velog")
+@observe(name="Scraping for Velog", capture_input=False, capture_output=False)
 def scrape_for_velog(soup: BeautifulSoup) -> str:
     content_tags = soup.find_all(TARGET_TAGS)
     extracted_lines = []
@@ -33,7 +33,7 @@ def scrape_for_velog(soup: BeautifulSoup) -> str:
     return '\n\n'.join(extracted_lines).strip()
 
 
-@observe(name="Scraping for Tistory")
+@observe(name="Scraping for Tistory", capture_input=False, capture_output=False)
 def scrape_for_tistory(soup: BeautifulSoup) -> str:
     target_classes = ['article_view', 'entry-content', 'tt_article_useless_p_margin']
     main_content = None
@@ -78,7 +78,7 @@ def scrape_for_tistory(soup: BeautifulSoup) -> str:
     
     return '\n\n'.join(extracted_lines).strip()
 
-@observe(name="Scraping for Other Blogs")
+@observe(name="Scraping for Other Blogs", capture_input=False, capture_output=False)
 def scrape_for_else(soup: BeautifulSoup) -> str:
     main_content = soup.find('article') or soup.find('main') or soup.find('body')
     
