@@ -5,9 +5,15 @@ from langfuse import observe
 from fastapi_worker.app.core.config import settings
 
 @observe(name="Summarization Publish")    
-async def publish_message(queue_name: str, message_body: BaseModel):
+async def publish_message(queue_name: str, message_body: BaseModel) -> None:
     """
-    지정된 큐로 Pydantic 객체를 직렬화하여 전송합니다.
+    지정된 큐로 Pydantic 객체를 직렬화하여 전송
+
+    params:
+    - queue_name: 메시지를 전송할 RabbitMQ 큐 이름
+    - message_body: Pydantic 모델 인스턴스 (BaseModel 상속)으로, JSON으로 직렬화하여 전송할 데이터
+
+    return: None
     """
     connection = await aio_pika.connect_robust(settings.RABBITMQ_URL)
     
@@ -23,10 +29,10 @@ async def publish_message(queue_name: str, message_body: BaseModel):
         publish_routing_key = f"{prefix}.{msg_type}"      # 결과: summary.response
         dlx_routing_key = f"{prefix}.{msg_type}.dead"     # 결과: summary.response.dead
         
-        # 1. Exchange 선언 
+        # Exchange 선언 
         exchange = await channel.get_exchange(name=exchange_name)
         
-        # 2. Queue 선언 
+        # Queue 선언 
         queue = await channel.declare_queue(
             name=queue_name, 
             durable=True,
@@ -36,16 +42,16 @@ async def publish_message(queue_name: str, message_body: BaseModel):
             }
         )
         
-        # 3. Queue와 Exchange 바인딩 
+        # Queue와 Exchange 바인딩 
         await queue.bind(exchange, routing_key=publish_routing_key)
         
         message = aio_pika.Message(
-            # Pydantic 모델을 JSON 문자열로 변환 후 바이트로 인코딩
+            # Pydantic 모델을 JSON 문자열로 변환 후 인코딩
             body=message_body.model_dump_json().encode("utf-8"),
             delivery_mode=aio_pika.DeliveryMode.PERSISTENT 
         )
         
-        # 4. Default exchange가 아닌, 선언된 Topic Exchange를 통해 발행
+        # Default exchange가 아닌, 선언된 Topic Exchange를 통해 발행
         await exchange.publish(
             message,
             routing_key=publish_routing_key,
