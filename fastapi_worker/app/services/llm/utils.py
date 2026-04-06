@@ -4,7 +4,7 @@ import tiktoken
 from typing import Optional, Dict, Any
 from langfuse import observe
 
-from fastapi_worker.app.core.exceptions import LLMAnswerParserFailedError
+from fastapi_worker.app.core.exceptions import LLMAnswerParserFailedError, LLMAnswerFailedError
 
 logger = logging.getLogger(__name__)
 
@@ -20,28 +20,36 @@ def truncate_text_by_token(text: str, model_name: str = "gpt-4o", max_tokens: in
     - max_tokens: 허용할 최대 Input 토큰 수 
 
     return: 토큰 수가 max_tokens를 초과하는 경우 자른 텍스트, 그렇지 않으면 원본 텍스트 반환
+    - 인코딩 및 토큰화 실패 시 LLMAnswerFailedError 발생
     """
     try:
-        # 모델에 맞는 인코더 로드
-        encoding = tiktoken.encoding_for_model(model_name)
-    except KeyError:
-        # 모델명을 찾지 못하면 기본적으로 gpt-4o의 인코더인 o200k_base 등을 사용
-        encoding = tiktoken.get_encoding("cl100k_base")
+        try:
+            # 모델에 맞는 인코더 로드
+            encoding = tiktoken.encoding_for_model(model_name)
+        except KeyError:
+            # 모델명을 찾지 못하면 기본적으로 gpt-4o의 인코더인 cl100k_base 등을 사용
+            encoding = tiktoken.get_encoding("cl100k_base")
 
-    # Texts -> Tokens
-    tokens = encoding.encode(text)
-    original_token_count = len(tokens)
-    
-    # 토큰 개수 확인 및 초과시 # max_tokens 만큼만 슬라이싱
-    if original_token_count > max_tokens:
-        logger.info(f"[Token Truncate] 원본 텍스트의 토큰 수({original_token_count}개)가 제한({max_tokens}개)을 초과하여 텍스트를 자릅니다.")
-        truncated_text = encoding.decode(tokens[:max_tokens])
-        logger.info(f"[Token Truncate] 텍스트가 {max_tokens}개의 토큰으로 성공적으로 수정되었습니다.")
-        return truncated_text
-    
-    # 제한을 넘지 않으면 원본 텍스트 반환
-    logger.info(f"[Token Truncate] 원본 텍스트의 토큰 수({original_token_count}개)가 제한({max_tokens}개) 이내이므로 수정 없이 통과합니다.")
-    return text
+        # Texts -> Tokens
+        tokens = encoding.encode(text)
+        original_token_count = len(tokens)
+        
+        # 토큰 개수 확인 및 초과시 # max_tokens 만큼만 슬라이싱
+        if original_token_count > max_tokens:
+            logger.info(f"[Token Truncate] 원본 텍스트의 토큰 수({original_token_count}개)가 제한({max_tokens}개)을 초과하여 텍스트를 자릅니다.")
+            truncated_text = encoding.decode(tokens[:max_tokens])
+            logger.info(f"[Token Truncate] 텍스트가 {max_tokens}개의 토큰으로 성공적으로 수정되었습니다.")
+            return truncated_text
+        
+        # 제한을 넘지 않으면 원본 텍스트 반환
+        logger.info(f"[Token Truncate] 원본 텍스트의 토큰 수({original_token_count}개)가 제한({max_tokens}개) 이내이므로 수정 없이 통과합니다.")
+        return text
+
+    except Exception as e:
+        # tiktoken 내부 에러, 타입 에러 등 토큰화 과정의 모든 예외 상황을 LLM 실패로 간주
+        error_msg = f"[Token Truncate] LLM 분석 전 Encoding 모델을 통한 Token 개수 계산 실패: {e}"
+        logger.error(error_msg)
+        raise LLMAnswerFailedError(error_msg)
 
 
 @observe(name="LLM Answer JSON Parsing Attempt")
