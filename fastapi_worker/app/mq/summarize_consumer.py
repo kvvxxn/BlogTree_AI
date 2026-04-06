@@ -27,22 +27,40 @@ logger = logging.getLogger(__name__)
 
 
 def _to_knowledge_tree(raw_keywords) -> KnowledgeTree | None:
+    """
+    LLM이 반환한 키워드 리스트를 KnowledgeTree 객체로 변환하는 함수
+
+    params:
+    - raw_keywords: LLM 응답에서 추출한 키워드 리스트 
+
+    return: KnowledgeTree 객체
+    - raw_keywords가 리스트가 아니거나 길이가 3이 아닌 경우 None 반환
+    """
     if not isinstance(raw_keywords, list) or len(raw_keywords) != 3:
         return None
     if not all(isinstance(item, str) and item.strip() for item in raw_keywords):
         return None
     return KnowledgeTree(category=raw_keywords[0], topic=raw_keywords[1], keyword=raw_keywords[2])
 
-# Consumer: Input 검증 -> 파이프라인 처리 -> Output 조립 및 검증 -> 전송
 @observe(name="Summarization Consume")
-async def consume_message(message: aio_pika.IncomingMessage):
+async def consume_message(message: aio_pika.IncomingMessage) -> None:
+    """
+    MQ에서 메시지를 수신하여 Summarization 파이프라인을 처리하는 Consumer 함수
+    - 메시지 수신 시 Input Payload 검증, Summarization 파이프라인 처리, Output 조립 및 검증, 결과 전송까지의 전체 흐름을 담당하는 핵심 Consumer 함수
+    
+    params:
+    - message: MQ에서 수신한 메시지 객체 
+
+    return: None
+    - 메시지 처리 성공 시 Output Queue로 결과 전송 후 메시지 ACK
+    """
     async with message.process(ignore_processed=True):
         payload = None 
         
         try:
             max_retries = 3
 
-            # [단계 1] Input schema 파싱 및 검증
+            # Input schema 파싱 및 검증
             payload = SummarizeInputPayload.model_validate_json(message.body)
             print(f"[Consumer] 요청 수신 - Task ID: {payload.task_id}")
 
@@ -54,7 +72,7 @@ async def consume_message(message: aio_pika.IncomingMessage):
                 tags=["summarize", f"task:{payload.task_id}"] # 검색 편의를 위해 태그 추가
             )
             
-            # [단계 2] 파이프라인 호출 
+            # Summarize 파이프라인 호출 
             llm_result = None
             
             for attempt in range(max_retries):
@@ -68,7 +86,8 @@ async def consume_message(message: aio_pika.IncomingMessage):
                     break # 성공 시 루프 탈출
                     
                 except (ScrapingFailedError, ScrapingParserFailedError) as e:
-                    # 블로그가 막혀있거나 구조가 바뀐 경우는 재시도해도 무의미하므로 즉시 에러 던짐
+                    # 스크래핑 관련 에러는 재시도 하지 않음
+                    # 스크래핑 실패 시, 재시도 의미 없을 가능성이 높음
                     print(f"[Consumer] 스크래핑 에러 감지 (재시도 안 함): {e}")
                     raise e
                     
@@ -77,14 +96,14 @@ async def consume_message(message: aio_pika.IncomingMessage):
                     print(f"[Consumer] 파이프라인 오류 발생: {api_err}. 재시도 {attempt + 1}/{max_retries}...")
                     await asyncio.sleep(1) 
 
-            # 3번 시도 후에도 결과가 없다면
+            # LLM API 호출을 3회 재시도했음에도 결과가 없으면 에러 처리
             if llm_result is None:
                 raise LLMAnswerFailedError("LLM 요약 엔진에서 3회 재시도했으나 응답 생성에 실패했습니다.")
             
-            # [단계 3] 지식 트리 파싱 및 검증
+            # LLM 답변으로부터 Knowledge Tree 파싱 및 검증
             parsed_knowledge_tree = _to_knowledge_tree(llm_result.get("keywords"))
             
-            # 지식 트리 추출에 실패했다면 에러 처리 (기존 PARTIAL_SUCCESS 대체)
+            # Knowledge Tree 추출에 실패했다면 에러 처리
             if parsed_knowledge_tree is None:
                 raise LLMAnswerParserFailedError("LLM 답변에서 올바른 형태의 지식 트리를 추출하지 못했습니다.")
 
@@ -93,7 +112,7 @@ async def consume_message(message: aio_pika.IncomingMessage):
                 knowledge_tree=parsed_knowledge_tree
             )
 
-            # [단계 4] 최종 Output 스키마 조립 (항상 SUCCESS)
+            # LLM 응답으로부터 최종 Output Payload 조립 및 검증
             response_payload = SummarizeResponsePayload(
                 task_id=payload.task_id,
                 user_id=payload.user_id,
@@ -101,7 +120,7 @@ async def consume_message(message: aio_pika.IncomingMessage):
                 data=response_data
             )
             
-            # [단계 5] Output Queue로 최종 전송
+            # Output Queue으로 Publish
             await publish_message(settings.SUMMARIZE_OUTPUT_QUEUE, response_payload)
             print(f"[Consumer] SUCCESS 메시지 전송 완료: {response_payload.task_id}")
             
@@ -109,14 +128,14 @@ async def consume_message(message: aio_pika.IncomingMessage):
             
         except ValidationError as e:
             print(f"[Consumer] Input 데이터 형식 오류: {e}")
-            # 페이로드 자체를 못 읽었을 때의 처리 (원시 JSON에서 task_id 추출 로직 등을 추가할 수 있음)
+            # Input payload 자체 형식 오류는 메시지 거부
             await message.reject(requeue=False)
             
         except Exception as e:
             print(f"[Consumer] 처리 중 FAILED 발생: {e}")
             
             if payload:
-                # [핵심] 발생한 예외 타입에 따라 우리가 정의한 에러 코드로 매핑
+                # 발생한 예외 타입에 따라 우리가 정의한 에러 코드로 매핑
                 error_code = "UNKNOWN_ERROR"
                 if isinstance(e, ScrapingFailedError):
                     error_code = "SCRAPING_FAILED"
@@ -127,6 +146,7 @@ async def consume_message(message: aio_pika.IncomingMessage):
                 elif isinstance(e, LLMAnswerParserFailedError):
                     error_code = "LLM_ANSWER_PARSER_FAILED"
 
+                # 에러코드 매핑 후 Output Payload 조립 및 검증
                 error_payload = SummarizeResponsePayload(
                     task_id=payload.task_id,
                     user_id=payload.user_id,
@@ -136,15 +156,20 @@ async def consume_message(message: aio_pika.IncomingMessage):
                         message=str(e)
                     )
                 )
+                # Output Queue으로 Publish
                 await publish_message(settings.SUMMARIZE_OUTPUT_QUEUE, error_payload)
                 print(f"[Consumer] FAILED ({error_code}) 메시지 전송 완료: {payload.task_id}")
                 await message.ack() 
             else:
                 await message.reject(requeue=False)
 
-async def start_consuming():
+async def start_consuming() -> None:
     """
-    MQ에서 메시지를 지속적으로 수신합니다.
+    Message Queue에서 메시지를 지속적으로 수신합니다.
+
+    params: None
+
+    return: None
     """
     connection = await aio_pika.connect_robust(settings.RABBITMQ_URL)
     channel = await connection.channel()
