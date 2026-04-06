@@ -19,9 +19,18 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-load_dotenv()  # .env 파일에서 환경 변수 로드
+load_dotenv() 
 
 def _mask_secret(value: str | None) -> str:
+    """
+    Secret value를 마스킹하는 함수
+
+    params:
+    - value: 마스킹할 문자열 
+
+    return: 마스킹된 문자열
+    - value이 None이거나 빈 문자열인 경우 "MISSING" 반환
+    """
     if not value:
         return "MISSING"
     if len(value) <= 10:
@@ -29,6 +38,13 @@ def _mask_secret(value: str | None) -> str:
     return value[:6] + "..." + value[-4:]
 
 def _debug_langfuse() -> None:
+    """
+    Langfuse 연결 상태 및 연결 정보를 로그로 출력하는 함수
+
+    params: None
+
+    return: None
+    """
     public_key = os.getenv("LANGFUSE_PUBLIC_KEY")
     secret_key = os.getenv("LANGFUSE_SECRET_KEY")
     host = os.getenv("LANGFUSE_HOST")
@@ -50,7 +66,13 @@ def _debug_langfuse() -> None:
 
 
 async def _shutdown_langfuse() -> None:
-    """Flush pending telemetry and then shutdown Langfuse client gracefully."""
+    """
+    Langfuse client를 비동기로 안전하게 종료하는 함수
+
+    params: None
+
+    return: None
+    """
     try:
         langfuse = get_client()
     except Exception:
@@ -71,18 +93,35 @@ async def _shutdown_langfuse() -> None:
     except Exception:
         logger.exception("Langfuse client shutdown failed")
 
-# Background Task의에러를 출력하는 함수
+
 def task_error_handler(task: asyncio.Task):
+    """
+    Background Task에서 발생한 예외를 로그로 출력하는 Handler
+
+    params:
+    - task: 예외를 처리할 asyncio.Task 객체
+
+    return: None
+    """
     try:
         task.result()
     except asyncio.CancelledError:
-        pass  # 정상 종료 시 무시
+        pass 
     except Exception as e:
         logger.error(f"🚨 Background Task '{task.get_name()}' crashed: {e}", exc_info=True)
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    _debug_langfuse()
+    """
+    FastAPI 애플리케이션의 수명 주기 동안 MQ 컨슈머를 실행하는 Lifespan Context Manager
+
+    params:
+    - _: FastAPI 애플리케이션 인스턴스
+
+    return: None
+    """
+    # Langfuse 연결 정보 및 상태를 디버깅
+    _debug_langfuse() 
 
     summarize_task = asyncio.create_task(start_summarize_consumer(), name="mq-summarize-consumer")
     recommend_task = asyncio.create_task(start_recommend_consumer(), name="mq-recommend-consumer")

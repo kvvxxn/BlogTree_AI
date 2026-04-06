@@ -14,24 +14,29 @@ logger = logging.getLogger(__name__)
 @observe(name="Blog Text Scraping Attempt")
 def scrape_blog_text(url: str) -> str:
     """
-    URL에서 본문을 추출합니다.
-    - 접근 실패 시: ScrapingFailedError 발생
+    Beutiful Soup을 사용하여 블로그 URL에서 본문을 추출하고 블로그 사이트에 맞게 커스텀 파서를 적용
+    - 네트워크 요청, Beautiful Soup 파싱, 플랫폼 감지 및 맞춤형 파서 실행, 에러 처리 등을 포함하는 Wrapper 함수
+
+    params:
+    - url: 스크래핑할 블로그 URL
+    
+    return: 추출된 본문 텍스트
+    - Beutiful Soup 접근 실패 시: ScrapingFailedError 발생
     - 파싱 실패 또는 빈 텍스트 시: ScrapingParserFailedError 발생
     """
     logger.info(f"[{url}] 웹페이지 스크래핑 요청을 시작합니다.")
 
-    # 1. 네트워크 요청 단계 
+    # 네트워크 요청
     try:
         response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()
         logger.info(f"[{url}] 웹페이지에 성공적으로 접근했습니다. HTTP 상태 코드: {response.status_code}")
         
     except requests.exceptions.RequestException as e:
-        # HTTP 에러(404, 500 등), 타임아웃, 연결 실패 등
         logger.error(f"[{url}] 웹페이지 접근 실패 (네트워크/HTTP 에러): {e}")
-        raise ScrapingFailedError(f"웹페이지 접근 실패: {str(e)}")
+        raise ScrapingFailedError(f"웹페이지 접근 실패: {str(e)}") # 네트워크 요청 실패시 ScrapingFailedError로 래핑하여 던짐
 
-    # 2. 파싱 및 텍스트 추출 단계 (ScrapingParserFailedError 처리)
+    # 본문 파싱 및 텍스트 추출 
     try:
         soup = BeautifulSoup(response.text, 'html.parser')
         domain = urlparse(url).netloc.lower()
@@ -58,7 +63,7 @@ def scrape_blog_text(url: str) -> str:
             text_clean = scrape_for_else(soup)
             logger.info("[일반 블로그] 파서 실행 시간: %.3fs", time.perf_counter() - started_at)
 
-        # 검증: 파서가 동작했으나 텍스트가 빈 문자열인 경우
+        # 파싱 실패 또는 빈 텍스트인지 확인
         if not text_clean or not text_clean.strip():
             logger.warning(f"[{url}] 파서는 실행되었으나 텍스트 추출 결과가 비어있습니다.")
             raise ScrapingParserFailedError("유의미한 본문 텍스트를 추출하지 못했습니다.")
