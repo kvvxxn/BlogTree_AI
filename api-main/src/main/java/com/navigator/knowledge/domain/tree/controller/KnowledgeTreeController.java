@@ -18,9 +18,10 @@ public class KnowledgeTreeController {
 
     private final KnowledgeService knowledgeService;
 
+    // TODO: Principal에서 userId 꺼내기
     @GetMapping
-    public ResponseEntity<Map<String, Map<String, List<String>>>> getKnowledgeTree(@PathVariable Long userId) {
-        Map<String, Map<String, List<String>>> knowledgeTree = knowledgeService.getKnowledgeTree(userId);
+    public ResponseEntity<Map<String, Map<String, List<String>>>> getKnowledgeTree() {
+        Map<String, Map<String, List<String>>> knowledgeTree = knowledgeService.getKnowledgeTree(1L);
         return ResponseEntity.ok(knowledgeTree);
     }
 }
