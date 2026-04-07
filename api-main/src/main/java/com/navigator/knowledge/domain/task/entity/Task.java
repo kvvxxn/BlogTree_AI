@@ -38,6 +38,12 @@ public class Task {
     @Column(name = "error_message", columnDefinition = "TEXT")
     private String errorMessage;
 
+    @Column(name = "expires_at", nullable = false)
+    private LocalDateTime expiresAt;
+
+    @Column(name = "completed_at")
+    private LocalDateTime completedAt;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -47,19 +53,34 @@ public class Task {
     private LocalDateTime updatedAt;
 
     @Builder
-    public Task(String taskId, Long userId, String sourceUrl, TaskStatus status) {
+    public Task(String taskId, Long userId, String sourceUrl, TaskStatus status, LocalDateTime expiresAt) {
         this.taskId = taskId;
         this.userId = userId;
         this.sourceUrl = sourceUrl;
         this.status = status;
+        this.expiresAt = expiresAt;
     }
 
     public void updateStatus(TaskStatus status) {
         this.status = status;
+        if (status.isTerminal()) {
+            this.completedAt = LocalDateTime.now();
+        }
     }
 
     public void fail(String errorMessage) {
         this.status = TaskStatus.FAILED;
         this.errorMessage = errorMessage;
+        this.completedAt = LocalDateTime.now();
+    }
+
+    public void expire(String errorMessage) {
+        this.status = TaskStatus.EXPIRED;
+        this.errorMessage = errorMessage;
+        this.completedAt = LocalDateTime.now();
+    }
+
+    public boolean isExpiredAt(LocalDateTime now) {
+        return expiresAt.isBefore(now) || expiresAt.isEqual(now);
     }
 }

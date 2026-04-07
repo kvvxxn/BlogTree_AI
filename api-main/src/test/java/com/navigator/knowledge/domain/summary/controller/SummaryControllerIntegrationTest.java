@@ -22,6 +22,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -94,6 +95,7 @@ class SummaryControllerIntegrationTest {
                 .userId(1L)
                 .sourceUrl("https://example.com/article")
                 .status(TaskStatus.SUCCESS)
+                .expiresAt(LocalDateTime.now().plusSeconds(45))
                 .build());
 
         Summary summary = summaryRepository.save(Summary.builder()

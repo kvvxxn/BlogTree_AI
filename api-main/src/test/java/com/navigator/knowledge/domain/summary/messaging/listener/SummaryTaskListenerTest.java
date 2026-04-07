@@ -21,6 +21,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.anyMap;
@@ -65,6 +66,7 @@ class SummaryTaskListenerTest {
             .userId(userId)
             .sourceUrl("https://example.com")
             .status(TaskStatus.PROCESSING)
+            .expiresAt(LocalDateTime.now().plusSeconds(45))
             .build();
         Summary summary = Summary.builder()
             .task(task)
@@ -109,6 +111,7 @@ class SummaryTaskListenerTest {
             .userId(userId)
             .sourceUrl("https://example.com/2")
             .status(TaskStatus.PROCESSING)
+            .expiresAt(LocalDateTime.now().plusSeconds(45))
             .build();
         Summary summary = Summary.builder()
             .task(task)
@@ -179,6 +182,7 @@ class SummaryTaskListenerTest {
             .userId(userId)
             .sourceUrl("https://example.com/4")
             .status(TaskStatus.PROCESSING)
+            .expiresAt(LocalDateTime.now().plusSeconds(45))
             .build();
         SummaryTaskResponseMessage response = new SummaryTaskResponseMessage(
             taskId,

@@ -21,6 +21,7 @@ import java.util.Map;
 public class SummaryTaskService {
 
     private static final String JPA_TRANSACTION_MANAGER = "jpaTransactionManager";
+    private static final long TASK_TTL_SECONDS = 45L;
 
     private final TaskService taskService;
     private final SummaryTaskProducer summaryTaskProducer;
@@ -31,7 +32,8 @@ public class SummaryTaskService {
         // 1. 공통 Task 생성 (DB 저장 완료)
         // 향후 사용자 인증 정보 등에서 가져올 값들
         Long userId = 1L; // TODO: principal에서 가져오기
-        Task task = taskService.createTask(userId, request.sourceUrl());
+        LocalDateTime expiresAt = LocalDateTime.now().plusSeconds(TASK_TTL_SECONDS);
+        Task task = taskService.createTask(userId, request.sourceUrl(), expiresAt);
 
         // 2. 지식 트리 조회
         Map<String, Map<String, List<String>>> knowledgeTree = knowledgeService.getKnowledgeTree(userId);
@@ -42,7 +44,7 @@ public class SummaryTaskService {
                 userId,
                 "Backend Developer", // TODO: 실제 유저의 career_goal 가져오기
                 request.sourceUrl(),
-                LocalDateTime.now().plusMinutes(5).toString(),
+                expiresAt.toString(),
                 knowledgeTree
         );
 

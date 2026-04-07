@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -49,20 +50,59 @@ public class SummaryTaskListener {
     }
 
     private void process(SummaryTaskResponseMessage responseDto) {
-        switch (normalizeStatus(responseDto.status())) {
-            case "SUCCESS" -> handleSuccess(responseDto);
-            case "PARTIAL_SUCCESS" -> handlePartialSuccess(responseDto);
+        String status = normalizeStatus(responseDto.status());
+        validateKnownStatus(status, responseDto.status());
+
+        Task task = taskService.getTask(responseDto.taskId());
+        if (!isProcessable(task, responseDto)) {
+            return;
+        }
+
+        switch (status) {
+            case "SUCCESS" -> handleSuccess(task, responseDto);
+            case "PARTIAL_SUCCESS" -> handlePartialSuccess(task, responseDto);
             case "FAILED" -> handleFailure(responseDto);
-            default -> throw new BusinessException(
-                ErrorCode.BAD_REQUEST,
-                "Unknown status in summary response: " + responseDto.status()
+            default -> throw new BusinessException(ErrorCode.BAD_REQUEST, "Unknown status in summary response: " + responseDto.status());
+        }
+    }
+
+    private void validateKnownStatus(String normalizedStatus, String originalStatus) {
+        if (!List.of("SUCCESS", "PARTIAL_SUCCESS", "FAILED").contains(normalizedStatus)) {
+            throw new BusinessException(
+                    ErrorCode.BAD_REQUEST,
+                    "Unknown status in summary response: " + originalStatus
             );
         }
     }
 
-    private void handleSuccess(SummaryTaskResponseMessage responseDto) {
+    private boolean isProcessable(Task task, SummaryTaskResponseMessage responseDto) {
+        if (task.getStatus().isTerminal()) {
+            log.info("Ignoring summary response for terminal task. taskId={}, status={}", task.getTaskId(), task.getStatus());
+            return false;
+        }
+
+        if (task.isExpiredAt(LocalDateTime.now())) {
+            log.warn("Discarding stale summary response after TTL. taskId={}, responseStatus={}, expiresAt={}",
+                    task.getTaskId(),
+                    responseDto.status(),
+                    task.getExpiresAt());
+
+            if (taskService.expireTask(task.getTaskId())) {
+                Map<String, Object> sseData = Map.of(
+                        "code", ErrorCode.TASK_EXPIRED.getCode(),
+                        "message", ErrorCode.TASK_EXPIRED.getDefaultMessage()
+                );
+                sseEmitterService.sendEvent(task.getTaskId(), "expired", sseData);
+                sseEmitterService.complete(task.getTaskId());
+            }
+            return false;
+        }
+
+        return true;
+    }
+
+    private void handleSuccess(Task task, SummaryTaskResponseMessage responseDto) {
         var data = requireResultData(responseDto);
-        Task task = taskService.getTask(responseDto.taskId());
         Long userId = requireUserId(responseDto);
         Summary summary = summaryService.findOrCreateSummary(
                 task,
@@ -94,9 +134,8 @@ public class SummaryTaskListener {
         log.info("Success handled. Category: {}, Topic: {}, Keywords: {}, Summary ID: {}", category, topic, keyword, summary.getSummaryId());
     }
 
-    private void handlePartialSuccess(SummaryTaskResponseMessage responseDto) {
+    private void handlePartialSuccess(Task task, SummaryTaskResponseMessage responseDto) {
         var data = requireResultData(responseDto);
-        Task task = taskService.getTask(responseDto.taskId());
         Long userId = requireUserId(responseDto);
         Summary summary = summaryService.findOrCreateSummary(
                 task,
