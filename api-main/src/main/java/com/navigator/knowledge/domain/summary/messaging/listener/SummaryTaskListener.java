@@ -6,7 +6,7 @@ import com.navigator.knowledge.domain.summary.service.SummaryService;
 import com.navigator.knowledge.domain.task.entity.Task;
 import com.navigator.knowledge.domain.task.entity.TaskStatus;
 import com.navigator.knowledge.domain.task.service.TaskFailureHandler;
-import com.navigator.knowledge.domain.task.service.SseEmitterService;
+import com.navigator.knowledge.domain.task.sse.SseEmitterService;
 import com.navigator.knowledge.domain.task.service.TaskService;
 import com.navigator.knowledge.domain.tree.service.KnowledgeService;
 import com.navigator.knowledge.global.exception.BusinessException;

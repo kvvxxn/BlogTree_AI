@@ -10,6 +10,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
 
 import java.util.stream.Collectors;
 
@@ -56,6 +57,15 @@ public class GlobalExceptionHandler {
                 message,
                 request.getRequestURI()
         ));
+    }
+
+    @ExceptionHandler(AsyncRequestTimeoutException.class)
+    public ResponseEntity<Void> handleAsyncRequestTimeout(
+            AsyncRequestTimeoutException e,
+            HttpServletRequest request
+    ) {
+        log.warn("Async request timeout occurred. path={}", request.getRequestURI(), e);
+        return ResponseEntity.noContent().build();
     }
 
     @ExceptionHandler(Exception.class)

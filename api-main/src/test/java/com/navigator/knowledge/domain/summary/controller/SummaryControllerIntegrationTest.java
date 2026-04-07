@@ -8,7 +8,7 @@ import com.navigator.knowledge.domain.summary.repository.SummaryRepository;
 import com.navigator.knowledge.domain.task.entity.Task;
 import com.navigator.knowledge.domain.task.entity.TaskStatus;
 import com.navigator.knowledge.domain.task.repository.TaskRepository;
-import com.navigator.knowledge.domain.task.service.SseEmitterService;
+import com.navigator.knowledge.domain.task.sse.SseEmitterService;
 import com.navigator.knowledge.domain.tree.service.KnowledgeService;
 import com.navigator.knowledge.global.infra.ai.TextEmbeddingService;
 import org.junit.jupiter.api.BeforeEach;

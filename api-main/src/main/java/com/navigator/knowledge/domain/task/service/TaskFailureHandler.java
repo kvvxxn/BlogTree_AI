@@ -1,5 +1,6 @@
 package com.navigator.knowledge.domain.task.service;
 
+import com.navigator.knowledge.domain.task.sse.SseEmitterService;
 import com.navigator.knowledge.global.exception.BusinessException;
 import com.navigator.knowledge.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
