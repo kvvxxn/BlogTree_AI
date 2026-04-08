@@ -15,7 +15,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TaskExpirationScheduler {
 
-    private static final long EXPIRATION_SCAN_INTERVAL_MS = 5_000L;
+    private static final long EXPIRATION_SCAN_INTERVAL_MS = 5 * 60 * 1_000L;
 
     private final TaskService taskService;
     private final SseEmitterService sseEmitterService;

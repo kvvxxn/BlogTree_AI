@@ -54,14 +54,7 @@ public class SseEmitterService {
                 .data("SSE 연결이 완료되었습니다. 작업 대기 중입니다."));
             log.info("Sent SSE connect event for task: {}", taskId);
 
-            CachedSseEvent terminalEvent = terminalEvents.get(taskId);
-            if (terminalEvent != null) {
-                log.info("Replaying terminal SSE event for task: {}", taskId);
-                emitter.send(SseEmitter.event()
-                        .name(terminalEvent.event().eventName().value())
-                        .data(terminalEvent.event().payload()));
-                emitter.complete();
-            }
+            replayTerminalEventIfPresent(taskId, emitter);
         } catch (IOException e) {
             log.error("Error sending SSE event to task: {}", taskId, e);
             cleanup(taskId, emitter, "failed during initial send", e);
@@ -113,5 +106,18 @@ public class SseEmitterService {
         if (event.terminal()) {
             terminalEvents.put(event.taskId(), new CachedSseEvent(event));
         }
+    }
+
+    private void replayTerminalEventIfPresent(String taskId, SseEmitter emitter) throws IOException {
+        CachedSseEvent terminalEvent = terminalEvents.remove(taskId);
+        if (terminalEvent == null) {
+            return;
+        }
+
+        log.info("Replaying terminal SSE event for task: {}", taskId);
+        emitter.send(SseEmitter.event()
+            .name(terminalEvent.event().eventName().value())
+            .data(terminalEvent.event().payload()));
+        emitter.complete();
     }
 }
