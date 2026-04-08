@@ -22,7 +22,7 @@ public class TaskFailureHandler {
         String errorMessage = String.format("[%s] %s", errorCode, exception.getMessage());
 
         log.warn(
-                "Failed to process summary response. code={}, taskId={}, status={}, message={}",
+                "Failed to process task response. code={}, taskId={}, status={}, message={}",
                 errorCode,
                 taskId,
                 status,
@@ -54,7 +54,7 @@ public class TaskFailureHandler {
         String errorMessage = String.format("[%s] %s", errorCode.getCode(), userMessage);
 
         log.error(
-                "Unexpected exception while processing summary response. code={}, taskId={}, status={}",
+                "Unexpected exception while processing task response. code={}, taskId={}, status={}",
                 errorCode.getCode(),
                 taskId,
                 status,

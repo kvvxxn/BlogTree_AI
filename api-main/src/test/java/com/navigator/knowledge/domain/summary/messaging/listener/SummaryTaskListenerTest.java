@@ -5,6 +5,7 @@ import com.navigator.knowledge.domain.summary.messaging.dto.SummaryTaskResponseM
 import com.navigator.knowledge.domain.summary.service.SummaryService;
 import com.navigator.knowledge.domain.task.entity.Task;
 import com.navigator.knowledge.domain.task.entity.TaskStatus;
+import com.navigator.knowledge.domain.task.entity.TaskType;
 import com.navigator.knowledge.domain.task.service.TaskFailureHandler;
 import com.navigator.knowledge.domain.task.sse.SseEmitterService;
 import com.navigator.knowledge.domain.task.service.TaskService;
@@ -65,6 +66,7 @@ class SummaryTaskListenerTest {
             .taskId(taskId)
             .userId(userId)
             .sourceUrl("https://example.com")
+            .taskType(TaskType.SUMMARY)
             .status(TaskStatus.PROCESSING)
             .expiresAt(LocalDateTime.now().plusSeconds(45))
             .build();
@@ -110,6 +112,7 @@ class SummaryTaskListenerTest {
             .taskId(taskId)
             .userId(userId)
             .sourceUrl("https://example.com/2")
+            .taskType(TaskType.SUMMARY)
             .status(TaskStatus.PROCESSING)
             .expiresAt(LocalDateTime.now().plusSeconds(45))
             .build();
@@ -181,6 +184,7 @@ class SummaryTaskListenerTest {
             .taskId(taskId)
             .userId(userId)
             .sourceUrl("https://example.com/4")
+            .taskType(TaskType.SUMMARY)
             .status(TaskStatus.PROCESSING)
             .expiresAt(LocalDateTime.now().plusSeconds(45))
             .build();

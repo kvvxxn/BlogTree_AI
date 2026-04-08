@@ -7,6 +7,7 @@ import com.navigator.knowledge.domain.summary.messaging.producer.SummaryTaskProd
 import com.navigator.knowledge.domain.summary.repository.SummaryRepository;
 import com.navigator.knowledge.domain.task.entity.Task;
 import com.navigator.knowledge.domain.task.entity.TaskStatus;
+import com.navigator.knowledge.domain.task.entity.TaskType;
 import com.navigator.knowledge.domain.task.repository.TaskRepository;
 import com.navigator.knowledge.domain.task.sse.SseEmitterService;
 import com.navigator.knowledge.domain.tree.service.KnowledgeService;
@@ -94,6 +95,7 @@ class SummaryControllerIntegrationTest {
                 .taskId("task-get-001")
                 .userId(1L)
                 .sourceUrl("https://example.com/article")
+                .taskType(TaskType.SUMMARY)
                 .status(TaskStatus.SUCCESS)
                 .expiresAt(LocalDateTime.now().plusSeconds(45))
                 .build());

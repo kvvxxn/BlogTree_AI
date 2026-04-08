@@ -13,9 +13,9 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class SseEmitterService {
 
-    // 기본 타임아웃 5분
-    private static final long DEFAULT_TIMEOUT = 5L * 60 * 1000;
-    private static final Set<String> TERMINAL_EVENTS = Set.of("success", "partial_success", "failed");
+    // 기본 타임아웃 1분
+    private static final long DEFAULT_TIMEOUT = (long) 60 * 1000;
+    private static final Set<String> TERMINAL_EVENTS = Set.of("success", "partial_success", "failed", "expired");
 
     // todo: Redis pub/sub으로 변경
     // taskId를 키로 하여 SseEmitter를 관리

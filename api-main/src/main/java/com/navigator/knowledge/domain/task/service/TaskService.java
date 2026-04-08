@@ -3,6 +3,7 @@ package com.navigator.knowledge.domain.task.service;
 import com.navigator.knowledge.domain.task.exception.TaskNotFoundException;
 import com.navigator.knowledge.domain.task.entity.Task;
 import com.navigator.knowledge.domain.task.entity.TaskStatus;
+import com.navigator.knowledge.domain.task.entity.TaskType;
 import com.navigator.knowledge.domain.task.repository.TaskRepository;
 import com.navigator.knowledge.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -23,13 +24,14 @@ public class TaskService {
     private final TaskRepository taskRepository;
 
     @Transactional(transactionManager = JPA_TRANSACTION_MANAGER)
-    public Task createTask(Long userId, String sourceUrl, LocalDateTime expiresAt) {
+    public Task createTask(Long userId, String sourceUrl, TaskType taskType, LocalDateTime expiresAt) {
         String taskId = UUID.randomUUID().toString();
 
         Task task = Task.builder()
                 .taskId(taskId)
                 .userId(userId)
                 .sourceUrl(sourceUrl)
+                .taskType(taskType)
                 .status(TaskStatus.PENDING)
                 .expiresAt(expiresAt)
                 .build();

@@ -32,8 +32,12 @@ public class Task {
     private String sourceUrl;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "task_type", length = 20, nullable = false)
+    private TaskType taskType;
+
+    @Enumerated(EnumType.STRING)
     @Column(length = 20)
-    private TaskStatus status; // PENDING, SUCCESS, PARTIAL_SUCCESS, FAILED
+    private TaskStatus status; // PENDING, PROCESSING, SUCCESS, PARTIAL_SUCCESS, FAILED, EXPIRED
 
     @Column(name = "error_message", columnDefinition = "TEXT")
     private String errorMessage;
@@ -53,10 +57,11 @@ public class Task {
     private LocalDateTime updatedAt;
 
     @Builder
-    public Task(String taskId, Long userId, String sourceUrl, TaskStatus status, LocalDateTime expiresAt) {
+    public Task(String taskId, Long userId, String sourceUrl, TaskType taskType, TaskStatus status, LocalDateTime expiresAt) {
         this.taskId = taskId;
         this.userId = userId;
         this.sourceUrl = sourceUrl;
+        this.taskType = taskType;
         this.status = status;
         this.expiresAt = expiresAt;
     }
