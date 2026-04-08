@@ -7,6 +7,7 @@ import com.navigator.knowledge.domain.task.entity.Task;
 import com.navigator.knowledge.domain.task.entity.TaskStatus;
 import com.navigator.knowledge.domain.task.service.TaskFailureHandler;
 import com.navigator.knowledge.domain.task.sse.SseEmitterService;
+import com.navigator.knowledge.domain.task.sse.TaskSseEventFactory;
 import com.navigator.knowledge.domain.task.service.TaskService;
 import com.navigator.knowledge.domain.tree.service.KnowledgeService;
 import com.navigator.knowledge.global.exception.BusinessException;
@@ -19,8 +20,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -33,6 +32,8 @@ public class SummaryTaskListener {
     private final TextEmbeddingService textEmbeddingService;
     private final KnowledgeService knowledgeService;
     private final SseEmitterService sseEmitterService;
+    private final SummaryTaskSseEventFactory summaryTaskSseEventFactory;
+    private final TaskSseEventFactory taskSseEventFactory;
     private final TaskFailureHandler taskFailureHandler;
 
     @RabbitListener(queues = RESPONSE_QUEUE)
@@ -88,12 +89,7 @@ public class SummaryTaskListener {
                     task.getExpiresAt());
 
             if (taskService.expireTask(task.getTaskId())) {
-                Map<String, Object> sseData = Map.of(
-                        "code", ErrorCode.TASK_EXPIRED.getCode(),
-                        "message", ErrorCode.TASK_EXPIRED.getDefaultMessage()
-                );
-                sseEmitterService.sendEvent(task.getTaskId(), "expired", sseData);
-                sseEmitterService.complete(task.getTaskId());
+                sseEmitterService.publish(taskSseEventFactory.expired(task.getTaskId()));
             }
             return false;
         }
@@ -122,14 +118,14 @@ public class SummaryTaskListener {
 
         taskService.updateTaskStatus(responseDto.taskId(), TaskStatus.SUCCESS);
 
-        Map<String, Object> sseData = Map.of(
-            "category", category,
-            "topic", topic,
-            "keyword", keyword,
-            "summaryContent", data.summaryContent()
-        );
-        sseEmitterService.sendEvent(responseDto.taskId(), "success", sseData);
-        sseEmitterService.complete(responseDto.taskId());
+        sseEmitterService.publish(summaryTaskSseEventFactory.success(
+            responseDto.taskId(),
+            summary,
+            category,
+            topic,
+            keyword,
+            data.summaryContent()
+        ));
 
         log.info("Success handled. Category: {}, Topic: {}, Keywords: {}, Summary ID: {}", category, topic, keyword, summary.getSummaryId());
     }
@@ -151,14 +147,14 @@ public class SummaryTaskListener {
         var knowledgeTree = requireKnowledgeTree(data);
         taskService.updateTaskStatus(responseDto.taskId(), TaskStatus.PARTIAL_SUCCESS);
 
-        Map<String, Object> sseData = Map.of(
-            "category", requireText(knowledgeTree.category(), "category"),
-            "topic", requireText(knowledgeTree.topic(), "topic"),
-            "keyword", requireText(knowledgeTree.keyword(), "keyword"),
-            "summaryContent", data.summaryContent()
-        );
-        sseEmitterService.sendEvent(responseDto.taskId(), "partial_success", sseData);
-        sseEmitterService.complete(responseDto.taskId());
+        sseEmitterService.publish(summaryTaskSseEventFactory.partialSuccess(
+            responseDto.taskId(),
+            summary,
+            requireText(knowledgeTree.category(), "category"),
+            requireText(knowledgeTree.topic(), "topic"),
+            requireText(knowledgeTree.keyword(), "keyword"),
+            data.summaryContent()
+        ));
 
         log.info("Partial success handled. Summary ID: {} has been linked to the most similar existing keyword.", summary.getSummaryId());
     }
@@ -169,12 +165,7 @@ public class SummaryTaskListener {
         String errorMessage = String.format("[%s] %s", error.code(), error.message());
         taskService.updateTaskFailed(responseDto.taskId(), errorMessage);
 
-        Map<String, Object> sseData = Map.of(
-            "code", error.code(),
-            "message", error.message()
-        );
-        sseEmitterService.sendEvent(responseDto.taskId(), "failed", sseData);
-        sseEmitterService.complete(responseDto.taskId());
+        sseEmitterService.publish(taskSseEventFactory.failed(responseDto.taskId(), error.code(), error.message()));
 
         log.error("Task failed handled. Error Code: {}, Message: {}", error.code(), error.message());
     }

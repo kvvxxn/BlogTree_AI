@@ -9,6 +9,8 @@ import com.navigator.knowledge.domain.task.entity.TaskType;
 import com.navigator.knowledge.domain.task.service.TaskFailureHandler;
 import com.navigator.knowledge.domain.task.service.TaskService;
 import com.navigator.knowledge.domain.task.sse.SseEmitterService;
+import com.navigator.knowledge.domain.task.sse.TaskSseEventFactory;
+import com.navigator.knowledge.domain.task.sse.event.RecommendTaskSuccessEvent;
 import com.navigator.knowledge.global.exception.BusinessException;
 import com.navigator.knowledge.global.exception.ErrorCode;
 import org.junit.jupiter.api.DisplayName;
@@ -21,7 +23,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 
-import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.inOrder;
@@ -39,6 +41,12 @@ class RecommendTaskListenerTest {
 
     @Mock
     private SseEmitterService sseEmitterService;
+
+    @Mock
+    private RecommendTaskSseEventFactory recommendTaskSseEventFactory;
+
+    @Mock
+    private TaskSseEventFactory taskSseEventFactory;
 
     @Mock
     private TaskFailureHandler taskFailureHandler;
@@ -77,15 +85,23 @@ class RecommendTaskListenerTest {
         when(taskService.getTask(taskId)).thenReturn(task);
         when(recommendationService.findOrCreateRecommendation(task, userId, "reason", "Backend", "Database", "PostgreSQL"))
             .thenReturn(recommendation);
+        when(recommendTaskSseEventFactory.success(taskId, recommendation))
+            .thenReturn(new RecommendTaskSuccessEvent(taskId, null, "reason", "Backend", "Database", "PostgreSQL"));
 
         recommendTaskListener.receiveRecommendResponse(response);
 
-        InOrder inOrder = inOrder(taskService, recommendationService, sseEmitterService);
+        InOrder inOrder = inOrder(taskService, recommendationService, recommendTaskSseEventFactory, sseEmitterService);
         inOrder.verify(taskService).getTask(taskId);
         inOrder.verify(recommendationService).findOrCreateRecommendation(task, userId, "reason", "Backend", "Database", "PostgreSQL");
         inOrder.verify(taskService).updateTaskStatus(taskId, TaskStatus.SUCCESS);
-        inOrder.verify(sseEmitterService).sendEvent(eq(taskId), eq("success"), anyMap());
-        inOrder.verify(sseEmitterService).complete(taskId);
+        inOrder.verify(recommendTaskSseEventFactory).success(taskId, recommendation);
+        inOrder.verify(sseEmitterService).publish(argThat(event ->
+            event instanceof RecommendTaskSuccessEvent recommendEvent
+                && recommendEvent.taskId().equals(taskId)
+                && recommendEvent.reason().equals("reason")
+                && recommendEvent.category().equals("Backend")
+                && recommendEvent.topic().equals("Database")
+                && recommendEvent.keyword().equals("PostgreSQL")));
     }
 
     @Test

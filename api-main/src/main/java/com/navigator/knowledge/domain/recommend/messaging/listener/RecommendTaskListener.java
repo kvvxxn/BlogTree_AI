@@ -8,6 +8,7 @@ import com.navigator.knowledge.domain.task.entity.TaskStatus;
 import com.navigator.knowledge.domain.task.service.TaskFailureHandler;
 import com.navigator.knowledge.domain.task.service.TaskService;
 import com.navigator.knowledge.domain.task.sse.SseEmitterService;
+import com.navigator.knowledge.domain.task.sse.TaskSseEventFactory;
 import com.navigator.knowledge.global.exception.BusinessException;
 import com.navigator.knowledge.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -16,9 +17,7 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Service
@@ -28,6 +27,8 @@ public class RecommendTaskListener {
     private final TaskService taskService;
     private final RecommendationService recommendationService;
     private final SseEmitterService sseEmitterService;
+    private final RecommendTaskSseEventFactory recommendTaskSseEventFactory;
+    private final TaskSseEventFactory taskSseEventFactory;
     private final TaskFailureHandler taskFailureHandler;
 
     @RabbitListener(queues = "${spring.rabbitmq.recommend.queue.response}")
@@ -82,12 +83,7 @@ public class RecommendTaskListener {
                 task.getExpiresAt());
 
             if (taskService.expireTask(task.getTaskId())) {
-                Map<String, Object> sseData = Map.of(
-                    "code", ErrorCode.TASK_EXPIRED.getCode(),
-                    "message", ErrorCode.TASK_EXPIRED.getDefaultMessage()
-                );
-                sseEmitterService.sendEvent(task.getTaskId(), "expired", sseData);
-                sseEmitterService.complete(task.getTaskId());
+                sseEmitterService.publish(taskSseEventFactory.expired(task.getTaskId()));
             }
             return false;
         }
@@ -110,16 +106,7 @@ public class RecommendTaskListener {
 
         taskService.updateTaskStatus(task.getTaskId(), TaskStatus.SUCCESS);
 
-        Map<String, Object> sseData = new HashMap<>();
-        sseData.put("reason", recommendation.getReason());
-        sseData.put("category", recommendation.getCategory());
-        sseData.put("topic", recommendation.getTopic());
-        sseData.put("keyword", recommendation.getKeyword());
-        if (recommendation.getRecommendationId() != null) {
-            sseData.put("recommendationId", recommendation.getRecommendationId());
-        }
-        sseEmitterService.sendEvent(task.getTaskId(), "success", sseData);
-        sseEmitterService.complete(task.getTaskId());
+        sseEmitterService.publish(recommendTaskSseEventFactory.success(task.getTaskId(), recommendation));
 
         log.info("Recommend success handled. Recommendation ID: {}", recommendation.getRecommendationId());
     }
@@ -130,12 +117,7 @@ public class RecommendTaskListener {
         String errorMessage = String.format("[%s] %s", error.code(), error.message());
         taskService.updateTaskFailed(responseMessage.taskId(), errorMessage);
 
-        Map<String, Object> sseData = Map.of(
-            "code", error.code(),
-            "message", error.message()
-        );
-        sseEmitterService.sendEvent(responseMessage.taskId(), "failed", sseData);
-        sseEmitterService.complete(responseMessage.taskId());
+        sseEmitterService.publish(taskSseEventFactory.failed(responseMessage.taskId(), error.code(), error.message()));
 
         log.error("Recommend task failed handled. Error Code: {}, Message: {}", error.code(), error.message());
     }

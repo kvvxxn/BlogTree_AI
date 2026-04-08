@@ -1,12 +1,12 @@
 package com.navigator.knowledge.domain.task.sse;
 
+import com.navigator.knowledge.domain.task.sse.event.TaskSseEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
@@ -15,7 +15,6 @@ public class SseEmitterService {
 
     // 기본 타임아웃 1분
     private static final long DEFAULT_TIMEOUT = (long) 60 * 1000;
-    private static final Set<String> TERMINAL_EVENTS = Set.of("success", "partial_success", "failed", "expired");
 
     // todo: Redis pub/sub으로 변경
     // taskId를 키로 하여 SseEmitter를 관리
@@ -59,8 +58,8 @@ public class SseEmitterService {
             if (terminalEvent != null) {
                 log.info("Replaying terminal SSE event for task: {}", taskId);
                 emitter.send(SseEmitter.event()
-                        .name(terminalEvent.eventName())
-                        .data(terminalEvent.data()));
+                        .name(terminalEvent.event().eventName().value())
+                        .data(terminalEvent.event().payload()));
                 emitter.complete();
             }
         } catch (IOException e) {
@@ -75,37 +74,29 @@ public class SseEmitterService {
     /**
      * 특정 SseEmitter로 이벤트를 전송합니다.
      */
-    public void sendEvent(String taskId, String eventName, Object data) {
-        SseEmitter emitter = emitters.get(taskId);
+    public void publish(TaskSseEvent event) {
+        SseEmitter emitter = emitters.get(event.taskId());
 
         if (emitter == null) {
-            cacheTerminalEvent(taskId, eventName, data);
-            log.info("No active SSE emitter found for task: {}. Event cached if terminal.", taskId);
+            cacheTerminalEvent(event);
+            log.info("No active SSE emitter found for task: {}. Event cached if terminal.", event.taskId());
             return;
         }
 
         try {
             emitter.send(SseEmitter.event()
-                .name(eventName)
-                .data(data));
-            log.info("Sent SSE event. taskId={}, eventName={}", taskId, eventName);
-        } catch (IOException e) {
-            log.error("Error sending SSE event to task: {}", taskId, e);
-            cleanup(taskId, emitter, "failed during event send", e);
-            emitter.completeWithError(e);
-        }
-    }
+                .name(event.eventName().value())
+                .data(event.payload()));
+            log.info("Sent SSE event. taskId={}, eventName={}", event.taskId(), event.eventName().value());
 
-    /**
-     * 특정 작업의 SseEmitter 연결을 정상적으로 종료합니다.
-     */
-    public void complete(String taskId) {
-        SseEmitter emitter = emitters.get(taskId);
-        if (emitter != null) {
-            log.info("Completing SSE emitter for task: {}", taskId);
-            emitter.complete();
-        } else {
-            log.info("No active SSE emitter to complete for task: {}", taskId);
+            if (event.terminal()) {
+                log.info("Completing SSE emitter for task: {}", event.taskId());
+                emitter.complete();
+            }
+        } catch (IOException e) {
+            log.error("Error sending SSE event to task: {}", event.taskId(), e);
+            cleanup(event.taskId(), emitter, "failed during event send", e);
+            emitter.completeWithError(e);
         }
     }
 
@@ -118,9 +109,9 @@ public class SseEmitterService {
         emitters.remove(taskId, emitter);
     }
 
-    private void cacheTerminalEvent(String taskId, String eventName, Object data) {
-        if (TERMINAL_EVENTS.contains(eventName)) {
-            terminalEvents.put(taskId, new CachedSseEvent(eventName, data));
+    private void cacheTerminalEvent(TaskSseEvent event) {
+        if (event.terminal()) {
+            terminalEvents.put(event.taskId(), new CachedSseEvent(event));
         }
     }
 }
