@@ -40,6 +40,7 @@ public class JwtProvider {
 
         return Jwts.builder()
                 .subject(String.valueOf(userId)) // 이 토큰 주인의 ID
+                .claim("category", "access")
                 .claim("role", role) // 이 사람의 권한(USER, ADMIN 등)도 토큰에 적어둔다.
                 .issuedAt(now) // 토큰 발급 시간
                 .expiration(validity) // 토큰 만료 시간
@@ -48,7 +49,9 @@ public class JwtProvider {
     }
 
     // 3. Refresh Token 발급 버튼
-    private final long REFRESH_TOKEN_VALIDITY = 1000L * 60 * 60 * 24 * 7;
+    // .yml에서 주입받아 사용
+    @Value("${jwt.refresh-expiration}")
+    private long REFRESH_TOKEN_VALIDITY;
 
     public String createRefreshToken(Long userId) {
         Date now = new Date();
@@ -56,6 +59,7 @@ public class JwtProvider {
 
         return Jwts.builder()
                 .subject(String.valueOf(userId))
+                .claim("category", "refresh")
                 .issuedAt(now) // 발급 시간
                 .expiration(validity) // 만료 시간 (7일 뒤)
                 .signWith(key)
@@ -112,14 +116,12 @@ public class JwtProvider {
                 .get("role", String.class); // "role"이라는 이름의 Claim을 String 타입으로 꺼냅니다.
     }
 
-    // 위조 여부 검증 시 추출할 메서드
-    public String getEmailFromToken(String token) {
-
+    public String getCategoryFromToken(String token) {
         return Jwts.parser()
                 .verifyWith(key)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload()
-                .getSubject(); // 토큰 만들 때 subject에 email을 넣었으니 여기서 꺼냅니다.
+                .get("category", String.class);
     }
 }

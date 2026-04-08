@@ -11,9 +11,7 @@ import com.navigator.knowledge.global.security.oauth2.dto.GoogleTokenResponse;
 import com.navigator.knowledge.global.security.oauth2.dto.GoogleUserInfoDto;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -61,7 +59,7 @@ public class OAuth2Service {
 
         // 5. Refresh Token을 메모리에 저장 (ConcurrentHashMap)
         // 추후 운영, 배포 시 Redis 등으로 변경 예정
-        // Map 구조이므로 이미 이메일(key)이 존재하면 알아서 새 토큰으로 덮어씌움
+        // Map 구조이므로 이미 userId(key)가 존재하면 알아서 새 토큰으로 덮어씌움
         refreshTokenRepository.save(user.getId(), refreshToken);
 
         // 6. 프론트엔드에게 줄 택배 상자에 포장해서 반환
@@ -82,6 +80,12 @@ public class OAuth2Service {
     public AuthDto.LoginResponse reissue(String refreshToken) {
         // 토큰 유효성 검증
         jwtProvider.validateToken(refreshToken);
+
+        String category = jwtProvider.getCategoryFromToken(refreshToken);
+        if (!"refresh".equals(category)) {
+            // 액세스 토큰을 재발급 주소로 보낸 경우 차단
+            throw new IllegalArgumentException("INVALID_TOKEN_TYPE");
+        }
 
         // 토큰에서 userid 추출
         Long id = jwtProvider.getUserIdFromToken(refreshToken);

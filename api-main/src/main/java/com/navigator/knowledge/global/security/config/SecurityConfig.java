@@ -56,6 +56,7 @@ public class SecurityConfig {
                 // 6. 구역별 출입 권한 설정
                 .authorizeHttpRequests(auth -> auth
                         // 기존 프리패스 구역 유지
+                        .requestMatchers("/api/auth/logout").authenticated()
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/login/oauth2/code/**").permitAll()

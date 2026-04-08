@@ -4,10 +4,12 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
 @Builder
 @AllArgsConstructor
+@NoArgsConstructor
 @Entity
 @Table(name = "users") // DB에 생성될 테이블 이름 (user는 예약어라 users로 씁니다)
 public class User {
@@ -31,43 +33,7 @@ public class User {
     @Column(length = 1000)
     private String careerGoal;
 
-    // 1. JPA가 테이블을 만들 때 필요한 '기본 생성자' (롬복 @NoArgsConstructor 역할)
-    protected User() {
-    }
-
-    // 2. 유저를 처음 생성할 때 쓸 '생성자' (롬복 @Builder 역할 대체)
-    public User(String email, String name, String profileImageUrl, Role role, String careerGoal) {
-        this.email = email;
-        this.name = name;
-        this.profileImageUrl = profileImageUrl;
-        this.role = role;
-        this.careerGoal = careerGoal;
-    }
-
-    // 3. 변수값을 가져오기 위한 Getter 메서드들 (롬복 @Getter 역할)
-    public Long getId() {
-        return id;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getProfileImageUrl() {
-        return profileImageUrl;
-    }
-
-    public Role getRole() {
-        return role;
-    }
-
-    public String getCareerGoal() { return careerGoal; }
-
-    // 4. 구글 정보가 업데이트되었을 때 갱신용
+    // 구글 정보가 업데이트되었을 때 갱신용
     public User update(String name, String profileImageUrl) {
         this.name = name;
         this.profileImageUrl = profileImageUrl;
