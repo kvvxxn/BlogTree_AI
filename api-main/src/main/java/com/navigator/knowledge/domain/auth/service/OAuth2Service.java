@@ -23,10 +23,10 @@ public class OAuth2Service {
 
     // 인가 코드를 통해 구글 로그인 처리
     @Transactional
-    public AuthDto.LoginResponse googleLogin(String code) {
+    public AuthDto.LoginResponse googleLogin(String code, String redirectUri) {
         // GoogleAuthClient에게 일 시키기
         // 1. 구글 access token 받아오기
-        GoogleTokenResponse googleToken = googleAuthClient.getGoogleAccessToken(code);
+        GoogleTokenResponse googleToken = googleAuthClient.getGoogleAccessToken(code, redirectUri);
 
         // 2. access token으로 유저 정보 (JSON) 받아오기
         GoogleUserInfoDto userInfoDto = googleAuthClient.getGoogleUserInfo(googleToken);

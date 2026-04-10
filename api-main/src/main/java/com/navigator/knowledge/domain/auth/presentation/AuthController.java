@@ -17,8 +17,9 @@ public class AuthController {
     @PostMapping("/google")
     public ResponseEntity<AuthDto.LoginResponse> googleLogin(@RequestBody AuthDto.LoginRequest request) {
         String authcode = request.getAuthorizationCode();
+        String redirectUri = request.getRedirectUri();
 
-        AuthDto.LoginResponse response = oAuth2Service.googleLogin(authcode);
+        AuthDto.LoginResponse response = oAuth2Service.googleLogin(authcode, redirectUri);
         
         // 서비스가 만들어온 토큰(access, refresh)을 200 ok 상태코드와 함께 프론트에 던져줌
         return ResponseEntity.ok(response);
