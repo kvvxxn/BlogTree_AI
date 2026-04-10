@@ -22,15 +22,18 @@ public class JwtProvider {
 
     private final SecretKey key;
     private final long accessTokenExpiration;
+    private final long refreshTokenExpiration;
 
     // 1. yml 파일에 숨겨둔 비밀키와 만료시간을 가져옴
     public JwtProvider(
             @Value("${jwt.secret}") String secretKey,
-            @Value("${jwt.access-expiration}") long accessTokenExpiration) {
+            @Value("${jwt.access-expiration}") long accessTokenExpiration,
+            @Value("${jwt.refresh-expiration}") long refreshTokenExpiration) {
         // 문자열로 된 비밀키를 컴퓨터가 좋아하는 Byte 배열로 바꿔서 진짜 암호화 키로
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         this.key = Keys.hmacShaKeyFor(keyBytes);
         this.accessTokenExpiration = accessTokenExpiration;
+        this.refreshTokenExpiration = refreshTokenExpiration;
     }
 
     // 2. Access Token 발급 버튼
@@ -49,13 +52,9 @@ public class JwtProvider {
     }
 
     // 3. Refresh Token 발급 버튼
-    // .yml에서 주입받아 사용
-    @Value("${jwt.refresh-expiration}")
-    private long REFRESH_TOKEN_VALIDITY;
-
     public String createRefreshToken(Long userId) {
         Date now = new Date();
-        Date validity = new Date(now.getTime() + REFRESH_TOKEN_VALIDITY);
+        Date validity = new Date(now.getTime() + refreshTokenExpiration);
 
         return Jwts.builder()
                 .subject(String.valueOf(userId))

@@ -12,6 +12,7 @@ import com.navigator.knowledge.domain.task.repository.TaskRepository;
 import com.navigator.knowledge.domain.task.sse.SseEmitterService;
 import com.navigator.knowledge.domain.tree.service.KnowledgeService;
 import com.navigator.knowledge.global.infra.ai.TextEmbeddingService;
+import com.navigator.knowledge.global.security.jwt.JwtProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -43,6 +44,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "oauth2.google.client-id=test-client-id",
         "oauth2.google.client-secret=test-client-secret",
         "jwt.secret=dGVzdC1qd3Qtc2VjcmV0LWZvci1pbnRlZ3JhdGlvbi10ZXN0cw==",
+        "jwt.refresh-expiration=1800000",
+        "app.cors.allowed-origins=http://localhost:3000",
         "spring.autoconfigure.exclude=" +
                 "org.springframework.boot.autoconfigure.neo4j.Neo4jAutoConfiguration," +
                 "org.springframework.boot.autoconfigure.data.neo4j.Neo4jDataAutoConfiguration," +
@@ -63,6 +66,9 @@ class SummaryControllerIntegrationTest {
 
     @Autowired
     private SummaryRepository summaryRepository;
+
+    @Autowired
+    private JwtProvider jwtProvider;
 
     @MockBean
     private SummaryTaskProducer summaryTaskProducer;
@@ -107,7 +113,8 @@ class SummaryControllerIntegrationTest {
                 .content("요약 본문")
                 .build());
 
-        mockMvc.perform(get("/api/summary/{summaryId}", summary.getSummaryId()))
+        mockMvc.perform(get("/api/summary/{summaryId}", summary.getSummaryId())
+                        .header("Authorization", authorizationHeader()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.sourceUrl").value("https://example.com/article"))
                 .andExpect(jsonPath("$.content").value("요약 본문"))
@@ -117,7 +124,8 @@ class SummaryControllerIntegrationTest {
     @Test
     @DisplayName("GET /api/summary/{summaryId}는 없는 요약 조회 시 404를 반환한다")
     void getSummary_returns404WhenSummaryDoesNotExist() throws Exception {
-        mockMvc.perform(get("/api/summary/{summaryId}", 99999L))
+        mockMvc.perform(get("/api/summary/{summaryId}", 99999L)
+                        .header("Authorization", authorizationHeader()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.code").value("SUMMARY_NOT_FOUND"))
@@ -134,6 +142,7 @@ class SummaryControllerIntegrationTest {
         doNothing().when(summaryTaskProducer).sendTaskRequest(any());
 
         mockMvc.perform(post("/api/summary")
+                        .header("Authorization", authorizationHeader())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
                                 "sourceUrl", "https://example.com/new-article"
@@ -156,6 +165,7 @@ class SummaryControllerIntegrationTest {
     @DisplayName("POST /api/summary는 sourceUrl이 비어 있으면 400을 반환한다")
     void requestSummary_returns400WhenSourceUrlIsBlank() throws Exception {
         mockMvc.perform(post("/api/summary")
+                        .header("Authorization", authorizationHeader())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
                                 "sourceUrl", ""
@@ -165,5 +175,9 @@ class SummaryControllerIntegrationTest {
                 .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
                 .andExpect(jsonPath("$.message").value("sourceUrl: sourceUrl은 비어 있을 수 없습니다."))
                 .andExpect(jsonPath("$.path").value("/api/summary"));
+    }
+
+    private String authorizationHeader() {
+        return "Bearer " + jwtProvider.createAccessToken(1L, "ROLE_USER");
     }
 }

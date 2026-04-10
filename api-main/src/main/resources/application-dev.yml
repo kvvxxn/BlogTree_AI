@@ -18,7 +18,7 @@ spring:
 
   ai:
     openai:
-      api-key: ${OPENAI_API_KEY}
+      api-key: ${OPENAI_API_KEY:dummy} # 테스트를 위해 :dummy로 설정
       base-url: https://api.openai.com
       embedding:
         options:
@@ -82,7 +82,5 @@ logging:
 # CORS
 app:
   cors:
-    allowed-origins:
-      - http://localhost:3000 # React 기본
-      - http://localhost:5173 # Vite 기본
+    allowed-origins: http://localhost:3000, http://localhost:5173 # Vite 기본
 
