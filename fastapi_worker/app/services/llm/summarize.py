@@ -1,8 +1,10 @@
 import os
 import logging
-from openai import OpenAI
 from dotenv import load_dotenv
 from typing import Dict, Any
+from langfuse import observe
+from langfuse.openai import OpenAI
+
 
 from fastapi_worker.app.services.llm.prompts import summarize_sys_prompt, make_summarize_user_prompt
 from fastapi_worker.app.services.llm.configs import T, OUTPUT_MAX_TOKENS, INPUT_MAX_TOKENS, MODEL_NAME
@@ -12,7 +14,22 @@ from fastapi_worker.app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
+@observe(name="Summarization using LLM")
 def summarize_with_llm(career_goal: str, url: str, blog_text: str, knowledge_tree: str) -> Dict[str, Any]:
+    """
+    LLM을 사용하여 블로그 텍스트를 요약하고 분석
+    - 블로그 Text의 Token 개수 검증, LLM 답변 생성 그리고 JSON 파싱을 포함하는 Warpper 함수
+    
+    params:
+    - career_goal: 사용자의 커리어 목표 
+    - url: 분석 대상 블로그 URL (로깅 및 추적용)
+    - blog_text: 스크래핑된 블로그 본문 텍스트
+    - knowledge_tree: 사용자가 현재까지 구축한 지식 트리 정보 
+
+    return: LLM이 생성한 요약 및 분석 결과 (JSON)
+    - LLM 응답이 비어있거나 JSON 파싱 실패 시 LLMAnswerParserFailedError 발생
+    - LLM API 호출 실패 시 LLMAnswerFailedError 발생
+    """
     client = OpenAI(api_key=settings.LLM_API_KEY)
 
     logger.info(f"[{url}] LLM 분석을 위한 텍스트 전처리 및 프롬프트 생성을 시작합니다.")
@@ -32,9 +49,9 @@ def summarize_with_llm(career_goal: str, url: str, blog_text: str, knowledge_tre
     )
 
     try:
-        # LLM 응답 생성 직전 로그 
         logger.info(f"[{url}] OpenAI API({MODEL_NAME})를 호출하여 요약 및 분석을 요청합니다...")
 
+        # LLM API 호출
         response = client.chat.completions.create(
             model=MODEL_NAME, 
             response_format={ "type": "json_object" },
@@ -49,7 +66,8 @@ def summarize_with_llm(career_goal: str, url: str, blog_text: str, knowledge_tre
         logger.info(f"[{url}] LLM API 응답을 성공적으로 수신했습니다. JSON 파싱을 시도합니다.")
         raw_content = response.choices[0].message.content
 
-        # 파싱 중 에러가 발생하면 내부에서 LLMAnswerParserFailedError를 발생시킴
+        # LLM 응답에서 JSON 부분만 안전하게 파싱하여 결과 반환 및 에러 처리
+        # - 파싱 실패시 LLMAnswerParserFailedError 발생
         result_json = safe_parse_json(
             raw_content=raw_content,
             schema_type="summary"

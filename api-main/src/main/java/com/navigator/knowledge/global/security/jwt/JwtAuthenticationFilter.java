@@ -1,5 +1,6 @@
 package com.navigator.knowledge.global.security.jwt;
 
+import com.navigator.knowledge.global.exception.ErrorCode;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -34,6 +35,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // 2. 출입증이 있고, 감식반(JwtProvider)이 진짜라고 확인해주면
             if (token != null && jwtProvider.validateToken(token)) {
 
+                String category = jwtProvider.getCategoryFromToken(token);
+
+                // 2. 카테고리가 "access"가 아니면 바로 차단
+                if (!"access".equals(category)) {
+                    log.error("필터 통과 실패: 액세스 토큰이 아님 (category: {})", category);
+
+                    // 직접 응답 X. 메모만 남기고 엔트리포인트로 넘김
+                    request.setAttribute("exception", ErrorCode.INVALID_TOKEN_TYPE.name());
+                    filterChain.doFilter(request, response);
+
+                    return;
+                }
+
                 // 3. 토큰 안에서 이메일과 권한(Role)을 빼옵니다. (DB 조회 안 함 완벽한 무상태성)
                 Long userId = jwtProvider.getUserIdFromToken(token);
                 String role = jwtProvider.getRoleFromToken(token);
@@ -42,7 +56,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 List<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority(role));
 
                 // 5. 스프링 시큐리티 전용 임시 플라스틱 사원증(Authentication)을 발급합니다.
-                // (이메일을 principal로, 비밀번호는 없으니 "", 권한을 넣습니다)
+                // (userID를 principal로, 비밀번호는 없으니 "", 권한을 넣습니다)
                 Authentication authentication = new UsernamePasswordAuthenticationToken(userId, "", authorities);
 
                 // 6. 우리 건물의 VIP 명부(SecurityContextHolder)에 이 사원증을 걸어둡니다.
@@ -50,7 +64,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
                 log.info("인증 성공! 권한: {}", role);
             }
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | io.jsonwebtoken.JwtException e) {
             // JwtProvider가 에러를 뱉었을 때 (만료됨, 위조됨 등)
             // 필터 밖으로 에러가 터지지 않게 일단 잡고, 다음 부서(EntryPoint)가 알 수 있게 메모만 남겨둡니다.
             request.setAttribute("exception", e.getMessage());

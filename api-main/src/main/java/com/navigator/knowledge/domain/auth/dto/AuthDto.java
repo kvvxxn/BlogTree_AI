@@ -11,6 +11,7 @@ public class AuthDto {
     @NoArgsConstructor
     public static class LoginRequest {
         private String authorizationCode; //인가 코드 (프론트가 보냄)
+        private String redirectUri; // 인가 코드 발급 시 사용한 redirect_uri
     }
 
     // 2. BE가 FE로 보낼 때 쓰는 상자

@@ -10,6 +10,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
 @Slf4j
@@ -23,12 +24,16 @@ public class GoogleAuthClient {
 
     // 왜 구글 서버 리프레시 토큰은 없는가?
     // 최초 사용자 인증 이후에는 구글 서버와 통신할 일이 없기 때문
-    public GoogleTokenResponse getGoogleAccessToken(String code) {
+    public GoogleTokenResponse getGoogleAccessToken(String code, String redirectUri) {
         // 인가 코드가 제대로 왔는지 확인
         if (code == null || code.isBlank()) {
             log.warn("Google access token code is null or empty");
             throw new IllegalArgumentException("인가 코드(code)가 비어있습니다. 정상적인 OAuth2 흐름이 아닙니다.");
         }
+
+        String resolvedRedirectUri = StringUtils.hasText(redirectUri)
+                ? redirectUri
+                : googleOAuthProperties.redirectUri();
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -38,7 +43,7 @@ public class GoogleAuthClient {
         params.add("code", code);
         params.add("client_id", googleOAuthProperties.clientId());
         params.add("client_secret", googleOAuthProperties.clientSecret());
-        params.add("redirect_uri", googleOAuthProperties.redirectUri());
+        params.add("redirect_uri", resolvedRedirectUri);
         params.add("grant_type", "authorization_code");
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);

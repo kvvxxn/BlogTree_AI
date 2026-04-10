@@ -13,9 +13,11 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class SummaryService {
 
+    private static final String JPA_TRANSACTION_MANAGER = "jpaTransactionManager";
+
     private final SummaryRepository summaryRepository;
 
-    @Transactional
+    @Transactional(transactionManager = JPA_TRANSACTION_MANAGER)
     public Summary saveSummary(Task task, Long userId, String sourceUrl, String content) {
         Summary summary = Summary.builder()
                 .task(task)
@@ -26,13 +28,13 @@ public class SummaryService {
         return summaryRepository.save(summary);
     }
 
-    @Transactional
+    @Transactional(transactionManager = JPA_TRANSACTION_MANAGER)
     public Summary findOrCreateSummary(Task task, Long userId, String sourceUrl, String content) {
         return summaryRepository.findByTask_TaskId(task.getTaskId())
                 .orElseGet(() -> saveSummary(task, userId, sourceUrl, content));
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(transactionManager = JPA_TRANSACTION_MANAGER, readOnly = true)
     public SummaryResponseDto getSummary(Long summaryId) {
         Summary summary = summaryRepository.findById(summaryId)
                 .orElseThrow(() -> new SummaryNotFoundException(summaryId));
