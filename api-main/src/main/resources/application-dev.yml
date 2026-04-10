@@ -56,6 +56,14 @@ spring:
       routing-key:
         request: summary.request
         response: summary.response
+    recommend:
+      exchange: recommend.exchange
+      queue:
+        request: recommend.request.queue
+        response: recommend.response.queue
+      routing-key:
+        request: recommend.request
+        response: recommend.response
     listener:
       simple:
         retry:

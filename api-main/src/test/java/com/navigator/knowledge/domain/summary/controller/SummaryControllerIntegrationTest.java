@@ -7,8 +7,9 @@ import com.navigator.knowledge.domain.summary.messaging.producer.SummaryTaskProd
 import com.navigator.knowledge.domain.summary.repository.SummaryRepository;
 import com.navigator.knowledge.domain.task.entity.Task;
 import com.navigator.knowledge.domain.task.entity.TaskStatus;
+import com.navigator.knowledge.domain.task.entity.TaskType;
 import com.navigator.knowledge.domain.task.repository.TaskRepository;
-import com.navigator.knowledge.domain.task.service.SseEmitterService;
+import com.navigator.knowledge.domain.task.sse.SseEmitterService;
 import com.navigator.knowledge.domain.tree.service.KnowledgeService;
 import com.navigator.knowledge.global.infra.ai.TextEmbeddingService;
 import com.navigator.knowledge.global.security.jwt.JwtProvider;
@@ -23,6 +24,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -99,7 +101,9 @@ class SummaryControllerIntegrationTest {
                 .taskId("task-get-001")
                 .userId(1L)
                 .sourceUrl("https://example.com/article")
+                .taskType(TaskType.SUMMARY)
                 .status(TaskStatus.SUCCESS)
+                .expiresAt(LocalDateTime.now().plusSeconds(45))
                 .build());
 
         Summary summary = summaryRepository.save(Summary.builder()
