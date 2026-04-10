@@ -1,29 +1,22 @@
 package com.navigator.knowledge;
 
+import com.navigator.knowledge.domain.recommend.messaging.listener.RecommendTaskListener;
+import com.navigator.knowledge.domain.recommend.messaging.producer.RecommendTaskProducer;
 import com.navigator.knowledge.domain.summary.messaging.listener.SummaryTaskListener;
 import com.navigator.knowledge.domain.summary.messaging.producer.SummaryTaskProducer;
 import com.navigator.knowledge.domain.task.sse.SseEmitterService;
 import com.navigator.knowledge.domain.tree.service.KnowledgeService;
 import com.navigator.knowledge.global.infra.ai.TextEmbeddingService;
+import org.neo4j.driver.Driver;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.neo4j.core.DatabaseSelectionProvider;
+import org.springframework.test.context.ActiveProfiles;
 
-@SpringBootTest(properties = {
-        "spring.ai.openai.api-key=test-api-key",
-        "spring.ai.openai.embedding.options.model=test-model",
-        "oauth2.google.client-id=test-client-id",
-        "oauth2.google.client-secret=test-client-secret",
-        "jwt.secret=dGVzdC1qd3Qtc2VjcmV0LWZvci1pbnRlZ3JhdGlvbi10ZXN0cw==",
-        "jwt.refresh-expiration=1800000",
-        "app.cors.allowed-origins=http://localhost:3000",
-        "spring.autoconfigure.exclude=" +
-                "org.springframework.boot.autoconfigure.neo4j.Neo4jAutoConfiguration," +
-                "org.springframework.boot.autoconfigure.data.neo4j.Neo4jDataAutoConfiguration," +
-                "org.springframework.boot.autoconfigure.data.neo4j.Neo4jRepositoriesAutoConfiguration," +
-                "org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration"
-})
+@ActiveProfiles("test")
+@SpringBootTest
 class ApiMainApplicationTests {
 
     @MockBean
@@ -31,6 +24,12 @@ class ApiMainApplicationTests {
 
     @MockBean
     private SummaryTaskListener summaryTaskListener;
+
+    @MockBean
+    private RecommendTaskProducer recommendTaskProducer;
+
+    @MockBean
+    private RecommendTaskListener recommendTaskListener;
 
     @MockBean
     private ConnectionFactory connectionFactory;
@@ -43,6 +42,12 @@ class ApiMainApplicationTests {
 
     @MockBean
     private SseEmitterService sseEmitterService;
+
+    @MockBean
+    private Driver neo4jDriver;
+
+    @MockBean
+    private DatabaseSelectionProvider databaseSelectionProvider;
 
     @Test
     void contextLoads() {

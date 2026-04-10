@@ -5,6 +5,7 @@ import com.navigator.knowledge.domain.summary.dto.SummaryResponseDto;
 import com.navigator.knowledge.domain.summary.service.SummaryService;
 import com.navigator.knowledge.domain.task.dto.TaskResponseDto;
 import com.navigator.knowledge.domain.summary.service.SummaryTaskService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/summary")
 @RequiredArgsConstructor
+@SecurityRequirement(name = "bearerAuth")
 public class SummaryController {
 
     private final SummaryTaskService summaryTaskService;

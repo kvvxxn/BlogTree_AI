@@ -4,6 +4,7 @@ import com.navigator.knowledge.domain.recommend.dto.RecommendationResponseDto;
 import com.navigator.knowledge.domain.recommend.service.RecommendTaskService;
 import com.navigator.knowledge.domain.recommend.service.RecommendationService;
 import com.navigator.knowledge.domain.task.dto.TaskResponseDto;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/recommend")
 @RequiredArgsConstructor
+@SecurityRequirement(name = "bearerAuth")
 public class RecommendController {
 
     private final RecommendTaskService recommendTaskService;

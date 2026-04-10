@@ -43,7 +43,7 @@ public class SecurityConfig {
                 // 3. 세션 정책은 STATELESS 유지 (JWT니까)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // 4. H2 콘솔 프레임 거부 해결
+                // 4. Swagger UI 등의 same-origin 프레임 허용
                 .headers(headers -> headers
                         .frameOptions(frame -> frame.sameOrigin())
                 )
@@ -56,7 +56,7 @@ public class SecurityConfig {
                 // 6. 구역별 출입 권한 설정
                 .authorizeHttpRequests(auth -> auth
                         // 공개 엔드포인트만 명시적으로 허용하고 logout은 인증을 강제한다.
-                        .requestMatchers("/h2-console/**").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/api/auth/google", "/api/auth/reissue").permitAll()
                         .requestMatchers("/login/oauth2/code/**").permitAll()
 

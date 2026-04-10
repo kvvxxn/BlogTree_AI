@@ -3,6 +3,7 @@ package com.navigator.knowledge.domain.user.presentation;
 import com.navigator.knowledge.domain.user.dto.UserProfileResponse;
 import com.navigator.knowledge.domain.user.dto.UserProfileUpdateRequest;
 import com.navigator.knowledge.domain.user.service.UserService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
+@SecurityRequirement(name = "bearerAuth")
 public class UserController {
 
     private final UserService userService;

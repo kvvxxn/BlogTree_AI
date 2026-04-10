@@ -1,6 +1,7 @@
 package com.navigator.knowledge.domain.tree.controller;
 
 import com.navigator.knowledge.domain.tree.service.KnowledgeService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -14,6 +15,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/tree")
 @RequiredArgsConstructor
+@SecurityRequirement(name = "bearerAuth")
 public class KnowledgeTreeController {
 
     private final KnowledgeService knowledgeService;
