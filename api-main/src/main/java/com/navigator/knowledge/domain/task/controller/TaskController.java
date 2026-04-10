@@ -1,6 +1,6 @@
 package com.navigator.knowledge.domain.task.controller;
 
-import com.navigator.knowledge.domain.task.service.SseEmitterService;
+import com.navigator.knowledge.domain.task.sse.SseEmitterService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;

@@ -5,9 +5,12 @@ import com.navigator.knowledge.domain.summary.messaging.dto.SummaryTaskResponseM
 import com.navigator.knowledge.domain.summary.service.SummaryService;
 import com.navigator.knowledge.domain.task.entity.Task;
 import com.navigator.knowledge.domain.task.entity.TaskStatus;
+import com.navigator.knowledge.domain.task.entity.TaskType;
 import com.navigator.knowledge.domain.task.service.TaskFailureHandler;
-import com.navigator.knowledge.domain.task.service.SseEmitterService;
 import com.navigator.knowledge.domain.task.service.TaskService;
+import com.navigator.knowledge.domain.task.sse.SseEmitterService;
+import com.navigator.knowledge.domain.task.sse.TaskSseEventFactory;
+import com.navigator.knowledge.domain.task.sse.event.SummaryTaskSuccessEvent;
 import com.navigator.knowledge.domain.tree.exception.SimilarKeywordNotFoundException;
 import com.navigator.knowledge.domain.tree.service.KnowledgeService;
 import com.navigator.knowledge.global.exception.BusinessException;
@@ -21,9 +24,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.inOrder;
@@ -50,6 +54,12 @@ class SummaryTaskListenerTest {
     private SseEmitterService sseEmitterService;
 
     @Mock
+    private SummaryTaskSseEventFactory summaryTaskSseEventFactory;
+
+    @Mock
+    private TaskSseEventFactory taskSseEventFactory;
+
+    @Mock
     private TaskFailureHandler taskFailureHandler;
 
     @InjectMocks
@@ -64,7 +74,9 @@ class SummaryTaskListenerTest {
             .taskId(taskId)
             .userId(userId)
             .sourceUrl("https://example.com")
+            .taskType(TaskType.SUMMARY)
             .status(TaskStatus.PROCESSING)
+            .expiresAt(LocalDateTime.now().plusSeconds(45))
             .build();
         Summary summary = Summary.builder()
             .task(task)
@@ -86,17 +98,25 @@ class SummaryTaskListenerTest {
         when(taskService.getTask(taskId)).thenReturn(task);
         when(summaryService.findOrCreateSummary(task, userId, task.getSourceUrl(), "summary")).thenReturn(summary);
         when(textEmbeddingService.embedText("summary")).thenReturn(List.of(0.1, 0.2, 0.3));
+        when(summaryTaskSseEventFactory.success(taskId, summary, "Backend", "Database", "PostgreSQL", "summary"))
+            .thenReturn(new SummaryTaskSuccessEvent(taskId, null, "Backend", "Database", "PostgreSQL", "summary"));
 
         summaryTaskListener.receiveSummaryResponse(response);
 
-        InOrder inOrder = inOrder(taskService, summaryService, textEmbeddingService, knowledgeService, sseEmitterService);
+        InOrder inOrder = inOrder(taskService, summaryService, textEmbeddingService, knowledgeService, summaryTaskSseEventFactory, sseEmitterService);
         inOrder.verify(taskService).getTask(taskId);
         inOrder.verify(summaryService).findOrCreateSummary(task, userId, task.getSourceUrl(), "summary");
         inOrder.verify(textEmbeddingService).embedText("summary");
         inOrder.verify(knowledgeService).saveKnowledgePath(userId, "Backend", "Database", "PostgreSQL", null, List.of(0.1, 0.2, 0.3));
         inOrder.verify(taskService).updateTaskStatus(taskId, TaskStatus.SUCCESS);
-        inOrder.verify(sseEmitterService).sendEvent(eq(taskId), eq("success"), anyMap());
-        inOrder.verify(sseEmitterService).complete(taskId);
+        inOrder.verify(summaryTaskSseEventFactory).success(taskId, summary, "Backend", "Database", "PostgreSQL", "summary");
+        inOrder.verify(sseEmitterService).publish(argThat(event ->
+            event instanceof SummaryTaskSuccessEvent summaryEvent
+                && summaryEvent.taskId().equals(taskId)
+                && summaryEvent.category().equals("Backend")
+                && summaryEvent.topic().equals("Database")
+                && summaryEvent.keyword().equals("PostgreSQL")
+                && summaryEvent.summaryContent().equals("summary")));
     }
 
     @Test
@@ -108,7 +128,9 @@ class SummaryTaskListenerTest {
             .taskId(taskId)
             .userId(userId)
             .sourceUrl("https://example.com/2")
+            .taskType(TaskType.SUMMARY)
             .status(TaskStatus.PROCESSING)
+            .expiresAt(LocalDateTime.now().plusSeconds(45))
             .build();
         Summary summary = Summary.builder()
             .task(task)
@@ -178,7 +200,9 @@ class SummaryTaskListenerTest {
             .taskId(taskId)
             .userId(userId)
             .sourceUrl("https://example.com/4")
+            .taskType(TaskType.SUMMARY)
             .status(TaskStatus.PROCESSING)
+            .expiresAt(LocalDateTime.now().plusSeconds(45))
             .build();
         SummaryTaskResponseMessage response = new SummaryTaskResponseMessage(
             taskId,
