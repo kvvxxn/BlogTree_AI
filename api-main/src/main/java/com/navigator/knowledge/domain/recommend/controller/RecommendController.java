@@ -7,6 +7,7 @@ import com.navigator.knowledge.domain.task.dto.TaskResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,8 +23,8 @@ public class RecommendController {
     private final RecommendationService recommendationService;
 
     @PostMapping
-    public ResponseEntity<TaskResponseDto> requestRecommendation() {
-        TaskResponseDto response = recommendTaskService.requestRecommendation();
+    public ResponseEntity<TaskResponseDto> requestRecommendation(@AuthenticationPrincipal Long userId) {
+        TaskResponseDto response = recommendTaskService.requestRecommendation(userId);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
     }
 

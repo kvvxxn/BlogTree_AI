@@ -9,6 +9,7 @@ import com.navigator.knowledge.domain.task.entity.TaskStatus;
 import com.navigator.knowledge.domain.task.entity.TaskType;
 import com.navigator.knowledge.domain.task.service.TaskService;
 import com.navigator.knowledge.domain.tree.service.KnowledgeService;
+import com.navigator.knowledge.domain.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,23 +28,23 @@ public class SummaryTaskService {
     private final TaskService taskService;
     private final SummaryTaskProducer summaryTaskProducer;
     private final KnowledgeService knowledgeService;
+    private final UserService userService;
 
     @Transactional(transactionManager = JPA_TRANSACTION_MANAGER)
-    public TaskResponseDto requestSummary(SummaryRequestDto request) {
+    public TaskResponseDto requestSummary(Long userId, SummaryRequestDto request) {
         // 1. 공통 Task 생성 (DB 저장 완료)
-        // 향후 사용자 인증 정보 등에서 가져올 값들
-        Long userId = 1L; // TODO: principal에서 가져오기
         LocalDateTime expiresAt = LocalDateTime.now().plusSeconds(TASK_TTL_SECONDS);
         Task task = taskService.createTask(userId, request.sourceUrl(), TaskType.SUMMARY, expiresAt);
 
         // 2. 지식 트리 조회
         Map<String, Map<String, List<String>>> knowledgeTree = knowledgeService.getKnowledgeTree(userId);
+        String careerGoal = userService.getRequiredCareerGoal(userId);
 
         // 3. RabbitMQ에 보낼 메시지 DTO 조립
         SummaryTaskRequestMessage message = new SummaryTaskRequestMessage(
                 task.getTaskId(),
                 userId,
-                "Backend Developer", // TODO: 실제 유저의 career_goal 가져오기
+                careerGoal,
                 request.sourceUrl(),
                 expiresAt.toString(),
                 knowledgeTree

@@ -5,9 +5,12 @@ import com.navigator.knowledge.domain.user.dto.UserProfileUpdateRequest;
 import com.navigator.knowledge.domain.user.entity.User;
 import com.navigator.knowledge.domain.user.exception.UserNotFoundException;
 import com.navigator.knowledge.domain.user.repository.UserRepository;
+import com.navigator.knowledge.global.exception.BusinessException;
+import com.navigator.knowledge.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +32,15 @@ public class UserService {
         user.updateName(request.getName());
         user.updateCareerGoal(request.getCareerGoal());
         return UserProfileResponse.from(user);
+    }
+
+    @Transactional(transactionManager = JPA_TRANSACTION_MANAGER, readOnly = true)
+    public String getRequiredCareerGoal(Long userId) {
+        User user = getUser(userId);
+        if (!StringUtils.hasText(user.getCareerGoal())) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "careerGoal이 설정되지 않았습니다.");
+        }
+        return user.getCareerGoal();
     }
 
     private User getUser(Long userId) {

@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -20,8 +21,11 @@ public class SummaryController {
     private final SummaryService summaryService;
 
     @PostMapping
-    public ResponseEntity<TaskResponseDto> requestSummary(@Valid @RequestBody SummaryRequestDto request) {
-        TaskResponseDto response = summaryTaskService.requestSummary(request);
+    public ResponseEntity<TaskResponseDto> requestSummary(
+            @AuthenticationPrincipal Long userId,
+            @Valid @RequestBody SummaryRequestDto request
+    ) {
+        TaskResponseDto response = summaryTaskService.requestSummary(userId, request);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
     }
     

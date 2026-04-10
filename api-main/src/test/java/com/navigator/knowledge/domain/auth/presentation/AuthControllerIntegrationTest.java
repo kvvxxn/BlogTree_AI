@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.navigator.knowledge.domain.auth.repository.RefreshTokenRepository;
 import com.navigator.knowledge.domain.summary.messaging.listener.SummaryTaskListener;
 import com.navigator.knowledge.domain.summary.messaging.producer.SummaryTaskProducer;
-import com.navigator.knowledge.domain.task.service.SseEmitterService;
+import com.navigator.knowledge.domain.task.sse.SseEmitterService;
 import com.navigator.knowledge.domain.tree.service.KnowledgeService;
 import com.navigator.knowledge.domain.user.entity.Role;
 import com.navigator.knowledge.domain.user.entity.User;

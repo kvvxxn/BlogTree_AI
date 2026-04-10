@@ -3,8 +3,8 @@ package com.navigator.knowledge.domain.tree.controller;
 import com.navigator.knowledge.domain.tree.service.KnowledgeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -18,10 +18,11 @@ public class KnowledgeTreeController {
 
     private final KnowledgeService knowledgeService;
 
-    // TODO: Principal에서 userId 꺼내기
     @GetMapping
-    public ResponseEntity<Map<String, Map<String, List<String>>>> getKnowledgeTree() {
-        Map<String, Map<String, List<String>>> knowledgeTree = knowledgeService.getKnowledgeTree(1L);
+    public ResponseEntity<Map<String, Map<String, List<String>>>> getKnowledgeTree(
+            @AuthenticationPrincipal Long userId
+    ) {
+        Map<String, Map<String, List<String>>> knowledgeTree = knowledgeService.getKnowledgeTree(userId);
         return ResponseEntity.ok(knowledgeTree);
     }
 }

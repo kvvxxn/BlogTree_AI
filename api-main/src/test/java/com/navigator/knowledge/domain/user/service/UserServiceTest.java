@@ -6,6 +6,7 @@ import com.navigator.knowledge.domain.user.entity.Role;
 import com.navigator.knowledge.domain.user.entity.User;
 import com.navigator.knowledge.domain.user.exception.UserNotFoundException;
 import com.navigator.knowledge.domain.user.repository.UserRepository;
+import com.navigator.knowledge.global.exception.BusinessException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -66,6 +67,28 @@ class UserServiceTest {
         assertThatThrownBy(() -> userService.getMyProfile(99L))
                 .isInstanceOf(UserNotFoundException.class)
                 .hasMessageContaining("userId=99");
+    }
+
+    @Test
+    @DisplayName("careerGoal 조회 시 설정된 값을 반환한다")
+    void getRequiredCareerGoal_returnsCareerGoal() {
+        User user = createUser(1L, "old name", "backend developer");
+        given(userRepository.findById(1L)).willReturn(Optional.of(user));
+
+        String careerGoal = userService.getRequiredCareerGoal(1L);
+
+        assertThat(careerGoal).isEqualTo("backend developer");
+    }
+
+    @Test
+    @DisplayName("careerGoal이 비어 있으면 예외가 발생한다")
+    void getRequiredCareerGoal_throwsWhenCareerGoalMissing() {
+        User user = createUser(1L, "old name", null);
+        given(userRepository.findById(1L)).willReturn(Optional.of(user));
+
+        assertThatThrownBy(() -> userService.getRequiredCareerGoal(1L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("careerGoal이 설정되지 않았습니다.");
     }
 
     private User createUser(Long id, String name, String careerGoal) {

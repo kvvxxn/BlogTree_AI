@@ -2,7 +2,7 @@ package com.navigator.knowledge;
 
 import com.navigator.knowledge.domain.summary.messaging.listener.SummaryTaskListener;
 import com.navigator.knowledge.domain.summary.messaging.producer.SummaryTaskProducer;
-import com.navigator.knowledge.domain.task.service.SseEmitterService;
+import com.navigator.knowledge.domain.task.sse.SseEmitterService;
 import com.navigator.knowledge.domain.tree.service.KnowledgeService;
 import com.navigator.knowledge.global.infra.ai.TextEmbeddingService;
 import org.junit.jupiter.api.Test;
