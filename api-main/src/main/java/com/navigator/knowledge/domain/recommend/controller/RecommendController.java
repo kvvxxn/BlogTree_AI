@@ -29,8 +29,11 @@ public class RecommendController {
     }
 
     @GetMapping("/{recommendationId}")
-    public ResponseEntity<RecommendationResponseDto> getRecommendation(@PathVariable Long recommendationId) {
-        RecommendationResponseDto response = recommendationService.getRecommendation(recommendationId);
+    public ResponseEntity<RecommendationResponseDto> getRecommendation(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long recommendationId
+    ) {
+        RecommendationResponseDto response = recommendationService.getRecommendation(userId, recommendationId);
         return ResponseEntity.ok(response);
     }
 }

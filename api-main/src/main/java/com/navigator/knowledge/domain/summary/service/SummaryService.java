@@ -2,12 +2,15 @@ package com.navigator.knowledge.domain.summary.service;
 
 import com.navigator.knowledge.domain.summary.dto.SummaryResponseDto;
 import com.navigator.knowledge.domain.summary.entity.Summary;
+import com.navigator.knowledge.domain.summary.exception.SummaryAccessDeniedException;
 import com.navigator.knowledge.domain.summary.exception.SummaryNotFoundException;
 import com.navigator.knowledge.domain.summary.repository.SummaryRepository;
 import com.navigator.knowledge.domain.task.entity.Task;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -35,9 +38,12 @@ public class SummaryService {
     }
 
     @Transactional(transactionManager = JPA_TRANSACTION_MANAGER, readOnly = true)
-    public SummaryResponseDto getSummary(Long summaryId) {
+    public SummaryResponseDto getSummary(Long userId, Long summaryId) {
         Summary summary = summaryRepository.findById(summaryId)
                 .orElseThrow(() -> new SummaryNotFoundException(summaryId));
+        if (!Objects.equals(summary.getUserId(), userId)) {
+            throw new SummaryAccessDeniedException(summaryId, userId);
+        }
         return SummaryResponseDto.from(summary);
     }
 }

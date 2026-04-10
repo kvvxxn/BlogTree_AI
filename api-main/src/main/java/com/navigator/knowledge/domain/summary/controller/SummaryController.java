@@ -30,8 +30,11 @@ public class SummaryController {
     }
     
     @GetMapping("/{summaryId}")
-    public ResponseEntity<SummaryResponseDto> getSummary(@PathVariable("summaryId") Long summaryId) {
-        SummaryResponseDto response = summaryService.getSummary(summaryId);
+    public ResponseEntity<SummaryResponseDto> getSummary(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable("summaryId") Long summaryId
+    ) {
+        SummaryResponseDto response = summaryService.getSummary(userId, summaryId);
         return ResponseEntity.ok(response);
     }
 }
