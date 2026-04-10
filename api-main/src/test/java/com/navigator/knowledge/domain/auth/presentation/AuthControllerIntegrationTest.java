@@ -18,6 +18,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.neo4j.driver.Driver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.neo4j.core.DatabaseSelectionProvider;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -96,6 +98,12 @@ class AuthControllerIntegrationTest {
     @MockBean
     private SseEmitterService sseEmitterService;
 
+    @MockBean
+    private Driver neo4jDriver;
+
+    @MockBean
+    private DatabaseSelectionProvider databaseSelectionProvider;
+
     @BeforeEach
     void setUp() {
         refreshTokenRepository.deleteByUserId(1L);
@@ -107,7 +115,7 @@ class AuthControllerIntegrationTest {
     @DisplayName("POST /api/auth/google은 사용자 저장 후 refresh token을 저장하고 설정된 만료시간으로 발급한다")
     void googleLogin_persistsUserAndRefreshTokenWithConfiguredExpiration() throws Exception {
         GoogleTokenResponse googleTokenResponse = createGoogleTokenResponse();
-        when(googleAuthClient.getGoogleAccessToken("google-auth-code"))
+        when(googleAuthClient.getGoogleAccessToken("google-auth-code", null))
                 .thenReturn(googleTokenResponse);
         when(googleAuthClient.getGoogleUserInfo(googleTokenResponse))
                 .thenReturn(createGoogleUserInfo("user@example.com", "Tester"));
