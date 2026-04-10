@@ -55,9 +55,9 @@ public class SecurityConfig {
 
                 // 6. 구역별 출입 권한 설정
                 .authorizeHttpRequests(auth -> auth
-                        // 기존 프리패스 구역 유지
+                        // 공개 엔드포인트만 명시적으로 허용하고 logout은 인증을 강제한다.
                         .requestMatchers("/h2-console/**").permitAll()
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/auth/google", "/api/auth/reissue").permitAll()
                         .requestMatchers("/login/oauth2/code/**").permitAll()
 
                         // 임시 개방 종료 나머지는 모두 신분증(토큰) 필수
