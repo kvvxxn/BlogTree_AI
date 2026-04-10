@@ -12,7 +12,6 @@ import org.springframework.transaction.PlatformTransactionManager;
 public class Neo4jTransactionConfig {
 
     @Bean("neo4jTransactionManager")
-    @ConditionalOnBean(Driver.class)
     public PlatformTransactionManager neo4jTransactionManager(
         Driver driver,
         DatabaseSelectionProvider databaseSelectionProvider
