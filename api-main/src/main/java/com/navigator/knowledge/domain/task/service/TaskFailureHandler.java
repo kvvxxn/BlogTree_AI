@@ -1,12 +1,12 @@
 package com.navigator.knowledge.domain.task.service;
 
+import com.navigator.knowledge.domain.task.sse.SseEmitterService;
+import com.navigator.knowledge.domain.task.sse.TaskSseEventFactory;
 import com.navigator.knowledge.global.exception.BusinessException;
 import com.navigator.knowledge.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-
-import java.util.Map;
 
 @Slf4j
 @Component
@@ -15,13 +15,14 @@ public class TaskFailureHandler {
 
     private final TaskService taskService;
     private final SseEmitterService sseEmitterService;
+    private final TaskSseEventFactory taskSseEventFactory;
 
     public void handle(String taskId, String status, BusinessException exception) {
         String errorCode = exception.getErrorCode().getCode();
         String errorMessage = String.format("[%s] %s", errorCode, exception.getMessage());
 
         log.warn(
-                "Failed to process summary response. code={}, taskId={}, status={}, message={}",
+                "Failed to process task response. code={}, taskId={}, status={}, message={}",
                 errorCode,
                 taskId,
                 status,
@@ -36,12 +37,7 @@ public class TaskFailureHandler {
         }
 
         try {
-            Map<String, Object> sseData = Map.of(
-                    "code", errorCode,
-                    "message", exception.getMessage()
-            );
-            sseEmitterService.sendEvent(taskId, "failed", sseData);
-            sseEmitterService.complete(taskId);
+            sseEmitterService.publish(taskSseEventFactory.failed(taskId, errorCode, exception.getMessage()));
         } catch (Exception sseException) {
             log.error("Failed to send failure SSE event. Task ID: {}", taskId, sseException);
         }
@@ -53,7 +49,7 @@ public class TaskFailureHandler {
         String errorMessage = String.format("[%s] %s", errorCode.getCode(), userMessage);
 
         log.error(
-                "Unexpected exception while processing summary response. code={}, taskId={}, status={}",
+                "Unexpected exception while processing task response. code={}, taskId={}, status={}",
                 errorCode.getCode(),
                 taskId,
                 status,
@@ -67,12 +63,7 @@ public class TaskFailureHandler {
         }
 
         try {
-            Map<String, Object> sseData = Map.of(
-                    "code", errorCode.getCode(),
-                    "message", userMessage
-            );
-            sseEmitterService.sendEvent(taskId, "failed", sseData);
-            sseEmitterService.complete(taskId);
+            sseEmitterService.publish(taskSseEventFactory.failed(taskId, errorCode, userMessage));
         } catch (Exception sseException) {
             log.error("Failed to send failure SSE event. Task ID: {}", taskId, sseException);
         }

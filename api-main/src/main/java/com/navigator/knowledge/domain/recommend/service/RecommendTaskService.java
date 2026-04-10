@@ -1,8 +1,7 @@
-package com.navigator.knowledge.domain.summary.service;
+package com.navigator.knowledge.domain.recommend.service;
 
-import com.navigator.knowledge.domain.summary.dto.SummaryRequestDto;
-import com.navigator.knowledge.domain.summary.messaging.dto.SummaryTaskRequestMessage;
-import com.navigator.knowledge.domain.summary.messaging.producer.SummaryTaskProducer;
+import com.navigator.knowledge.domain.recommend.messaging.dto.RecommendTaskRequestMessage;
+import com.navigator.knowledge.domain.recommend.messaging.producer.RecommendTaskProducer;
 import com.navigator.knowledge.domain.task.dto.TaskResponseDto;
 import com.navigator.knowledge.domain.task.entity.Task;
 import com.navigator.knowledge.domain.task.entity.TaskStatus;
@@ -19,40 +18,32 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
-public class SummaryTaskService {
+public class RecommendTaskService {
 
     private static final String JPA_TRANSACTION_MANAGER = "jpaTransactionManager";
     private static final long TASK_TTL_SECONDS = 45L;
 
     private final TaskService taskService;
-    private final SummaryTaskProducer summaryTaskProducer;
+    private final RecommendTaskProducer recommendTaskProducer;
     private final KnowledgeService knowledgeService;
 
     @Transactional(transactionManager = JPA_TRANSACTION_MANAGER)
-    public TaskResponseDto requestSummary(SummaryRequestDto request) {
-        // 1. 공통 Task 생성 (DB 저장 완료)
-        // 향후 사용자 인증 정보 등에서 가져올 값들
+    public TaskResponseDto requestRecommendation() {
         Long userId = 1L; // TODO: principal에서 가져오기
         LocalDateTime expiresAt = LocalDateTime.now().plusSeconds(TASK_TTL_SECONDS);
-        Task task = taskService.createTask(userId, request.sourceUrl(), TaskType.SUMMARY, expiresAt);
+        Task task = taskService.createTask(userId, null, TaskType.RECOMMEND, expiresAt);
 
-        // 2. 지식 트리 조회
         Map<String, Map<String, List<String>>> knowledgeTree = knowledgeService.getKnowledgeTree(userId);
 
-        // 3. RabbitMQ에 보낼 메시지 DTO 조립
-        SummaryTaskRequestMessage message = new SummaryTaskRequestMessage(
-                task.getTaskId(),
-                userId,
-                "Backend Developer", // TODO: 실제 유저의 career_goal 가져오기
-                request.sourceUrl(),
-                expiresAt.toString(),
-                knowledgeTree
+        RecommendTaskRequestMessage message = new RecommendTaskRequestMessage(
+            task.getTaskId(),
+            userId,
+            "Backend Developer", // TODO: 실제 유저의 career_goal 가져오기
+            expiresAt.toString(),
+            knowledgeTree
         );
 
-        // 4. 메시지 발행
-        summaryTaskProducer.sendTaskRequest(message);
-
-        // 5. 발행 성공 시 상태 업데이트
+        recommendTaskProducer.sendTaskRequest(message);
         taskService.updateTaskStatus(task.getTaskId(), TaskStatus.PROCESSING);
 
         return new TaskResponseDto(task.getTaskId());

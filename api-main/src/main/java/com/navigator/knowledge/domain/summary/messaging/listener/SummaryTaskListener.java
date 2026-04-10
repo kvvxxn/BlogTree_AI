@@ -6,7 +6,8 @@ import com.navigator.knowledge.domain.summary.service.SummaryService;
 import com.navigator.knowledge.domain.task.entity.Task;
 import com.navigator.knowledge.domain.task.entity.TaskStatus;
 import com.navigator.knowledge.domain.task.service.TaskFailureHandler;
-import com.navigator.knowledge.domain.task.service.SseEmitterService;
+import com.navigator.knowledge.domain.task.sse.SseEmitterService;
+import com.navigator.knowledge.domain.task.sse.TaskSseEventFactory;
 import com.navigator.knowledge.domain.task.service.TaskService;
 import com.navigator.knowledge.domain.tree.service.KnowledgeService;
 import com.navigator.knowledge.global.exception.BusinessException;
@@ -17,9 +18,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -32,6 +32,8 @@ public class SummaryTaskListener {
     private final TextEmbeddingService textEmbeddingService;
     private final KnowledgeService knowledgeService;
     private final SseEmitterService sseEmitterService;
+    private final SummaryTaskSseEventFactory summaryTaskSseEventFactory;
+    private final TaskSseEventFactory taskSseEventFactory;
     private final TaskFailureHandler taskFailureHandler;
 
     @RabbitListener(queues = RESPONSE_QUEUE)
@@ -49,20 +51,54 @@ public class SummaryTaskListener {
     }
 
     private void process(SummaryTaskResponseMessage responseDto) {
-        switch (normalizeStatus(responseDto.status())) {
-            case "SUCCESS" -> handleSuccess(responseDto);
-            case "PARTIAL_SUCCESS" -> handlePartialSuccess(responseDto);
+        String status = normalizeStatus(responseDto.status());
+        validateKnownStatus(status, responseDto.status());
+
+        Task task = taskService.getTask(responseDto.taskId());
+        if (!isProcessable(task, responseDto)) {
+            return;
+        }
+
+        switch (status) {
+            case "SUCCESS" -> handleSuccess(task, responseDto);
+            case "PARTIAL_SUCCESS" -> handlePartialSuccess(task, responseDto);
             case "FAILED" -> handleFailure(responseDto);
-            default -> throw new BusinessException(
-                ErrorCode.BAD_REQUEST,
-                "Unknown status in summary response: " + responseDto.status()
+            default -> throw new BusinessException(ErrorCode.BAD_REQUEST, "Unknown status in summary response: " + responseDto.status());
+        }
+    }
+
+    private void validateKnownStatus(String normalizedStatus, String originalStatus) {
+        if (!List.of("SUCCESS", "PARTIAL_SUCCESS", "FAILED").contains(normalizedStatus)) {
+            throw new BusinessException(
+                    ErrorCode.BAD_REQUEST,
+                    "Unknown status in summary response: " + originalStatus
             );
         }
     }
 
-    private void handleSuccess(SummaryTaskResponseMessage responseDto) {
+    private boolean isProcessable(Task task, SummaryTaskResponseMessage responseDto) {
+        if (task.getStatus().isTerminal()) {
+            log.info("Ignoring summary response for terminal task. taskId={}, status={}", task.getTaskId(), task.getStatus());
+            return false;
+        }
+
+        if (task.isExpiredAt(LocalDateTime.now())) {
+            log.warn("Discarding stale summary response after TTL. taskId={}, responseStatus={}, expiresAt={}",
+                    task.getTaskId(),
+                    responseDto.status(),
+                    task.getExpiresAt());
+
+            if (taskService.expireTask(task.getTaskId())) {
+                sseEmitterService.publish(taskSseEventFactory.expired(task.getTaskId()));
+            }
+            return false;
+        }
+
+        return true;
+    }
+
+    private void handleSuccess(Task task, SummaryTaskResponseMessage responseDto) {
         var data = requireResultData(responseDto);
-        Task task = taskService.getTask(responseDto.taskId());
         Long userId = requireUserId(responseDto);
         Summary summary = summaryService.findOrCreateSummary(
                 task,
@@ -82,21 +118,20 @@ public class SummaryTaskListener {
 
         taskService.updateTaskStatus(responseDto.taskId(), TaskStatus.SUCCESS);
 
-        Map<String, Object> sseData = Map.of(
-            "category", category,
-            "topic", topic,
-            "keyword", keyword,
-            "summaryContent", data.summaryContent()
-        );
-        sseEmitterService.sendEvent(responseDto.taskId(), "success", sseData);
-        sseEmitterService.complete(responseDto.taskId());
+        sseEmitterService.publish(summaryTaskSseEventFactory.success(
+            responseDto.taskId(),
+            summary,
+            category,
+            topic,
+            keyword,
+            data.summaryContent()
+        ));
 
         log.info("Success handled. Category: {}, Topic: {}, Keywords: {}, Summary ID: {}", category, topic, keyword, summary.getSummaryId());
     }
 
-    private void handlePartialSuccess(SummaryTaskResponseMessage responseDto) {
+    private void handlePartialSuccess(Task task, SummaryTaskResponseMessage responseDto) {
         var data = requireResultData(responseDto);
-        Task task = taskService.getTask(responseDto.taskId());
         Long userId = requireUserId(responseDto);
         Summary summary = summaryService.findOrCreateSummary(
                 task,
@@ -112,14 +147,14 @@ public class SummaryTaskListener {
         var knowledgeTree = requireKnowledgeTree(data);
         taskService.updateTaskStatus(responseDto.taskId(), TaskStatus.PARTIAL_SUCCESS);
 
-        Map<String, Object> sseData = Map.of(
-            "category", requireText(knowledgeTree.category(), "category"),
-            "topic", requireText(knowledgeTree.topic(), "topic"),
-            "keyword", requireText(knowledgeTree.keyword(), "keyword"),
-            "summaryContent", data.summaryContent()
-        );
-        sseEmitterService.sendEvent(responseDto.taskId(), "partial_success", sseData);
-        sseEmitterService.complete(responseDto.taskId());
+        sseEmitterService.publish(summaryTaskSseEventFactory.partialSuccess(
+            responseDto.taskId(),
+            summary,
+            requireText(knowledgeTree.category(), "category"),
+            requireText(knowledgeTree.topic(), "topic"),
+            requireText(knowledgeTree.keyword(), "keyword"),
+            data.summaryContent()
+        ));
 
         log.info("Partial success handled. Summary ID: {} has been linked to the most similar existing keyword.", summary.getSummaryId());
     }
@@ -130,12 +165,7 @@ public class SummaryTaskListener {
         String errorMessage = String.format("[%s] %s", error.code(), error.message());
         taskService.updateTaskFailed(responseDto.taskId(), errorMessage);
 
-        Map<String, Object> sseData = Map.of(
-            "code", error.code(),
-            "message", error.message()
-        );
-        sseEmitterService.sendEvent(responseDto.taskId(), "failed", sseData);
-        sseEmitterService.complete(responseDto.taskId());
+        sseEmitterService.publish(taskSseEventFactory.failed(responseDto.taskId(), error.code(), error.message()));
 
         log.error("Task failed handled. Error Code: {}, Message: {}", error.code(), error.message());
     }
