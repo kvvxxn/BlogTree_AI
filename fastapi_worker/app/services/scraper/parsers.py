@@ -1,4 +1,5 @@
 import logging
+import trafilatura
 from bs4 import BeautifulSoup
 from langfuse import observe
 
@@ -138,3 +139,32 @@ def scrape_for_else(soup: BeautifulSoup) -> str:
     logger.info(f"[일반 블로그] 공통 파싱 파이프라인 완료 (추출된 텍스트 길이: {len(result_text)})")
     
     return result_text
+
+
+@observe(name="Retry scraping forcefully with Trafilatura", capture_input=False, capture_output=False)
+def scrape_forcefully(html_source: str) -> str:
+    """
+    맞춤형 파서가 실패했을 때, Trafilatura를 사용하여 강제로 본문 텍스트를 추출하는 최후의 보루 함수
+
+    params:
+    - html_source: requests로 받아온 원본 HTML 텍스트 문자열 (BeautifulSoup 객체 아님)
+
+    return: 추출된 정제된 본문 텍스트 (추출 실패 시 빈 문자열 반환)
+    """
+    logger.info("강제 스크래핑(Trafilatura) 파이프라인 시작")
+
+    # trafilatura를 활용하여 노이즈를 제거하고 순수 본문만 강제 추출
+    text_clean = trafilatura.extract(
+        html_source, 
+        include_links=False,     # 링크 URL 텍스트 제외
+        include_images=False,    # 이미지 태그 관련 텍스트 제외
+        include_comments=False   # 댓글 영역 제외
+    )
+
+    # trafilatura가 아무것도 찾지 못해 None을 반환할 경우를 대비한 안전 장치
+    if not text_clean:
+        logger.warning("Trafilatura 강제 추출 실패: 유의미한 텍스트를 찾지 못했습니다.")
+        return ""
+
+    logger.info(f"강제 스크래핑 완료 (추출된 텍스트 길이: {len(text_clean)})")
+    return text_clean

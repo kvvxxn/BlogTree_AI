@@ -71,6 +71,9 @@ def remove_unwanted_tags(content_element: BeautifulSoup, extra_targets: list = N
     return: None
     - 원본 content_element에서 불필요한 태그만 제거
     """
+
+    if content_element is None:
+        return
     
     remove_targets = ['script', 'style', 'header', 'footer', 'nav', 'aside']
     
