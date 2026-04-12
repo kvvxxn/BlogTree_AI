@@ -2,12 +2,15 @@ package com.navigator.knowledge.domain.recommend.service;
 
 import com.navigator.knowledge.domain.recommend.dto.RecommendationResponseDto;
 import com.navigator.knowledge.domain.recommend.entity.Recommendation;
+import com.navigator.knowledge.domain.recommend.exception.RecommendationAccessDeniedException;
 import com.navigator.knowledge.domain.recommend.exception.RecommendationNotFoundException;
 import com.navigator.knowledge.domain.recommend.repository.RecommendationRepository;
 import com.navigator.knowledge.domain.task.entity.Task;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -51,9 +54,12 @@ public class RecommendationService {
     }
 
     @Transactional(transactionManager = JPA_TRANSACTION_MANAGER, readOnly = true)
-    public RecommendationResponseDto getRecommendation(Long recommendationId) {
+    public RecommendationResponseDto getRecommendation(Long userId, Long recommendationId) {
         Recommendation recommendation = recommendationRepository.findById(recommendationId)
             .orElseThrow(() -> new RecommendationNotFoundException(recommendationId));
+        if (!Objects.equals(recommendation.getUserId(), userId)) {
+            throw new RecommendationAccessDeniedException(recommendationId, userId);
+        }
         return RecommendationResponseDto.from(recommendation);
     }
 }
