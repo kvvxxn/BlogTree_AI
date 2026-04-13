@@ -1,6 +1,7 @@
 package com.navigator.knowledge.domain.task.service;
 
 import com.navigator.knowledge.domain.task.exception.TaskNotFoundException;
+import com.navigator.knowledge.domain.task.exception.TaskAccessDeniedException;
 import com.navigator.knowledge.domain.task.entity.Task;
 import com.navigator.knowledge.domain.task.entity.TaskStatus;
 import com.navigator.knowledge.domain.task.entity.TaskType;
@@ -12,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -81,5 +83,14 @@ public class TaskService {
     public Task getTask(String taskId) {
         return taskRepository.findById(taskId)
                 .orElseThrow(() -> new TaskNotFoundException(taskId));
+    }
+
+    @Transactional(transactionManager = JPA_TRANSACTION_MANAGER, readOnly = true)
+    public Task getOwnedTask(Long userId, String taskId) {
+        Task task = getTask(taskId);
+        if (!Objects.equals(task.getUserId(), userId)) {
+            throw new TaskAccessDeniedException(taskId, userId);
+        }
+        return task;
     }
 }

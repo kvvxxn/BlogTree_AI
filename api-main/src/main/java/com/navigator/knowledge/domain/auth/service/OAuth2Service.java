@@ -4,6 +4,7 @@ import com.navigator.knowledge.domain.auth.dto.AuthDto;
 import com.navigator.knowledge.domain.user.entity.Role;
 import com.navigator.knowledge.domain.user.entity.User;
 import com.navigator.knowledge.domain.auth.repository.RefreshTokenRepository;
+import com.navigator.knowledge.domain.tree.service.KnowledgeService;
 import com.navigator.knowledge.domain.user.repository.UserRepository;
 import com.navigator.knowledge.global.security.jwt.JwtProvider;
 import com.navigator.knowledge.global.security.oauth2.GoogleAuthClient;
@@ -19,6 +20,7 @@ public class OAuth2Service {
     private final GoogleAuthClient googleAuthClient;
     private final RefreshTokenRepository refreshTokenRepository;
     private final UserRepository userRepository;
+    private final KnowledgeService knowledgeService;
     private final JwtProvider jwtProvider;
 
     // 인가 코드를 통해 구글 로그인 처리
@@ -50,7 +52,9 @@ public class OAuth2Service {
                             .profileImageUrl(userInfoDto.getPicture())
                             .role(Role.USER)
                             .build();
-                    return userRepository.save(newUser);
+                    User savedUser = userRepository.save(newUser);
+                    knowledgeService.createUserNode(savedUser.getId());
+                    return savedUser;
                 });
 
         // 4. 우리 서비스 전용 JWT (Access / Refresh) 토큰 생성

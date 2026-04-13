@@ -43,4 +43,8 @@ public class User {
     public void updateCareerGoal(String careerGoal) {
         this.careerGoal = careerGoal;
     }
+
+    public void updateName(String name) {
+        this.name = name;
+    }
 }

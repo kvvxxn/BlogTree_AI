@@ -2,9 +2,11 @@ package com.navigator.knowledge.domain.auth.presentation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.navigator.knowledge.domain.auth.repository.RefreshTokenRepository;
+import com.navigator.knowledge.domain.recommend.messaging.listener.RecommendTaskListener;
+import com.navigator.knowledge.domain.recommend.messaging.producer.RecommendTaskProducer;
 import com.navigator.knowledge.domain.summary.messaging.listener.SummaryTaskListener;
 import com.navigator.knowledge.domain.summary.messaging.producer.SummaryTaskProducer;
-import com.navigator.knowledge.domain.task.service.SseEmitterService;
+import com.navigator.knowledge.domain.task.sse.SseEmitterService;
 import com.navigator.knowledge.domain.tree.service.KnowledgeService;
 import com.navigator.knowledge.domain.user.entity.Role;
 import com.navigator.knowledge.domain.user.entity.User;
@@ -18,6 +20,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.neo4j.driver.Driver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,7 +29,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.neo4j.core.DatabaseSelectionProvider;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import javax.crypto.SecretKey;
@@ -38,22 +43,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(properties = {
-        "spring.jpa.hibernate.ddl-auto=create-drop",
-        "spring.ai.openai.api-key=test-api-key",
-        "spring.ai.openai.embedding.options.model=test-model",
-        "oauth2.google.client-id=test-client-id",
-        "oauth2.google.client-secret=test-client-secret",
-        "jwt.secret=dGVzdC1qd3Qtc2VjcmV0LWZvci1pbnRlZ3JhdGlvbi10ZXN0cw==",
-        "jwt.access-expiration=3600000",
-        "jwt.refresh-expiration=1800000",
-        "app.cors.allowed-origins=http://localhost:3000",
-        "spring.autoconfigure.exclude=" +
-                "org.springframework.boot.autoconfigure.neo4j.Neo4jAutoConfiguration," +
-                "org.springframework.boot.autoconfigure.data.neo4j.Neo4jDataAutoConfiguration," +
-                "org.springframework.boot.autoconfigure.data.neo4j.Neo4jRepositoriesAutoConfiguration," +
-                "org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration"
-})
+@ActiveProfiles("test")
+@SpringBootTest
 @AutoConfigureMockMvc
 class AuthControllerIntegrationTest {
 
@@ -85,6 +76,12 @@ class AuthControllerIntegrationTest {
     private SummaryTaskListener summaryTaskListener;
 
     @MockBean
+    private RecommendTaskProducer recommendTaskProducer;
+
+    @MockBean
+    private RecommendTaskListener recommendTaskListener;
+
+    @MockBean
     private ConnectionFactory connectionFactory;
 
     @MockBean
@@ -95,6 +92,12 @@ class AuthControllerIntegrationTest {
 
     @MockBean
     private SseEmitterService sseEmitterService;
+
+    @MockBean
+    private Driver neo4jDriver;
+
+    @MockBean
+    private DatabaseSelectionProvider databaseSelectionProvider;
 
     @BeforeEach
     void setUp() {
@@ -107,7 +110,7 @@ class AuthControllerIntegrationTest {
     @DisplayName("POST /api/auth/google은 사용자 저장 후 refresh token을 저장하고 설정된 만료시간으로 발급한다")
     void googleLogin_persistsUserAndRefreshTokenWithConfiguredExpiration() throws Exception {
         GoogleTokenResponse googleTokenResponse = createGoogleTokenResponse();
-        when(googleAuthClient.getGoogleAccessToken("google-auth-code"))
+        when(googleAuthClient.getGoogleAccessToken("google-auth-code", null))
                 .thenReturn(googleTokenResponse);
         when(googleAuthClient.getGoogleUserInfo(googleTokenResponse))
                 .thenReturn(createGoogleUserInfo("user@example.com", "Tester"));
