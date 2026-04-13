@@ -142,12 +142,13 @@ def scrape_for_else(soup: BeautifulSoup) -> str:
 
 
 @observe(name="Retry scraping forcefully with Trafilatura", capture_input=False, capture_output=False)
-def scrape_forcefully(html_source: str) -> str:
+def scrape_forcefully(html_source: str, url: str) -> str:
     """
     맞춤형 파서가 실패했을 때, Trafilatura를 사용하여 강제로 본문 텍스트를 추출하는 최후의 보루 함수
 
     params:
     - html_source: requests로 받아온 원본 HTML 텍스트 문자열 (BeautifulSoup 객체 아님)
+    - url: 스크래핑할 블로그 URL
 
     return: 추출된 정제된 본문 텍스트 (추출 실패 시 빈 문자열 반환)
     """
@@ -155,10 +156,17 @@ def scrape_forcefully(html_source: str) -> str:
 
     # trafilatura를 활용하여 노이즈를 제거하고 순수 본문만 강제 추출
     text_clean = trafilatura.extract(
-        html_source, 
-        include_links=False,     # 링크 URL 텍스트 제외
-        include_images=False,    # 이미지 태그 관련 텍스트 제외
-        include_comments=False   # 댓글 영역 제외
+        html_source,
+        url=url,                    # 메타데이터/링크 추적을 위해 넣어주면 좋음
+        include_links=False,        # 순수 텍스트만 필요하므로 제외
+        include_images=False,       # 이미지 정보 제외
+        include_comments=False,     # 남의 댓글이 본문에 섞이는 것 방지
+        include_tables=True,        # 표에 중요한 정보가 있을 수 있으므로 보통 유지
+        favor_precision=True,       # 노이즈를 최대한 줄임
+        deduplicate=True,           # 사이드바/헤더 등에 중복 배치된 문구 제거
+        include_formatting=True,    # **강조**, _이탤릭_ 등 마크다운 스타일 보존
+        output_format="markdown",   # LLM이 구조를 파악하기 가장 좋은 포맷
+        target_language="ko"        # 한국어 사이트 위주라면 명시
     )
 
     # trafilatura가 아무것도 찾지 못해 None을 반환할 경우를 대비한 안전 장치

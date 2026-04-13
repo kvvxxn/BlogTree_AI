@@ -64,7 +64,7 @@ def scrape_blog_text(url: str) -> str:
         else:
             logger.info("[일반 블로그] 플랫폼 감지 - Trafilatura 강제 파서 즉시 실행")
             started_at = time.perf_counter()
-            text_clean = scrape_forcefully(response.text) # 무조건 Trafilatura로 스크래핑
+            text_clean = scrape_forcefully(html_source=response.text, url=url) # 무조건 Trafilatura로 스크래핑
             logger.info("[일반 블로그] 파서 실행 시간: %.3fs", time.perf_counter() - started_at)
 
         # 파싱 실패 또는 빈 텍스트인지 확인
@@ -73,7 +73,7 @@ def scrape_blog_text(url: str) -> str:
 
             logger.info(f"[{url}] trafilatura을 이용하여 강제 스크래핑을 시도합니다.")
             started_at = time.perf_counter()
-            text_clean = scrape_forcefully(response.text)
+            text_clean = scrape_forcefully(html_source=response.text, url=url)
             logger.info("강제 스크래핑 실행 시간: %.3fs", time.perf_counter() - started_at)
 
         if not text_clean or not text_clean.strip():
