@@ -266,16 +266,19 @@ export function DashboardOverview() {
             <div className="knowledge-modal__header">
               <div>
                 <span className="section-label">Knowledge Card</span>
-                {keywordPath && (
-                  <div className="knowledge-modal__path">
-                    <span className="knowledge-path__item knowledge-path__item--category">{keywordPath.category}</span>
-                    <span className="knowledge-path__arrow">→</span>
-                    <span className="knowledge-path__item knowledge-path__item--topic">{keywordPath.topic}</span>
-                    <span className="knowledge-path__arrow">→</span>
-                    <span className="knowledge-path__item knowledge-path__item--keyword">{selectedKeyword.title}</span>
-                  </div>
-                )}
-                <h2 id="knowledge-card-title">{selectedKeyword.title}</h2>
+                <h2 id="knowledge-card-title" className="knowledge-modal__title-path">
+                  {keywordPath ? (
+                    <>
+                      <span className="knowledge-title__category">{keywordPath.category}</span>
+                      <span className="knowledge-title__arrow">→</span>
+                      <span className="knowledge-title__topic">{keywordPath.topic}</span>
+                      <span className="knowledge-title__arrow">→</span>
+                      <span className="knowledge-title__keyword">{selectedKeyword.title}</span>
+                    </>
+                  ) : (
+                    selectedKeyword.title
+                  )}
+                </h2>
               </div>
               <button
                 className="button button--ghost"

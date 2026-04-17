@@ -711,6 +711,31 @@ textarea {
   margin: 8px 0 0;
 }
 
+.knowledge-modal__title-path {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.knowledge-title__category {
+  color: #f472b6;
+}
+
+.knowledge-title__topic {
+  color: #60a5fa;
+}
+
+.knowledge-title__keyword {
+  color: #34d399;
+}
+
+.knowledge-title__arrow {
+  color: var(--muted);
+  font-size: 0.85em;
+  font-weight: 400;
+}
+
 .knowledge-modal__body {
   display: grid;
   gap: 16px;
