@@ -151,6 +151,7 @@ export function SummaryPanel() {
 
       {status === "success" && result && (
         <>
+          <hr className="summary-divider" />
           <div className="summary-result-card">
             <div className="summary-result-card__header">
               <span className="section-label">Knowledge Card</span>
