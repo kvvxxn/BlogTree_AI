@@ -80,7 +80,7 @@ function getNodeClassName(node: TreeNodeCard) {
 }
 
 export function DashboardOverview() {
-  const [selectedKeywordId, setSelectedKeywordId] = useState<string | null>("vector-index");
+  const [selectedKeywordId, setSelectedKeywordId] = useState<string | null>(null);
   const selectedKeyword =
     treeNodes.find((node) => node.id === selectedKeywordId && node.kind === "keyword") ?? null;
 
