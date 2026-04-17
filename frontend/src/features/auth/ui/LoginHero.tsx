@@ -1,22 +1,15 @@
-import { buildGoogleAuthorizeUrl } from "@/features/auth/lib/google-oauth";
+import { useNavigate } from "react-router-dom";
+import { setAuthTokens } from "@/shared/api/token-storage";
 import { logger } from "@/shared/lib/logger";
 
 export function LoginHero() {
+  const navigate = useNavigate();
+
   function handleGoogleLogin() {
-    try {
-      const authorizeUrl = buildGoogleAuthorizeUrl();
-      logger.info("auth", "Google 로그인 리다이렉트를 시작합니다.", {
-        redirectUri: window.location.origin,
-      });
-      window.location.href = authorizeUrl;
-    } catch (error) {
-      logger.error("auth", "Google 로그인 URL 생성에 실패했습니다.", error);
-      window.alert(
-        error instanceof Error
-          ? error.message
-          : "Google 로그인 URL을 만드는 중 오류가 발생했습니다.",
-      );
-    }
+    // 임시: 실제 Google OAuth 없이 바로 대시보드로 이동
+    logger.info("auth", "임시 로그인 - 대시보드로 바로 이동합니다.");
+    setAuthTokens("demo-access-token", "demo-refresh-token");
+    navigate("/");
   }
 
   return (
