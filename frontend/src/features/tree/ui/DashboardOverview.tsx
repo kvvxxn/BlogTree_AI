@@ -91,18 +91,6 @@ export function DashboardOverview() {
   return (
     <>
       <section className="dashboard-canvas dashboard-canvas--full">
-        <section className="card dashboard-canvas__hero">
-          <div className="dashboard-canvas__heading">
-            <div>
-              <span className="section-label">Knowledge Graph</span>
-              <h1>내 블로그 트리</h1>
-              <p>
-                읽어본 블로그 내용이 하나의 지식 트리가 됩니다.
-              </p>
-            </div>
-          </div>
-        </section>
-
         <section className="card dashboard-tree-shell">
           <div className="dashboard-tree-shell__header">
             <div>
