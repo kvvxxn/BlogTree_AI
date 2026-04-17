@@ -11,7 +11,7 @@ type TreeNodeCard = {
   sourceUrl?: string;
 };
 
-// 중앙 Career Goal
+// 왼쪽 Career Goal
 const careerGoal: TreeNodeCard = {
   id: "career-goal",
   title: "AI Backend Engineer",
@@ -19,7 +19,7 @@ const careerGoal: TreeNodeCard = {
   kind: "goal",
 };
 
-// 상단 방향 (Backend 계열)
+// 상단 브랜치 (Backend 계열)
 const upperBranch = {
   category: { id: "backend", title: "Backend", subtitle: "Category", kind: "category" as TreeKind },
   topics: [
@@ -45,7 +45,7 @@ const upperBranch = {
   ],
 };
 
-// 하단 방향 (AI 계열)
+// 하단 브랜치 (AI 계열)
 const lowerBranch = {
   category: { id: "ai", title: "AI", subtitle: "Category", kind: "category" as TreeKind },
   topics: [
@@ -84,6 +84,10 @@ export function DashboardOverview() {
   const allKeywords = [...upperBranch.keywords, ...lowerBranch.keywords];
   const selectedKeyword = allKeywords.find((k) => k.id === selectedKeywordId) ?? null;
 
+  // 수평 트리 레이아웃: Goal(왼쪽) -> Category(중앙 상하) -> Topic -> Keyword
+  // X 좌표: Goal 8%, Category 28%, Topic 52%, Keyword 78%
+  // Y 좌표: 상단 브랜치 25%, 하단 브랜치 75%
+
   return (
     <>
       <section className="dashboard-canvas dashboard-canvas--full">
@@ -105,73 +109,88 @@ export function DashboardOverview() {
               <span className="section-label">Knowledge Tree</span>
               <div className="tree-legend">
                 <span className="tree-legend__item tree-legend__item--category">카테고리</span>
-                <span className="tree-legend__arrow">➔</span>
+                <span className="tree-legend__arrow">→</span>
                 <span className="tree-legend__item tree-legend__item--topic">토픽</span>
-                <span className="tree-legend__arrow">➔</span>
+                <span className="tree-legend__arrow">→</span>
                 <span className="tree-legend__item tree-legend__item--keyword">키워드</span>
               </div>
             </div>
           </div>
 
-          <div className="tree-viewport tree-viewport--radial">
+          <div className="tree-viewport tree-viewport--horizontal">
             <svg
               className="tree-viewport__links"
               viewBox="0 0 100 100"
               preserveAspectRatio="none"
               aria-hidden="true"
             >
-              {/* Goal -> Categories */}
-              <line x1="50" y1="50" x2="50" y2="22" className="tree-link tree-link--goal" />
-              <line x1="50" y1="50" x2="50" y2="78" className="tree-link tree-link--goal" />
+              {/* Goal -> Categories (수평 분기) */}
+              <line x1="12" y1="50" x2="24" y2="50" className="tree-link tree-link--goal" />
+              <line x1="24" y1="50" x2="24" y2="28" className="tree-link tree-link--goal" />
+              <line x1="24" y1="50" x2="24" y2="72" className="tree-link tree-link--goal" />
+              <line x1="24" y1="28" x2="28" y2="28" className="tree-link tree-link--goal" />
+              <line x1="24" y1="72" x2="28" y2="72" className="tree-link tree-link--goal" />
               
               {/* Upper: Category -> Topic */}
-              <line x1="50" y1="22" x2="70" y2="22" className="tree-link tree-link--category" />
+              <line x1="36" y1="28" x2="50" y2="28" className="tree-link tree-link--category" />
               
               {/* Upper: Topic -> Keywords */}
-              <line x1="70" y1="22" x2="88" y2="14" className="tree-link tree-link--topic" />
-              <line x1="70" y1="22" x2="88" y2="30" className="tree-link tree-link--topic" />
+              <line x1="58" y1="28" x2="68" y2="28" className="tree-link tree-link--topic" />
+              <line x1="68" y1="28" x2="68" y2="18" className="tree-link tree-link--topic" />
+              <line x1="68" y1="28" x2="68" y2="38" className="tree-link tree-link--topic" />
+              <line x1="68" y1="18" x2="74" y2="18" className="tree-link tree-link--topic" />
+              <line x1="68" y1="38" x2="74" y2="38" className="tree-link tree-link--topic" />
               
               {/* Lower: Category -> Topic */}
-              <line x1="50" y1="78" x2="70" y2="78" className="tree-link tree-link--category" />
+              <line x1="36" y1="72" x2="50" y2="72" className="tree-link tree-link--category" />
               
               {/* Lower: Topic -> Keywords */}
-              <line x1="70" y1="78" x2="88" y2="70" className="tree-link tree-link--topic" />
-              <line x1="70" y1="78" x2="88" y2="86" className="tree-link tree-link--topic" />
+              <line x1="58" y1="72" x2="68" y2="72" className="tree-link tree-link--topic" />
+              <line x1="68" y1="72" x2="68" y2="62" className="tree-link tree-link--topic" />
+              <line x1="68" y1="72" x2="68" y2="82" className="tree-link tree-link--topic" />
+              <line x1="68" y1="62" x2="74" y2="62" className="tree-link tree-link--topic" />
+              <line x1="68" y1="82" x2="74" y2="82" className="tree-link tree-link--topic" />
             </svg>
 
-            {/* Center: Career Goal */}
+            {/* Left: Career Goal */}
             <div
-              className="tree-node-card tree-node-card--goal tree-node-card--center"
-              style={{ left: "50%", top: "50%" }}
+              className="tree-node-card tree-node-card--goal"
+              style={{ left: "8%", top: "50%", transform: "translateY(-50%)" }}
             >
               <span>{careerGoal.subtitle}</span>
               <strong>{careerGoal.title}</strong>
             </div>
 
-            {/* Upper Branch */}
+            {/* Upper Branch - Category */}
             <button
               className={getNodeClassName("category")}
-              style={{ left: "50%", top: "22%" }}
+              style={{ left: "32%", top: "28%", transform: "translate(-50%, -50%)" }}
               type="button"
             >
               <span>{upperBranch.category.subtitle}</span>
               <strong>{upperBranch.category.title}</strong>
             </button>
 
+            {/* Upper Branch - Topic */}
             <button
               className={getNodeClassName("topic")}
-              style={{ left: "70%", top: "22%" }}
+              style={{ left: "54%", top: "28%", transform: "translate(-50%, -50%)" }}
               type="button"
             >
               <span>{upperBranch.topics[0].subtitle}</span>
               <strong>{upperBranch.topics[0].title}</strong>
             </button>
 
+            {/* Upper Branch - Keywords */}
             {upperBranch.keywords.map((keyword, index) => (
               <button
                 key={keyword.id}
                 className={getNodeClassName("keyword", selectedKeywordId === keyword.id)}
-                style={{ left: "88%", top: `${14 + index * 16}%` }}
+                style={{ 
+                  left: "80%", 
+                  top: `${18 + index * 20}%`, 
+                  transform: "translate(-50%, -50%)" 
+                }}
                 type="button"
                 onClick={() => setSelectedKeywordId(keyword.id)}
                 aria-pressed={selectedKeywordId === keyword.id}
@@ -181,30 +200,36 @@ export function DashboardOverview() {
               </button>
             ))}
 
-            {/* Lower Branch */}
+            {/* Lower Branch - Category */}
             <button
               className={getNodeClassName("category")}
-              style={{ left: "50%", top: "78%" }}
+              style={{ left: "32%", top: "72%", transform: "translate(-50%, -50%)" }}
               type="button"
             >
               <span>{lowerBranch.category.subtitle}</span>
               <strong>{lowerBranch.category.title}</strong>
             </button>
 
+            {/* Lower Branch - Topic */}
             <button
               className={getNodeClassName("topic")}
-              style={{ left: "70%", top: "78%" }}
+              style={{ left: "54%", top: "72%", transform: "translate(-50%, -50%)" }}
               type="button"
             >
               <span>{lowerBranch.topics[0].subtitle}</span>
               <strong>{lowerBranch.topics[0].title}</strong>
             </button>
 
+            {/* Lower Branch - Keywords */}
             {lowerBranch.keywords.map((keyword, index) => (
               <button
                 key={keyword.id}
                 className={getNodeClassName("keyword", selectedKeywordId === keyword.id)}
-                style={{ left: "88%", top: `${70 + index * 16}%` }}
+                style={{ 
+                  left: "80%", 
+                  top: `${62 + index * 20}%`, 
+                  transform: "translate(-50%, -50%)" 
+                }}
                 type="button"
                 onClick={() => setSelectedKeywordId(keyword.id)}
                 aria-pressed={selectedKeywordId === keyword.id}

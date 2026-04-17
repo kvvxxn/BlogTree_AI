@@ -513,15 +513,18 @@ textarea {
 }
 
 .tree-node-card--category {
-  border-color: rgba(255, 138, 61, 0.32);
+  border-color: rgba(255, 138, 61, 0.7);
+  border-width: 1.5px;
 }
 
 .tree-node-card--topic {
-  border-color: rgba(126, 200, 255, 0.32);
+  border-color: rgba(126, 200, 255, 0.7);
+  border-width: 1.5px;
 }
 
 .tree-node-card--keyword {
-  border-color: rgba(131, 242, 143, 0.26);
+  border-color: rgba(131, 242, 143, 0.6);
+  border-width: 1.5px;
 }
 
 .tree-node-card--interactive {
@@ -581,6 +584,10 @@ textarea {
   min-height: 640px;
 }
 
+.tree-viewport--horizontal {
+  min-height: 640px;
+}
+
 /* Tree Legend */
 .tree-legend {
   display: flex;
@@ -608,33 +615,33 @@ textarea {
 }
 
 .tree-legend__item--category {
-  background: rgba(255, 138, 61, 0.12);
-  border: 1px solid rgba(255, 138, 61, 0.32);
+  background: rgba(255, 138, 61, 0.18);
+  border: 1.5px solid rgba(255, 138, 61, 0.7);
   color: #ffb87a;
 }
 
 .tree-legend__item--category::before {
-  background: rgba(255, 138, 61, 0.6);
+  background: #ff8a3d;
 }
 
 .tree-legend__item--topic {
-  background: rgba(126, 200, 255, 0.12);
-  border: 1px solid rgba(126, 200, 255, 0.32);
+  background: rgba(126, 200, 255, 0.18);
+  border: 1.5px solid rgba(126, 200, 255, 0.7);
   color: #a8d8ff;
 }
 
 .tree-legend__item--topic::before {
-  background: rgba(126, 200, 255, 0.6);
+  background: #7ec8ff;
 }
 
 .tree-legend__item--keyword {
-  background: rgba(131, 242, 143, 0.12);
-  border: 1px solid rgba(131, 242, 143, 0.26);
+  background: rgba(131, 242, 143, 0.18);
+  border: 1.5px solid rgba(131, 242, 143, 0.6);
   color: #a8f5b0;
 }
 
 .tree-legend__item--keyword::before {
-  background: rgba(131, 242, 143, 0.6);
+  background: #83f28f;
 }
 
 .tree-legend__arrow {
