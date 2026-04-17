@@ -44,8 +44,7 @@ export function StatsWorkspace() {
         
         {/* 헤더 섹션 */}
         <header className="workspace-header">
-          <h1 className="header-title">나의 지식 트리</h1>
-          <p className="header-subtitle">커리어 목표: AI Backend Engineer</p>
+          <h1 className="header-career-goal">AI Backend Engineer</h1>
         </header>
 
         {/* 0. 총 학습 블로그 - Hero */}
