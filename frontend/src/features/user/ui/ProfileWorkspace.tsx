@@ -19,10 +19,7 @@ export function ProfileWorkspace() {
           <span className="section-label">Edit Name</span>
           <h2>이름 수정</h2>
           <form className="form-layout">
-            <label className="field">
-              <span>Name</span>
-              <input className="input" type="text" placeholder="이름을 입력하세요" />
-            </label>
+            <input className="input" type="text" placeholder="이름을 입력하세요" />
 
             <div className="button-row">
               <button className="button button--primary" type="button">
@@ -36,14 +33,11 @@ export function ProfileWorkspace() {
           <span className="section-label">Edit Career Goal</span>
           <h2>커리어 목표 수정</h2>
           <form className="form-layout">
-            <label className="field">
-              <span>Career Goal</span>
-              <input
-                className="input"
-                type="text"
-                placeholder="예: Backend"
-              />
-            </label>
+            <input
+              className="input"
+              type="text"
+              placeholder="예: Backend Developer"
+            />
 
             <div className="button-row">
               <button className="button button--primary" type="button">
