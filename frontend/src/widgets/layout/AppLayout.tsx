@@ -120,16 +120,10 @@ export function AppLayout() {
 
       <div className="content-shell">
         <header className="topbar">
-          <div>
-            <span className="topbar__eyebrow">Workspace</span>
-            <h2>Frontend prototype</h2>
-          </div>
-          <div className="topbar__actions">
-            <div className="topbar__badge">React + TypeScript</div>
-            <button className="button button--ghost" type="button" onClick={handleLogout}>
-              Logout
-            </button>
-          </div>
+          <div />
+          <button className="button button--ghost" type="button" onClick={handleLogout}>
+            Logout
+          </button>
         </header>
 
         <main className="page-container">
