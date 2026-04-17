@@ -513,17 +513,17 @@ textarea {
 }
 
 .tree-node-card--category {
-  border-color: rgba(255, 138, 61, 0.7);
+  border-color: rgba(244, 114, 182, 0.75);
   border-width: 1.5px;
 }
 
 .tree-node-card--topic {
-  border-color: rgba(126, 200, 255, 0.7);
+  border-color: rgba(96, 165, 250, 0.75);
   border-width: 1.5px;
 }
 
 .tree-node-card--keyword {
-  border-color: rgba(131, 242, 143, 0.6);
+  border-color: rgba(52, 211, 153, 0.7);
   border-width: 1.5px;
 }
 
@@ -615,33 +615,33 @@ textarea {
 }
 
 .tree-legend__item--category {
-  background: rgba(255, 138, 61, 0.18);
-  border: 1.5px solid rgba(255, 138, 61, 0.7);
-  color: #ffb87a;
+  background: rgba(244, 114, 182, 0.15);
+  border: 1.5px solid rgba(244, 114, 182, 0.75);
+  color: #f9a8d4;
 }
 
 .tree-legend__item--category::before {
-  background: #ff8a3d;
+  background: #f472b6;
 }
 
 .tree-legend__item--topic {
-  background: rgba(126, 200, 255, 0.18);
-  border: 1.5px solid rgba(126, 200, 255, 0.7);
-  color: #a8d8ff;
+  background: rgba(96, 165, 250, 0.15);
+  border: 1.5px solid rgba(96, 165, 250, 0.75);
+  color: #93c5fd;
 }
 
 .tree-legend__item--topic::before {
-  background: #7ec8ff;
+  background: #60a5fa;
 }
 
 .tree-legend__item--keyword {
-  background: rgba(131, 242, 143, 0.18);
-  border: 1.5px solid rgba(131, 242, 143, 0.6);
-  color: #a8f5b0;
+  background: rgba(52, 211, 153, 0.15);
+  border: 1.5px solid rgba(52, 211, 153, 0.7);
+  color: #6ee7b7;
 }
 
 .tree-legend__item--keyword::before {
-  background: #83f28f;
+  background: #34d399;
 }
 
 .tree-legend__arrow {
@@ -651,9 +651,10 @@ textarea {
 
 /* Goal Node */
 .tree-node-card--goal {
-  border-color: rgba(255, 215, 0, 0.5);
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 138, 61, 0.1)), rgba(19, 25, 31, 0.94);
-  box-shadow: 0 0 30px rgba(255, 215, 0, 0.15), 0 18px 40px rgba(0, 0, 0, 0.28);
+  border-color: rgba(251, 191, 36, 0.7);
+  border-width: 1.5px;
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.18), rgba(251, 191, 36, 0.08)), rgba(19, 25, 31, 0.94);
+  box-shadow: 0 0 30px rgba(251, 191, 36, 0.12), 0 18px 40px rgba(0, 0, 0, 0.28);
   min-width: 180px;
   z-index: 2;
 }
@@ -664,19 +665,19 @@ textarea {
 
 /* Tree Links */
 .tree-link {
-  stroke-width: 0.4;
+  stroke-width: 0.5;
 }
 
 .tree-link--goal {
-  stroke: rgba(255, 215, 0, 0.4);
+  stroke: rgba(251, 191, 36, 0.5);
 }
 
 .tree-link--category {
-  stroke: rgba(255, 138, 61, 0.35);
+  stroke: rgba(244, 114, 182, 0.45);
 }
 
 .tree-link--topic {
-  stroke: rgba(126, 200, 255, 0.35);
+  stroke: rgba(96, 165, 250, 0.45);
 }
 
 .knowledge-modal-backdrop {

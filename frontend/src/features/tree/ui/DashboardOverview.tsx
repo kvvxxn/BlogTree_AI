@@ -124,12 +124,11 @@ export function DashboardOverview() {
               preserveAspectRatio="none"
               aria-hidden="true"
             >
-              {/* Goal -> Categories (수평 분기) */}
-              <line x1="12" y1="50" x2="24" y2="50" className="tree-link tree-link--goal" />
-              <line x1="24" y1="50" x2="24" y2="28" className="tree-link tree-link--goal" />
-              <line x1="24" y1="50" x2="24" y2="72" className="tree-link tree-link--goal" />
-              <line x1="24" y1="28" x2="28" y2="28" className="tree-link tree-link--goal" />
-              <line x1="24" y1="72" x2="28" y2="72" className="tree-link tree-link--goal" />
+              {/* Goal -> 수평 트렁크 -> 상하 분기 -> Categories */}
+              <line x1="16" y1="50" x2="22" y2="50" className="tree-link tree-link--goal" />
+              <line x1="22" y1="28" x2="22" y2="72" className="tree-link tree-link--goal" />
+              <line x1="22" y1="28" x2="28" y2="28" className="tree-link tree-link--goal" />
+              <line x1="22" y1="72" x2="28" y2="72" className="tree-link tree-link--goal" />
               
               {/* Upper: Category -> Topic */}
               <line x1="36" y1="28" x2="50" y2="28" className="tree-link tree-link--category" />
