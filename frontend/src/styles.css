@@ -64,6 +64,17 @@ textarea {
   height: 100vh;
 }
 
+.sidebar__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.sidebar__logout {
+  flex-shrink: 0;
+}
+
 .sidebar__brand h1,
 .hero-banner h1,
 .login-hero h1,
