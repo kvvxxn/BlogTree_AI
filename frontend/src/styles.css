@@ -1237,6 +1237,34 @@ textarea {
   color: #6ee7b7;
 }
 
+/* Recommend Blog List */
+.recommend-blog-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.recommend-blog-list li {
+  display: flex;
+  align-items: flex-start;
+}
+
+.recommend-blog-list li::before {
+  content: "•";
+  color: var(--secondary);
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.recommend-blog-list a {
+  color: var(--secondary);
+  font-size: 0.92rem;
+  line-height: 1.4;
+  word-break: break-all;
+}
+
 /* Knowledge Card Path */
 .knowledge-modal__path {
   display: flex;

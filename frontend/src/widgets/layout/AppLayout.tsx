@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { logout } from "@/features/auth/api/auth.api";
 import { SummaryPanel } from "@/features/summary/ui/SummaryPanel";
+import { RecommendPanel } from "@/features/recommend/ui/RecommendPanel";
 
 const navItems = [
   { to: "/knowledge-graph", label: "Knowledge Graph" },
@@ -43,20 +44,7 @@ export function AppLayout() {
       case "/summary":
         return <SummaryPanel />;
       case "/recommendation":
-        return (
-          <section className="sidebar__panel">
-            <div>
-              <span className="sidebar__eyebrow">Learning Recommendation</span>
-              <h2 className="sidebar__panel-title">맞춤형 학습 추천</h2>
-            </div>
-            <p className="sidebar__panel-copy">
-              현재까지 구축한 블로그 트리와 설정하신 커리어 목표를 분석하여, 다음으로 학습하기 좋은 맞춤형 키워드를 추천합니다.
-            </p>
-            <button className="button button--primary" type="button">
-              추천 키워드 생성
-            </button>
-          </section>
-        );
+        return <RecommendPanel />;
       case "/profile":
         return (
           <section className="sidebar__panel">
