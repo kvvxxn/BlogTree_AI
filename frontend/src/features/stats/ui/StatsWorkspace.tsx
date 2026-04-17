@@ -2,8 +2,8 @@
 const totalBlogs = 42;
 
 const categoryData = [
-  { name: "Backend", count: 25, percentage: 60, color: "#f472b6" },
-  { name: "AI", count: 17, percentage: 40, color: "#60a5fa" },
+  { name: "Backend", count: 25, percentage: 60, color: "#818cf8" },
+  { name: "AI", count: 17, percentage: 40, color: "#2dd4bf" },
 ];
 
 const topTopics = [
@@ -21,10 +21,28 @@ const recentKeywords = [
 ];
 
 export function StatsWorkspace() {
+  // 도넛 차트 계산
+  const radius = 40;
+  const circumference = 2 * Math.PI * radius;
+  const gap = 4; // 섹션 간 간격
+  
+  let cumulativeOffset = 0;
+  const segments = categoryData.map((cat) => {
+    const segmentLength = (cat.percentage / 100) * circumference - gap;
+    const offset = cumulativeOffset;
+    cumulativeOffset += (cat.percentage / 100) * circumference;
+    return {
+      ...cat,
+      dasharray: `${segmentLength} ${circumference}`,
+      dashoffset: -offset,
+    };
+  });
+
   return (
     <section className="page-stack">
-      {/* 0. 총 학습 블로그 */}
+      {/* 0. 총 학습 블로그 - Hero */}
       <section className="stats-hero card">
+        <div className="stats-hero__glow" />
         <div className="stats-hero__content">
           <span className="section-label">Total Knowledge</span>
           <div className="stats-hero__number">{totalBlogs}</div>
@@ -33,47 +51,48 @@ export function StatsWorkspace() {
       </section>
 
       <section className="content-grid content-grid--wide">
-        {/* 1. 나의 학습 밸런스 */}
+        {/* 1. 나의 학습 밸런스 - Donut Chart */}
         <article className="card">
           <span className="section-label">Learning Balance</span>
           <h2>나의 학습 밸런스</h2>
           
-          <div className="stats-pie">
-            <div className="stats-pie__chart">
-              <svg viewBox="0 0 100 100" className="stats-pie__svg">
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="40"
-                  fill="none"
-                  stroke="#f472b6"
-                  strokeWidth="20"
-                  strokeDasharray={`${60 * 2.51} ${100 * 2.51}`}
-                  strokeDashoffset="0"
-                  transform="rotate(-90 50 50)"
-                />
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="40"
-                  fill="none"
-                  stroke="#60a5fa"
-                  strokeWidth="20"
-                  strokeDasharray={`${40 * 2.51} ${100 * 2.51}`}
-                  strokeDashoffset={`${-60 * 2.51}`}
-                  transform="rotate(-90 50 50)"
-                />
+          <div className="stats-donut">
+            <div className="stats-donut__chart">
+              <svg viewBox="0 0 100 100" className="stats-donut__svg">
+                {segments.map((seg) => (
+                  <circle
+                    key={seg.name}
+                    cx="50"
+                    cy="50"
+                    r={radius}
+                    fill="none"
+                    stroke={seg.color}
+                    strokeWidth="12"
+                    strokeLinecap="round"
+                    strokeDasharray={seg.dasharray}
+                    strokeDashoffset={seg.dashoffset}
+                    transform="rotate(-90 50 50)"
+                  />
+                ))}
               </svg>
+              <div className="stats-donut__center">
+                <span className="stats-donut__total">{totalBlogs}</span>
+                <span className="stats-donut__label">Total</span>
+              </div>
             </div>
-            <div className="stats-pie__legend">
+            
+            <div className="stats-donut__legend">
               {categoryData.map((cat) => (
-                <div key={cat.name} className="stats-pie__item">
+                <div key={cat.name} className="stats-donut__item">
                   <span
-                    className="stats-pie__dot"
+                    className="stats-donut__dot"
                     style={{ background: cat.color }}
                   />
-                  <span className="stats-pie__label">{cat.name}</span>
-                  <span className="stats-pie__value">{cat.percentage}% ({cat.count}개)</span>
+                  <span className="stats-donut__name">{cat.name}</span>
+                  <span className="stats-donut__divider">|</span>
+                  <span className="stats-donut__percent">{cat.percentage}%</span>
+                  <span className="stats-donut__divider">|</span>
+                  <span className="stats-donut__count">{cat.count}개</span>
                 </div>
               ))}
             </div>
@@ -92,15 +111,15 @@ export function StatsWorkspace() {
           <div className="stats-ranking">
             {topTopics.map((topic) => (
               <div key={topic.rank} className="stats-ranking__item">
-                <div className="stats-ranking__medal">
-                  {topic.rank === 1 && "🥇"}
-                  {topic.rank === 2 && "🥈"}
-                  {topic.rank === 3 && "🥉"}
+                <div className="stats-ranking__rank">
+                  {topic.rank === 1 && <span className="stats-ranking__medal stats-ranking__medal--gold">1</span>}
+                  {topic.rank === 2 && <span className="stats-ranking__medal stats-ranking__medal--silver">2</span>}
+                  {topic.rank === 3 && <span className="stats-ranking__medal stats-ranking__medal--bronze">3</span>}
                 </div>
                 <div className="stats-ranking__info">
                   <div className="stats-ranking__header">
                     <span className="stats-ranking__name">{topic.name}</span>
-                    <span className="stats-ranking__count">블로그 {topic.count}개</span>
+                    <span className="stats-ranking__count">{topic.count}개</span>
                   </div>
                   <div className="stats-ranking__bar">
                     <div
@@ -120,11 +139,11 @@ export function StatsWorkspace() {
         <span className="section-label">Recent Keywords</span>
         <h2>최근 획득한 키워드</h2>
         
-        <div className="stats-recent">
+        <div className="stats-keywords">
           {recentKeywords.map((kw) => (
-            <div key={kw.name} className="stats-recent__chip">
-              <span className="stats-recent__name">#{kw.name}</span>
-              <span className="stats-recent__time">{kw.time}</span>
+            <div key={kw.name} className="stats-keyword">
+              <span className="stats-keyword__badge">{kw.name}</span>
+              <span className="stats-keyword__time">{kw.time}</span>
             </div>
           ))}
         </div>
