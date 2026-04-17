@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { logout } from "@/features/auth/api/auth.api";
 
 const navItems = [
@@ -9,11 +9,83 @@ const navItems = [
 ];
 
 export function AppLayout() {
+  const location = useLocation();
+  const currentPath = location.pathname;
+
   async function handleLogout() {
     try {
       await logout();
     } finally {
       window.location.href = "/login";
+    }
+  }
+
+  function renderSidebarPanel() {
+    switch (currentPath) {
+      case "/":
+        return (
+          <section className="sidebar__panel">
+            <div>
+              <span className="sidebar__eyebrow">Knowledge Graph</span>
+              <h2 className="sidebar__panel-title">내 지식 그래프</h2>
+            </div>
+            <p className="sidebar__panel-copy">
+              학습한 내용이 카테고리, 토픽, 키워드로 구조화되어 표시됩니다.
+            </p>
+          </section>
+        );
+      case "/summary":
+        return (
+          <section className="sidebar__panel">
+            <div>
+              <span className="sidebar__eyebrow">Summary Request</span>
+              <h2 className="sidebar__panel-title">요약 요청</h2>
+            </div>
+            <p className="sidebar__panel-copy">
+              URL을 입력하면 블로그 내용을 분석해 지식 트리에 연결합니다.
+            </p>
+            <label className="field">
+              <span>Article URL</span>
+              <input
+                className="input"
+                type="url"
+                placeholder="https://example.com/article"
+              />
+            </label>
+            <button className="button button--primary" type="button">
+              요약 요청 보내기
+            </button>
+          </section>
+        );
+      case "/recommendation":
+        return (
+          <section className="sidebar__panel">
+            <div>
+              <span className="sidebar__eyebrow">Learning Recommendation</span>
+              <h2 className="sidebar__panel-title">학습 추천</h2>
+            </div>
+            <p className="sidebar__panel-copy">
+              현재 트리를 기준으로 다음 단계 키워드 추천을 생성합니다.
+            </p>
+            <button className="button button--primary" type="button">
+              추천 키워드 생성
+            </button>
+          </section>
+        );
+      case "/profile":
+        return (
+          <section className="sidebar__panel">
+            <div>
+              <span className="sidebar__eyebrow">Profile</span>
+              <h2 className="sidebar__panel-title">내 프로필</h2>
+            </div>
+            <p className="sidebar__panel-copy">
+              계정 정보와 학습 통계를 확인하고 설정을 변경할 수 있습니다.
+            </p>
+          </section>
+        );
+      default:
+        return null;
     }
   }
 
@@ -41,44 +113,7 @@ export function AppLayout() {
           ))}
         </nav>
 
-        <section className="sidebar__panel">
-          <div>
-            <span className="sidebar__eyebrow">Summary Request</span>
-            <h2 className="sidebar__panel-title">요약 요청</h2>
-          </div>
-          <p className="sidebar__panel-copy">
-            URL을 입력하면 블로그 내용을 분석해 지식 트리에 연결합니다.
-          </p>
-          <label className="field">
-            <span>Article URL</span>
-            <input
-              className="input"
-              type="url"
-              placeholder="https://example.com/article"
-            />
-          </label>
-          <button className="button button--primary" type="button">
-            요약 요청 보내기
-          </button>
-        </section>
-
-        <section className="sidebar__panel">
-          <div>
-            <span className="sidebar__eyebrow">Learning Recommendation</span>
-            <h2 className="sidebar__panel-title">학습 추천</h2>
-          </div>
-          <p className="sidebar__panel-copy">
-            현재 트리를 기준으로 다음 단계 키워드 추천을 생성합니다.
-          </p>
-          <button className="button button--primary" type="button">
-            추천 키워드 생성
-          </button>
-        </section>
-
-        <div className="sidebar__note">
-          <strong>Current backend flow</strong>
-          <span>`POST` 요청 후 `taskId`를 받고 SSE로 완료 이벤트를 구독합니다.</span>
-        </div>
+        {renderSidebarPanel()}
       </aside>
 
       <div className="content-shell">
