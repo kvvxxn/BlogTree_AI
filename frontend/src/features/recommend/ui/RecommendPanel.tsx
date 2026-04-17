@@ -8,7 +8,7 @@ type RecommendResult = {
   topic: string;
   keyword: string;
   reason: string;
-  blogUrls: { title: string; url: string }[];
+  searchTerms: string[];
 };
 
 const STATUS_MESSAGES: Record<RecommendStatus, string> = {
@@ -44,10 +44,10 @@ export function RecommendPanel() {
         topic: "Spring",
         keyword: "Spring Security",
         reason: "현재 JPA와 QueryDSL을 학습하셨으니, 다음 단계로 인증/인가 처리를 위한 Spring Security를 학습하시면 백엔드 개발 역량을 더욱 강화할 수 있습니다. 특히 JWT 기반 인증과 OAuth2 연동은 실무에서 자주 사용됩니다.",
-        blogUrls: [
-          { title: "Spring Security 기초 개념 정리", url: "https://velog.io/@example/spring-security-basics" },
-          { title: "JWT 인증 구현 가이드", url: "https://tistory.com/example/jwt-auth-guide" },
-          { title: "OAuth2 소셜 로그인 연동하기", url: "https://velog.io/@example/oauth2-social-login" },
+        searchTerms: [
+          "Spring Security 기초",
+          "Spring Security JWT 인증",
+          "Spring Boot OAuth2 소셜 로그인",
         ],
       });
       setStatus("success");
@@ -123,13 +123,11 @@ export function RecommendPanel() {
               </div>
 
               <div className="summary-result-card__section">
-                <strong>추천 블로그 URL</strong>
+                <strong>추천 검색어</strong>
                 <ul className="recommend-blog-list">
-                  {result.blogUrls.map((blog, index) => (
+                  {result.searchTerms.map((term, index) => (
                     <li key={index}>
-                      <a href={blog.url} target="_blank" rel="noreferrer">
-                        {blog.title}
-                      </a>
+                      <span>{term}</span>
                     </li>
                   ))}
                 </ul>
