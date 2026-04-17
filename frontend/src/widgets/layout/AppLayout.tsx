@@ -53,7 +53,7 @@ export function AppLayout() {
               <h2 className="sidebar__panel-title">내 프로필</h2>
             </div>
             <p className="sidebar__panel-copy">
-              계정 정보와 학습 통계를 확인하고 설정을 변경할 수 있습니다.
+              계정 정보를 관리하고 그동안의 학습 통계를 확인할 수 있습니다.
             </p>
           </section>
         );

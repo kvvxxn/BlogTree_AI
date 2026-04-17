@@ -1,17 +1,6 @@
 export function ProfileWorkspace() {
   return (
     <section className="page-stack">
-      <section className="hero-banner card">
-        <div>
-          <span className="section-label">Profile</span>
-          <h1>사용자 정보와 커리어 목표를 수정하는 화면입니다.</h1>
-          <p>
-            `GET /api/users/me`, `PATCH /api/users/me`를 연결할 자리이며 추천 품질에
-            직접 영향을 주는 커리어 목표 입력이 핵심입니다.
-          </p>
-        </div>
-      </section>
-
       <section className="content-grid content-grid--wide">
         <article className="card">
           <span className="section-label">Account</span>
