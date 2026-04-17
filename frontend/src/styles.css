@@ -1006,6 +1006,35 @@ textarea {
   gap: 16px;
 }
 
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.profile-info strong {
+  font-size: 1.1rem;
+}
+
+.profile-goal {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  background: rgba(251, 191, 36, 0.15);
+  border: 1px solid rgba(251, 191, 36, 0.5);
+  color: #fbbf24;
+  width: fit-content;
+}
+
+.profile-info p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
 .avatar {
   width: 64px;
   height: 64px;
