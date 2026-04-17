@@ -2,7 +2,7 @@ import { NavLink, Outlet } from "react-router-dom";
 import { logout } from "@/features/auth/api/auth.api";
 
 const navItems = [
-  { to: "/", label: "Dashboard" },
+  { to: "/", label: "Knowledge Graph" },
   { to: "/summary", label: "Summary Lab" },
   { to: "/recommendation", label: "Career Picks" },
   { to: "/profile", label: "Profile" },

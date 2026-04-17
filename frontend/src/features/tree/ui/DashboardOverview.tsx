@@ -90,7 +90,7 @@ export function DashboardOverview() {
         <section className="card dashboard-canvas__hero">
           <div className="dashboard-canvas__heading">
             <div>
-              <span className="section-label">Dashboard</span>
+              <span className="section-label">Knowledge Graph</span>
               <h1>Category &gt; Topic &gt; Keyword 구조로 지식을 탐색한다.</h1>
               <p>
                 키워드를 클릭하면 요약본과 원본 URL을 지식 카드 모달로 바로 확인할 수 있다.
