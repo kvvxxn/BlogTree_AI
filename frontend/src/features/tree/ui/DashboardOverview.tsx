@@ -1,88 +1,88 @@
 import { useState } from "react";
 
-type TreeKind = "category" | "topic" | "keyword";
+type TreeKind = "goal" | "category" | "topic" | "keyword";
 
 type TreeNodeCard = {
   id: string;
   title: string;
   subtitle: string;
   kind: TreeKind;
-  x: number;
-  y: number;
-  size: "lg" | "md" | "sm";
   summary?: string;
   sourceUrl?: string;
 };
 
-const treeNodes: TreeNodeCard[] = [
-  { id: "backend", title: "Backend", subtitle: "Category", kind: "category", x: 10, y: 26, size: "lg" },
-  { id: "ai", title: "AI", subtitle: "Category", kind: "category", x: 10, y: 68, size: "lg" },
-  { id: "spring", title: "Spring", subtitle: "Topic", kind: "topic", x: 36, y: 22, size: "md" },
-  { id: "rag", title: "RAG", subtitle: "Topic", kind: "topic", x: 38, y: 64, size: "md" },
-  {
-    id: "jpa",
-    title: "JPA",
-    subtitle: "Keyword",
-    kind: "keyword",
-    x: 66,
-    y: 16,
-    size: "sm",
-    summary: "Spring 기반 데이터 접근에서 ORM 매핑, 영속성 컨텍스트, 트랜잭션 경계를 이해하는 핵심 키워드.",
-    sourceUrl: "https://spring.io/projects/spring-data-jpa",
-  },
-  {
-    id: "querydsl",
-    title: "QueryDSL",
-    subtitle: "Keyword",
-    kind: "keyword",
-    x: 70,
-    y: 34,
-    size: "sm",
-    summary: "복잡한 동적 쿼리를 타입 안정성 있게 구성할 때 사용하는 도구로 JPA 학습 다음 단계에 자주 연결된다.",
-    sourceUrl: "https://querydsl.com/",
-  },
-  {
-    id: "vector-index",
-    title: "Vector Index",
-    subtitle: "Keyword",
-    kind: "keyword",
-    x: 67,
-    y: 58,
-    size: "sm",
-    summary: "RAG 시스템에서 임베딩 기반 검색 품질과 성능을 좌우하는 인덱싱 전략에 대한 핵심 개념.",
-    sourceUrl: "https://www.pinecone.io/learn/vector-indexes/",
-  },
-  {
-    id: "reranking",
-    title: "Reranking",
-    subtitle: "Keyword",
-    kind: "keyword",
-    x: 73,
-    y: 77,
-    size: "sm",
-    summary: "1차 검색 결과를 다시 정렬해 문맥 적합도를 높이는 단계로, 검색 정확도 개선에 직접 연결된다.",
-    sourceUrl: "https://www.pinecone.io/learn/series/rag/rerankers/",
-  },
-];
+// 중앙 Career Goal
+const careerGoal: TreeNodeCard = {
+  id: "career-goal",
+  title: "AI Backend Engineer",
+  subtitle: "Career Goal",
+  kind: "goal",
+};
 
-const treeLinks = [
-  { from: { x: 18, y: 31 }, to: { x: 43, y: 27 } },
-  { from: { x: 18, y: 72 }, to: { x: 45, y: 68 } },
-  { from: { x: 44, y: 25 }, to: { x: 71, y: 20 } },
-  { from: { x: 46, y: 28 }, to: { x: 75, y: 38 } },
-  { from: { x: 46, y: 67 }, to: { x: 72, y: 62 } },
-  { from: { x: 47, y: 69 }, to: { x: 78, y: 80 } },
-];
+// 상단 방향 (Backend 계열)
+const upperBranch = {
+  category: { id: "backend", title: "Backend", subtitle: "Category", kind: "category" as TreeKind },
+  topics: [
+    { id: "spring", title: "Spring", subtitle: "Topic", kind: "topic" as TreeKind },
+  ],
+  keywords: [
+    {
+      id: "jpa",
+      title: "JPA",
+      subtitle: "Keyword",
+      kind: "keyword" as TreeKind,
+      summary: "Spring 기반 데이터 접근에서 ORM 매핑, 영속성 컨텍스트, 트랜잭션 경계를 이해하는 핵심 키워드.",
+      sourceUrl: "https://spring.io/projects/spring-data-jpa",
+    },
+    {
+      id: "querydsl",
+      title: "QueryDSL",
+      subtitle: "Keyword",
+      kind: "keyword" as TreeKind,
+      summary: "복잡한 동적 쿼리를 타입 안정성 있게 구성할 때 사용하는 도구로 JPA 학습 다음 단계에 자주 연결된다.",
+      sourceUrl: "https://querydsl.com/",
+    },
+  ],
+};
 
-function getNodeClassName(node: TreeNodeCard) {
-  const clickableClass = node.kind === "keyword" ? " tree-node-card--interactive" : "";
-  return `tree-node-card tree-node-card--${node.kind} tree-node-card--${node.size}${clickableClass}`;
+// 하단 방향 (AI 계열)
+const lowerBranch = {
+  category: { id: "ai", title: "AI", subtitle: "Category", kind: "category" as TreeKind },
+  topics: [
+    { id: "rag", title: "RAG", subtitle: "Topic", kind: "topic" as TreeKind },
+  ],
+  keywords: [
+    {
+      id: "vector-index",
+      title: "Vector Index",
+      subtitle: "Keyword",
+      kind: "keyword" as TreeKind,
+      summary: "RAG 시스템에서 임베딩 기반 검색 품질과 성능을 좌우하는 인덱싱 전략에 대한 핵심 개념.",
+      sourceUrl: "https://www.pinecone.io/learn/vector-indexes/",
+    },
+    {
+      id: "reranking",
+      title: "Reranking",
+      subtitle: "Keyword",
+      kind: "keyword" as TreeKind,
+      summary: "1차 검색 결과를 다시 정렬해 문맥 적합도를 높이는 단계로, 검색 정확도 개선에 직접 연결된다.",
+      sourceUrl: "https://www.pinecone.io/learn/series/rag/rerankers/",
+    },
+  ],
+};
+
+function getNodeClassName(kind: TreeKind, isSelected: boolean = false) {
+  const baseClass = `tree-node-card tree-node-card--${kind}`;
+  const interactiveClass = kind === "keyword" ? " tree-node-card--interactive" : "";
+  const selectedClass = isSelected ? " tree-node-card--selected" : "";
+  return `${baseClass}${interactiveClass}${selectedClass}`;
 }
 
 export function DashboardOverview() {
   const [selectedKeywordId, setSelectedKeywordId] = useState<string | null>(null);
-  const selectedKeyword =
-    treeNodes.find((node) => node.id === selectedKeywordId && node.kind === "keyword") ?? null;
+  
+  const allKeywords = [...upperBranch.keywords, ...lowerBranch.keywords];
+  const selectedKeyword = allKeywords.find((k) => k.id === selectedKeywordId) ?? null;
 
   return (
     <>
@@ -91,9 +91,9 @@ export function DashboardOverview() {
           <div className="dashboard-canvas__heading">
             <div>
               <span className="section-label">Knowledge Graph</span>
-              <h1>Category &gt; Topic &gt; Keyword 구조로 지식을 탐색한다.</h1>
+              <h1>내 블로그 트리</h1>
               <p>
-                키워드를 클릭하면 요약본과 원본 URL을 지식 카드 모달로 바로 확인할 수 있다.
+                읽어본 블로그 내용이 하나의 지식 트리가 됩니다.
               </p>
             </div>
           </div>
@@ -103,50 +103,116 @@ export function DashboardOverview() {
           <div className="dashboard-tree-shell__header">
             <div>
               <span className="section-label">Knowledge Tree</span>
-              <h2>Category &gt; Topic &gt; Keyword</h2>
+              <div className="tree-legend">
+                <span className="tree-legend__item tree-legend__item--category">카테고리</span>
+                <span className="tree-legend__arrow">➔</span>
+                <span className="tree-legend__item tree-legend__item--topic">토픽</span>
+                <span className="tree-legend__arrow">➔</span>
+                <span className="tree-legend__item tree-legend__item--keyword">키워드</span>
+              </div>
             </div>
           </div>
 
-          <div className="tree-viewport tree-viewport--simple">
+          <div className="tree-viewport tree-viewport--radial">
             <svg
               className="tree-viewport__links"
               viewBox="0 0 100 100"
               preserveAspectRatio="none"
               aria-hidden="true"
             >
-              {treeLinks.map((link, index) => (
-                <line
-                  key={`${link.from.x}-${link.to.x}-${index}`}
-                  x1={link.from.x}
-                  y1={link.from.y}
-                  x2={link.to.x}
-                  y2={link.to.y}
-                />
-              ))}
+              {/* Goal -> Categories */}
+              <line x1="50" y1="50" x2="50" y2="22" className="tree-link tree-link--goal" />
+              <line x1="50" y1="50" x2="50" y2="78" className="tree-link tree-link--goal" />
+              
+              {/* Upper: Category -> Topic */}
+              <line x1="50" y1="22" x2="70" y2="22" className="tree-link tree-link--category" />
+              
+              {/* Upper: Topic -> Keywords */}
+              <line x1="70" y1="22" x2="88" y2="14" className="tree-link tree-link--topic" />
+              <line x1="70" y1="22" x2="88" y2="30" className="tree-link tree-link--topic" />
+              
+              {/* Lower: Category -> Topic */}
+              <line x1="50" y1="78" x2="70" y2="78" className="tree-link tree-link--category" />
+              
+              {/* Lower: Topic -> Keywords */}
+              <line x1="70" y1="78" x2="88" y2="70" className="tree-link tree-link--topic" />
+              <line x1="70" y1="78" x2="88" y2="86" className="tree-link tree-link--topic" />
             </svg>
 
-            {treeNodes.map((node) => {
-              const isSelected = selectedKeyword?.id === node.id;
-              const isKeyword = node.kind === "keyword";
+            {/* Center: Career Goal */}
+            <div
+              className="tree-node-card tree-node-card--goal tree-node-card--center"
+              style={{ left: "50%", top: "50%" }}
+            >
+              <span>{careerGoal.subtitle}</span>
+              <strong>{careerGoal.title}</strong>
+            </div>
 
-              return (
-                <button
-                  key={node.id}
-                  className={`${getNodeClassName(node)}${isSelected ? " tree-node-card--selected" : ""}`}
-                  style={{ left: `${node.x}%`, top: `${node.y}%` }}
-                  type="button"
-                  onClick={() => {
-                    if (isKeyword) {
-                      setSelectedKeywordId(node.id);
-                    }
-                  }}
-                  aria-pressed={isSelected}
-                >
-                  <span>{node.subtitle}</span>
-                  <strong>{node.title}</strong>
-                </button>
-              );
-            })}
+            {/* Upper Branch */}
+            <button
+              className={getNodeClassName("category")}
+              style={{ left: "50%", top: "22%" }}
+              type="button"
+            >
+              <span>{upperBranch.category.subtitle}</span>
+              <strong>{upperBranch.category.title}</strong>
+            </button>
+
+            <button
+              className={getNodeClassName("topic")}
+              style={{ left: "70%", top: "22%" }}
+              type="button"
+            >
+              <span>{upperBranch.topics[0].subtitle}</span>
+              <strong>{upperBranch.topics[0].title}</strong>
+            </button>
+
+            {upperBranch.keywords.map((keyword, index) => (
+              <button
+                key={keyword.id}
+                className={getNodeClassName("keyword", selectedKeywordId === keyword.id)}
+                style={{ left: "88%", top: `${14 + index * 16}%` }}
+                type="button"
+                onClick={() => setSelectedKeywordId(keyword.id)}
+                aria-pressed={selectedKeywordId === keyword.id}
+              >
+                <span>{keyword.subtitle}</span>
+                <strong>{keyword.title}</strong>
+              </button>
+            ))}
+
+            {/* Lower Branch */}
+            <button
+              className={getNodeClassName("category")}
+              style={{ left: "50%", top: "78%" }}
+              type="button"
+            >
+              <span>{lowerBranch.category.subtitle}</span>
+              <strong>{lowerBranch.category.title}</strong>
+            </button>
+
+            <button
+              className={getNodeClassName("topic")}
+              style={{ left: "70%", top: "78%" }}
+              type="button"
+            >
+              <span>{lowerBranch.topics[0].subtitle}</span>
+              <strong>{lowerBranch.topics[0].title}</strong>
+            </button>
+
+            {lowerBranch.keywords.map((keyword, index) => (
+              <button
+                key={keyword.id}
+                className={getNodeClassName("keyword", selectedKeywordId === keyword.id)}
+                style={{ left: "88%", top: `${70 + index * 16}%` }}
+                type="button"
+                onClick={() => setSelectedKeywordId(keyword.id)}
+                aria-pressed={selectedKeywordId === keyword.id}
+              >
+                <span>{keyword.subtitle}</span>
+                <strong>{keyword.title}</strong>
+              </button>
+            ))}
           </div>
         </section>
       </section>

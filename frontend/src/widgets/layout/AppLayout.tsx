@@ -29,10 +29,13 @@ export function AppLayout() {
           <section className="sidebar__panel">
             <div>
               <span className="sidebar__eyebrow">Knowledge Graph</span>
-              <h2 className="sidebar__panel-title">내 지식 그래프</h2>
+              <h2 className="sidebar__panel-title">내 블로그 트리</h2>
             </div>
             <p className="sidebar__panel-copy">
-              학습한 내용이 카테고리, 토픽, 키워드로 구조화되어 표시됩니다.
+              읽어본 블로그 내용이 하나의 지식 트리가 됩니다.
+            </p>
+            <p className="sidebar__panel-copy sidebar__panel-copy--sub">
+              카테고리부터 키워드까지 구조화된 학습 데이터를 한눈에 파악하고, 키워드를 클릭해 요약본과 원본 URL이 담긴 지식 카드를 바로 확인해 보세요.
             </p>
           </section>
         );

@@ -147,6 +147,11 @@ textarea {
   line-height: 1.6;
 }
 
+.sidebar__panel-copy--sub {
+  font-size: 0.88rem;
+  opacity: 0.85;
+}
+
 .content-shell {
   padding: 28px;
 }
@@ -570,6 +575,101 @@ textarea {
 
 .tree-viewport--simple {
   min-height: 640px;
+}
+
+.tree-viewport--radial {
+  min-height: 640px;
+}
+
+/* Tree Legend */
+.tree-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.tree-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.tree-legend__item::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+}
+
+.tree-legend__item--category {
+  background: rgba(255, 138, 61, 0.12);
+  border: 1px solid rgba(255, 138, 61, 0.32);
+  color: #ffb87a;
+}
+
+.tree-legend__item--category::before {
+  background: rgba(255, 138, 61, 0.6);
+}
+
+.tree-legend__item--topic {
+  background: rgba(126, 200, 255, 0.12);
+  border: 1px solid rgba(126, 200, 255, 0.32);
+  color: #a8d8ff;
+}
+
+.tree-legend__item--topic::before {
+  background: rgba(126, 200, 255, 0.6);
+}
+
+.tree-legend__item--keyword {
+  background: rgba(131, 242, 143, 0.12);
+  border: 1px solid rgba(131, 242, 143, 0.26);
+  color: #a8f5b0;
+}
+
+.tree-legend__item--keyword::before {
+  background: rgba(131, 242, 143, 0.6);
+}
+
+.tree-legend__arrow {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* Goal Node */
+.tree-node-card--goal {
+  border-color: rgba(255, 215, 0, 0.5);
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 138, 61, 0.1)), rgba(19, 25, 31, 0.94);
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.15), 0 18px 40px rgba(0, 0, 0, 0.28);
+  min-width: 180px;
+  z-index: 2;
+}
+
+.tree-node-card--center {
+  transform: translate(-50%, -50%);
+}
+
+/* Tree Links */
+.tree-link {
+  stroke-width: 0.4;
+}
+
+.tree-link--goal {
+  stroke: rgba(255, 215, 0, 0.4);
+}
+
+.tree-link--category {
+  stroke: rgba(255, 138, 61, 0.35);
+}
+
+.tree-link--topic {
+  stroke: rgba(126, 200, 255, 0.35);
 }
 
 .knowledge-modal-backdrop {
