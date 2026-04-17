@@ -2,7 +2,7 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { logout } from "@/features/auth/api/auth.api";
 
 const navItems = [
-  { to: "/", label: "Knowledge Graph" },
+  { to: "/knowledge-graph", label: "Knowledge Graph" },
   { to: "/summary", label: "Summary Lab" },
   { to: "/recommendation", label: "Career Picks" },
   { to: "/profile", label: "Profile" },
@@ -23,6 +23,8 @@ export function AppLayout() {
   function renderSidebarPanel() {
     switch (currentPath) {
       case "/":
+        return null;
+      case "/knowledge-graph":
         return (
           <section className="sidebar__panel">
             <div>
@@ -103,7 +105,7 @@ export function AppLayout() {
             <NavLink
               key={item.to}
               to={item.to}
-              end={item.to === "/"}
+              end
               className={({ isActive }) =>
                 isActive ? "sidebar__link sidebar__link--active" : "sidebar__link"
               }

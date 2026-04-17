@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { LoginPage } from "@/pages/LoginPage";
 import { AuthCallbackPage } from "@/pages/AuthCallbackPage";
+import { HomePage } from "@/pages/HomePage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { SummaryPage } from "@/pages/SummaryPage";
 import { RecommendationPage } from "@/pages/RecommendationPage";
@@ -18,7 +19,8 @@ export function AppRouter() {
       </Route>
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
-          <Route path="/" element={<DashboardPage />} />
+          <Route path="/" element={<HomePage />} />
+          <Route path="/knowledge-graph" element={<DashboardPage />} />
           <Route path="/summary" element={<SummaryPage />} />
           <Route path="/recommendation" element={<RecommendationPage />} />
           <Route path="/profile" element={<ProfilePage />} />
