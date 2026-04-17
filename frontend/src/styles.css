@@ -1177,6 +1177,7 @@ textarea {
 
 .summary-result-card__section {
   display: grid;
+  grid-template-columns: 1fr;
   gap: 8px;
   padding: 14px 16px;
   border-radius: 14px;
