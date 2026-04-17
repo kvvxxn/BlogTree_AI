@@ -1150,6 +1150,20 @@ textarea {
   font-size: 1.15rem;
 }
 
+.summary-result-card__title-path {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.summary-result-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+
 .summary-result-card__body {
   display: grid;
   gap: 12px;

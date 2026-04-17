@@ -151,14 +151,16 @@ export function SummaryPanel() {
 
       {status === "success" && result && (
         <>
-          <div className="summary-status summary-status--success">
-            <span>{STATUS_MESSAGES.success}</span>
-          </div>
-
           <div className="summary-result-card">
             <div className="summary-result-card__header">
               <span className="section-label">Knowledge Card</span>
-              <h3>{result.title}</h3>
+              <h3 className="summary-result-card__title-path">
+                <span className="knowledge-title__category">{result.category}</span>
+                <span className="knowledge-title__arrow">→</span>
+                <span className="knowledge-title__topic">{result.topic}</span>
+                <span className="knowledge-title__arrow">→</span>
+                <span className="knowledge-title__keyword">{result.keyword}</span>
+              </h3>
             </div>
 
             <div className="summary-result-card__body">
@@ -173,20 +175,16 @@ export function SummaryPanel() {
                   {result.sourceUrl}
                 </a>
               </div>
-
-              <div className="summary-result-card__tags">
-                <span className="summary-tag summary-tag--category">{result.category}</span>
-                <span className="summary-tag summary-tag--topic">{result.topic}</span>
-                <span className="summary-tag summary-tag--keyword">{result.keyword}</span>
-              </div>
             </div>
+          </div>
 
+          <div className="summary-result-actions">
             <button
               className="button button--primary"
               type="button"
               onClick={handleGoToKnowledgeGraph}
             >
-              Knowledge Graph에서 확인하기
+              Knowledge Graph 확인
             </button>
 
             <button
@@ -194,7 +192,7 @@ export function SummaryPanel() {
               type="button"
               onClick={handleReset}
             >
-              새 요약 요청
+              새 요약
             </button>
           </div>
         </>
