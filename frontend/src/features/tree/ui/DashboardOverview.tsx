@@ -84,6 +84,27 @@ export function DashboardOverview() {
   const allKeywords = [...upperBranch.keywords, ...lowerBranch.keywords];
   const selectedKeyword = allKeywords.find((k) => k.id === selectedKeywordId) ?? null;
 
+  // 선택된 키워드의 경로 찾기 (Category -> Topic -> Keyword)
+  function getKeywordPath(keywordId: string | null) {
+    if (!keywordId) return null;
+    
+    if (upperBranch.keywords.some((k) => k.id === keywordId)) {
+      return {
+        category: upperBranch.category.title,
+        topic: upperBranch.topics[0].title,
+      };
+    }
+    if (lowerBranch.keywords.some((k) => k.id === keywordId)) {
+      return {
+        category: lowerBranch.category.title,
+        topic: lowerBranch.topics[0].title,
+      };
+    }
+    return null;
+  }
+
+  const keywordPath = getKeywordPath(selectedKeywordId);
+
   // 수평 트리 레이아웃: Goal(왼쪽) -> Category(중앙 상하) -> Topic -> Keyword
   // X 좌표: Goal 8%, Category 28%, Topic 52%, Keyword 78%
   // Y 좌표: 상단 브랜치 25%, 하단 브랜치 75%
@@ -245,6 +266,15 @@ export function DashboardOverview() {
             <div className="knowledge-modal__header">
               <div>
                 <span className="section-label">Knowledge Card</span>
+                {keywordPath && (
+                  <div className="knowledge-modal__path">
+                    <span className="knowledge-path__item knowledge-path__item--category">{keywordPath.category}</span>
+                    <span className="knowledge-path__arrow">→</span>
+                    <span className="knowledge-path__item knowledge-path__item--topic">{keywordPath.topic}</span>
+                    <span className="knowledge-path__arrow">→</span>
+                    <span className="knowledge-path__item knowledge-path__item--keyword">{selectedKeyword.title}</span>
+                  </div>
+                )}
                 <h2 id="knowledge-card-title">{selectedKeyword.title}</h2>
               </div>
               <button

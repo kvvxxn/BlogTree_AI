@@ -1187,6 +1187,47 @@ textarea {
   color: #6ee7b7;
 }
 
+/* Knowledge Card Path */
+.knowledge-modal__path {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.knowledge-path__item {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.knowledge-path__item--category {
+  background: rgba(244, 114, 182, 0.15);
+  border: 1px solid rgba(244, 114, 182, 0.5);
+  color: #f9a8d4;
+}
+
+.knowledge-path__item--topic {
+  background: rgba(96, 165, 250, 0.15);
+  border: 1px solid rgba(96, 165, 250, 0.5);
+  color: #93c5fd;
+}
+
+.knowledge-path__item--keyword {
+  background: rgba(52, 211, 153, 0.15);
+  border: 1px solid rgba(52, 211, 153, 0.5);
+  color: #6ee7b7;
+}
+
+.knowledge-path__arrow {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
 .knowledge-modal-backdrop {
     padding: 16px;
   }
