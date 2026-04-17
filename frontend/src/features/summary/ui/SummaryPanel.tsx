@@ -172,9 +172,11 @@ export function SummaryPanel() {
 
               <div className="summary-result-card__section">
                 <strong>원본 URL</strong>
-                <a href={result.sourceUrl} target="_blank" rel="noreferrer">
-                  {result.sourceUrl}
-                </a>
+                <p>
+                  <a href={result.sourceUrl} target="_blank" rel="noreferrer">
+                    {result.sourceUrl}
+                  </a>
+                </p>
               </div>
             </div>
           </div>
