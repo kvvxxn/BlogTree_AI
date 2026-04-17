@@ -47,7 +47,10 @@ export function AppLayout() {
               <h2 className="sidebar__panel-title">요약 요청</h2>
             </div>
             <p className="sidebar__panel-copy">
-              URL을 입력하면 블로그 내용을 분석해 지식 트리에 연결합니다.
+              URL 입력 한 번으로 블로그의 문맥을 분석하고, 요약된 인사이트를 블로그 트리에 매핑합니다.
+            </p>
+            <p className="sidebar__panel-copy sidebar__panel-copy--sub">
+              * 현재 Tistory, Velog 블로그의 URL 입력을 권장합니다.
             </p>
             <label className="field">
               <span>Article URL</span>
