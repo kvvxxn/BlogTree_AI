@@ -6,8 +6,8 @@ import { RecommendPanel } from "@/features/recommend/ui/RecommendPanel";
 const navItems = [
   { to: "/knowledge-graph", label: "Knowledge Graph" },
   { to: "/summary", label: "Summary Lab" },
-  { to: "/stats", label: "Learning Stats" },
   { to: "/recommendation", label: "Career Picks" },
+  { to: "/stats", label: "Learning Stats" },
   { to: "/profile", label: "Profile" },
 ];
 
