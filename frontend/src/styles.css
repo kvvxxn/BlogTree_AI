@@ -1319,21 +1319,24 @@ textarea {
   z-index: 1;
 }
 
+.stats-hero__text {
+  margin: 16px 0 0;
+  font-size: 1.5rem;
+  color: var(--text);
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+}
+
 .stats-hero__number {
-  font-size: 6rem;
+  font-size: 3rem;
   font-weight: 800;
   background: linear-gradient(135deg, #818cf8, #2dd4bf);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   line-height: 1;
-  letter-spacing: -2px;
-}
-
-.stats-hero__desc {
-  margin: 12px 0 0;
-  font-size: 1.1rem;
-  color: var(--muted);
 }
 
 /* Donut Chart */

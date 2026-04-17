@@ -45,8 +45,10 @@ export function StatsWorkspace() {
         <div className="stats-hero__glow" />
         <div className="stats-hero__content">
           <span className="section-label">Total Knowledge</span>
-          <div className="stats-hero__number">{totalBlogs}</div>
-          <p className="stats-hero__desc">개의 블로그를 트리에 연결했어요!</p>
+          <p className="stats-hero__text">
+            <span className="stats-hero__number">{totalBlogs}</span>
+            개의 블로그를 트리에 연결했어요!
+          </p>
         </div>
       </section>
 
