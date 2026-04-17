@@ -91,6 +91,18 @@ export function DashboardOverview() {
   return (
     <>
       <section className="dashboard-canvas dashboard-canvas--full">
+        <section className="card dashboard-canvas__hero">
+          <div className="dashboard-canvas__heading">
+            <div>
+              <span className="section-label">Knowledge Graph</span>
+              <h1>내 블로그 트리</h1>
+              <p>
+                읽어본 블로그 내용이 하나의 지식 트리가 됩니다.
+              </p>
+            </div>
+          </div>
+        </section>
+
         <section className="card dashboard-tree-shell">
           <div className="dashboard-tree-shell__header">
             <div>
@@ -113,14 +125,10 @@ export function DashboardOverview() {
               aria-hidden="true"
             >
               {/* Goal -> 수평 트렁크 -> 상하 분기 -> Categories */}
-              {/* 1. Goal 우측에서 수평으로 나가는 트렁크 */}
-              <line x1="14" y1="50" x2="24" y2="50" className="tree-link tree-link--goal" />
-              {/* 2. 트렁크에서 상하로 뻗는 수직선 */}
-              <line x1="24" y1="28" x2="24" y2="72" className="tree-link tree-link--goal" />
-              {/* 3. 상단 Category로 연결 */}
-              <line x1="24" y1="28" x2="28" y2="28" className="tree-link tree-link--goal" />
-              {/* 4. 하단 Category로 연결 */}
-              <line x1="24" y1="72" x2="28" y2="72" className="tree-link tree-link--goal" />
+              <line x1="16" y1="50" x2="22" y2="50" className="tree-link tree-link--goal" />
+              <line x1="22" y1="28" x2="22" y2="72" className="tree-link tree-link--goal" />
+              <line x1="22" y1="28" x2="28" y2="28" className="tree-link tree-link--goal" />
+              <line x1="22" y1="72" x2="28" y2="72" className="tree-link tree-link--goal" />
               
               {/* Upper: Category -> Topic */}
               <line x1="36" y1="28" x2="50" y2="28" className="tree-link tree-link--category" />
