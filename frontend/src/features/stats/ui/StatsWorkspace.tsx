@@ -76,6 +76,9 @@ export function StatsWorkspace() {
                     transform="rotate(-90 50 50)"
                   />
                 ))}
+                {/* 카테고리 라벨 */}
+                <text x="85" y="35" className="stats-donut__text" fill="#818cf8" fontSize="6" fontWeight="600">Backend</text>
+                <text x="5" y="75" className="stats-donut__text" fill="#2dd4bf" fontSize="6" fontWeight="600">AI</text>
               </svg>
               <div className="stats-donut__center">
                 <span className="stats-donut__total">{totalBlogs}</span>
@@ -85,16 +88,19 @@ export function StatsWorkspace() {
             
             <div className="stats-donut__legend">
               {categoryData.map((cat) => (
-                <div key={cat.name} className="stats-donut__item">
-                  <span
-                    className="stats-donut__dot"
-                    style={{ background: cat.color }}
-                  />
-                  <span className="stats-donut__name">{cat.name}</span>
-                  <span className="stats-donut__divider">|</span>
-                  <span className="stats-donut__percent">{cat.percentage}%</span>
-                  <span className="stats-donut__divider">|</span>
-                  <span className="stats-donut__count">{cat.count}개</span>
+                <div 
+                  key={cat.name} 
+                  className="stats-donut__card"
+                  style={{ borderColor: cat.color }}
+                >
+                  <div className="stats-donut__card-header">
+                    <span className="stats-donut__dot" style={{ background: cat.color }} />
+                    <span className="stats-donut__card-name">{cat.name}</span>
+                  </div>
+                  <div className="stats-donut__card-stats">
+                    <span className="stats-donut__card-percent" style={{ color: cat.color }}>{cat.percentage}%</span>
+                    <span className="stats-donut__card-count">{cat.count}개</span>
+                  </div>
                 </div>
               ))}
             </div>
