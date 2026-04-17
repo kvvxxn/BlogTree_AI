@@ -1451,6 +1451,34 @@ textarea {
   color: #2dd4bf;
 }
 
+/* Simple Ranking */
+.stats-ranking-simple {
+  display: grid;
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.stats-ranking-simple__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.05rem;
+}
+
+.stats-ranking-simple__medal {
+  font-size: 1.4rem;
+}
+
+.stats-ranking-simple__name {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.stats-ranking-simple__count {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
 /* Ranking */
 .stats-ranking {
   display: grid;

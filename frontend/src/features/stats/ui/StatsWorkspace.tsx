@@ -114,28 +114,18 @@ export function StatsWorkspace() {
         {/* 2. 가장 많이 학습한 토픽 TOP 3 */}
         <article className="card">
           <span className="section-label">Top Topics</span>
-          <h2>집중 공략 주제 TOP 3</h2>
+          <h2>집중 공략 토픽 TOP 3</h2>
           
-          <div className="stats-ranking">
+          <div className="stats-ranking-simple">
             {topTopics.map((topic) => (
-              <div key={topic.rank} className="stats-ranking__item">
-                <div className="stats-ranking__rank">
-                  {topic.rank === 1 && <span className="stats-ranking__medal stats-ranking__medal--gold">1</span>}
-                  {topic.rank === 2 && <span className="stats-ranking__medal stats-ranking__medal--silver">2</span>}
-                  {topic.rank === 3 && <span className="stats-ranking__medal stats-ranking__medal--bronze">3</span>}
-                </div>
-                <div className="stats-ranking__info">
-                  <div className="stats-ranking__header">
-                    <span className="stats-ranking__name">{topic.name}</span>
-                    <span className="stats-ranking__count">{topic.count}개</span>
-                  </div>
-                  <div className="stats-ranking__bar">
-                    <div
-                      className="stats-ranking__fill"
-                      style={{ width: `${topic.percentage}%` }}
-                    />
-                  </div>
-                </div>
+              <div key={topic.rank} className="stats-ranking-simple__item">
+                <span className="stats-ranking-simple__medal">
+                  {topic.rank === 1 && "🥇"}
+                  {topic.rank === 2 && "🥈"}
+                  {topic.rank === 3 && "🥉"}
+                </span>
+                <span className="stats-ranking-simple__name">{topic.name}</span>
+                <span className="stats-ranking-simple__count">(블로그 {topic.count}개)</span>
               </div>
             ))}
           </div>
