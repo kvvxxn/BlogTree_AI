@@ -1557,7 +1557,33 @@ textarea {
   transition: width 0.5s ease;
 }
 
-/* Recent Keywords */
+/* Recent Keywords - Chips */
+.stats-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.stats-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 20px;
+  background: rgba(45, 212, 191, 0.1);
+  border: 1px solid rgba(45, 212, 191, 0.25);
+  color: #2dd4bf;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.stats-chip__time {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+/* Legacy Keywords styles */
 .stats-keywords {
   display: grid;
   gap: 12px;

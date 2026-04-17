@@ -16,8 +16,6 @@ const recentKeywords = [
   { name: "QueryDSL", time: "오늘" },
   { name: "Vector Index", time: "어제" },
   { name: "Reranking", time: "3일 전" },
-  { name: "JPA", time: "5일 전" },
-  { name: "Spring Security", time: "1주 전" },
 ];
 
 export function StatsWorkspace() {
@@ -137,12 +135,11 @@ export function StatsWorkspace() {
         <span className="section-label">Recent Keywords</span>
         <h2>최근 획득한 키워드</h2>
         
-        <div className="stats-keywords">
+        <div className="stats-chips">
           {recentKeywords.map((kw) => (
-            <div key={kw.name} className="stats-keyword">
-              <span className="stats-keyword__badge">{kw.name}</span>
-              <span className="stats-keyword__time">{kw.time}</span>
-            </div>
+            <span key={kw.name} className="stats-chip">
+              #{kw.name} <span className="stats-chip__time">({kw.time})</span>
+            </span>
           ))}
         </div>
       </section>
