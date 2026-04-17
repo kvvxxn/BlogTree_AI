@@ -1197,6 +1197,7 @@ textarea {
 }
 
 .summary-result-card__section a {
+  display: block;
   color: var(--secondary);
   word-break: break-all;
 }
