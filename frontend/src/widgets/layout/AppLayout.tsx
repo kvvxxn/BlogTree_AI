@@ -6,6 +6,7 @@ import { RecommendPanel } from "@/features/recommend/ui/RecommendPanel";
 const navItems = [
   { to: "/knowledge-graph", label: "Knowledge Graph" },
   { to: "/summary", label: "Summary Lab" },
+  { to: "/stats", label: "Learning Stats" },
   { to: "/recommendation", label: "Career Picks" },
   { to: "/profile", label: "Profile" },
 ];
@@ -43,6 +44,18 @@ export function AppLayout() {
         );
       case "/summary":
         return <SummaryPanel />;
+      case "/stats":
+        return (
+          <section className="sidebar__panel">
+            <div>
+              <span className="sidebar__eyebrow">Learning Stats</span>
+              <h2 className="sidebar__panel-title">학습 통계</h2>
+            </div>
+            <p className="sidebar__panel-copy">
+              지금까지의 학습 현황을 한눈에 확인하세요.
+            </p>
+          </section>
+        );
       case "/recommendation":
         return <RecommendPanel />;
       case "/profile":

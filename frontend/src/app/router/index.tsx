@@ -4,6 +4,7 @@ import { AuthCallbackPage } from "@/pages/AuthCallbackPage";
 import { HomePage } from "@/pages/HomePage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { SummaryPage } from "@/pages/SummaryPage";
+import { StatsPage } from "@/pages/StatsPage";
 import { RecommendationPage } from "@/pages/RecommendationPage";
 import { ProfilePage } from "@/pages/ProfilePage";
 import { AppLayout } from "@/widgets/layout/AppLayout";
@@ -22,6 +23,7 @@ export function AppRouter() {
           <Route path="/" element={<HomePage />} />
           <Route path="/knowledge-graph" element={<DashboardPage />} />
           <Route path="/summary" element={<SummaryPage />} />
+          <Route path="/stats" element={<StatsPage />} />
           <Route path="/recommendation" element={<RecommendationPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
