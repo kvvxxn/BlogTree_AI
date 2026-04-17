@@ -47,10 +47,10 @@ export function AppLayout() {
           <section className="sidebar__panel">
             <div>
               <span className="sidebar__eyebrow">Learning Recommendation</span>
-              <h2 className="sidebar__panel-title">학습 추천</h2>
+              <h2 className="sidebar__panel-title">맞춤형 학습 추천</h2>
             </div>
             <p className="sidebar__panel-copy">
-              현재 트리를 기준으로 다음 단계 키워드 추천을 생성합니다.
+              현재까지 구축한 블로그 트리와 설정하신 커리어 목표를 분석하여, 다음으로 학습하기 좋은 맞춤형 키워드를 추천합니다.
             </p>
             <button className="button button--primary" type="button">
               추천 키워드 생성
