@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { logout } from "@/features/auth/api/auth.api";
+import { SummaryPanel } from "@/features/summary/ui/SummaryPanel";
 
 const navItems = [
   { to: "/knowledge-graph", label: "Knowledge Graph" },
@@ -40,31 +41,7 @@ export function AppLayout() {
           </section>
         );
       case "/summary":
-        return (
-          <section className="sidebar__panel">
-            <div>
-              <span className="sidebar__eyebrow">Summary Request</span>
-              <h2 className="sidebar__panel-title">요약 요청</h2>
-            </div>
-            <p className="sidebar__panel-copy">
-              URL 입력 한 번으로 블로그의 문맥을 분석하고, 요약된 인사이트를 블로그 트리에 매핑합니다.
-            </p>
-            <p className="sidebar__panel-copy sidebar__panel-copy--sub">
-              * 현재 Tistory, Velog 블로그의 URL 입력을 권장합니다.
-            </p>
-            <label className="field">
-              <span>Article URL</span>
-              <input
-                className="input"
-                type="url"
-                placeholder="https://example.com/article"
-              />
-            </label>
-            <button className="button button--primary" type="button">
-              요약 요청 보내기
-            </button>
-          </section>
-        );
+        return <SummaryPanel />;
       case "/recommendation":
         return (
           <section className="sidebar__panel">
