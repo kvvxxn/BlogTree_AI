@@ -22,10 +22,8 @@ export function AppLayout() {
       <aside className="sidebar">
         <div className="sidebar__brand">
           <span className="sidebar__eyebrow">BlogTree AI</span>
-          <h1>Learning graph for your next move.</h1>
-          <p>
-            요약과 추천을 같은 작업 흐름으로 묶어서 관리하는 학습 대시보드입니다.
-          </p>
+          <h1>안녕하세요, 사용자님</h1>
+          <p>오늘은 어떤 것을 알아볼까요?</p>
         </div>
 
         <nav className="sidebar__nav" aria-label="Primary">
