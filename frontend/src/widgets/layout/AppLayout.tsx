@@ -77,16 +77,9 @@ export function AppLayout() {
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
-        <div className="sidebar__header">
-          <div className="sidebar__brand">
-            <span className="sidebar__eyebrow">BlogTree AI</span>
-            <h1>안녕하세요, 사용자님</h1>
-            <p>오늘은 어떤 내용을 알아볼까요?</p>
-          </div>
-          <button className="button button--ghost sidebar__logout" type="button" onClick={handleLogout}>
-            Logout
-          </button>
+      <aside className="sidebar sidebar--narrow">
+        <div className="sidebar__brand-mini">
+          <span className="sidebar__eyebrow">BlogTree AI</span>
         </div>
 
         <nav className="sidebar__nav" aria-label="Primary">
@@ -104,15 +97,29 @@ export function AppLayout() {
           ))}
         </nav>
 
-        {renderSidebarPanel()}
+        <button className="button button--ghost sidebar__logout-bottom" type="button" onClick={handleLogout}>
+          Logout
+        </button>
       </aside>
 
       <div className="content-shell">
-        
+        <header className="content-header">
+          <div className="content-header__greeting">
+            <h1>안녕하세요, 사용자님</h1>
+            <p>오늘은 어떤 내용을 알아볼까요?</p>
+          </div>
+        </header>
 
-        <main className="page-container">
-          <Outlet />
-        </main>
+        <div className="content-body">
+          {renderSidebarPanel() && (
+            <aside className="content-panel">
+              {renderSidebarPanel()}
+            </aside>
+          )}
+          <main className="page-container">
+            <Outlet />
+          </main>
+        </div>
       </div>
     </div>
   );
