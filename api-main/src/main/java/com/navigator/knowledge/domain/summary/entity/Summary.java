@@ -1,6 +1,7 @@
 package com.navigator.knowledge.domain.summary.entity;
 
 import com.navigator.knowledge.domain.task.entity.Task;
+import com.navigator.knowledge.domain.tree.entity.KnowledgeKeyword;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -34,6 +35,10 @@ public class Summary {
     @Column(columnDefinition = "TEXT")
     private String content;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "keyword_id")
+    private KnowledgeKeyword keyword;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -44,5 +49,9 @@ public class Summary {
         this.userId = userId;
         this.sourceUrl = sourceUrl;
         this.content = content;
+    }
+
+    public void assignKeyword(KnowledgeKeyword keyword) {
+        this.keyword = keyword;
     }
 }

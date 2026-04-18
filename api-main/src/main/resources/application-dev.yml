@@ -3,19 +3,22 @@ spring:
     name: api-main
 
   datasource:
-    url: jdbc:mysql://localhost:3307/blogtree?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    username: mysql_user
-    password: mysql_password
+    url: jdbc:postgresql://localhost:5432/blogtree
+    driver-class-name: org.postgresql.Driver
+    username: postgres_user
+    password: postgres_password
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: true
     properties:
       hibernate:
         format_sql: true
-        dialect: org.hibernate.dialect.MySQLDialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  flyway:
+    enabled: true
 
   ai:
     openai:
@@ -24,13 +27,6 @@ spring:
       embedding:
         options:
           model: text-embedding-3-small
-
-  # Neo4j
-  neo4j:
-    uri: bolt://localhost:7687
-    authentication:
-      username: neo4j
-      password: neo4j_password
 
   # RabbitMQ
   rabbitmq:
@@ -74,11 +70,6 @@ spring:
           multiplier: 2.0          # 대기 시간을 2배씩 늘림 (3초 -> 6초 -> 12초)
           max-interval: 5000ms        # 최대 대기 시간은 15초까지만
         default-requeue-rejected: false
-
-# Logging level
-logging:
-  level:
-    org.springframework.data.neo4j: DEBUG
 
 # CORS
 app:

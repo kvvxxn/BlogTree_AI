@@ -15,7 +15,6 @@ import com.navigator.knowledge.domain.user.entity.Role;
 import com.navigator.knowledge.domain.user.entity.User;
 import com.navigator.knowledge.domain.user.repository.UserRepository;
 import com.navigator.knowledge.global.security.jwt.JwtProvider;
-import org.neo4j.driver.Driver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,7 +23,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.data.neo4j.core.DatabaseSelectionProvider;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -81,12 +79,6 @@ class RecommendControllerIntegrationTest {
 
     @MockBean
     private SseEmitterService sseEmitterService;
-
-    @MockBean
-    private Driver neo4jDriver;
-
-    @MockBean
-    private DatabaseSelectionProvider databaseSelectionProvider;
 
     @BeforeEach
     void setUp() {
@@ -161,7 +153,7 @@ class RecommendControllerIntegrationTest {
     @DisplayName("POST /api/recommend는 task를 생성하고 PROCESSING 상태로 전환한 뒤 요청을 발행한다")
     void requestRecommendation_createsTaskAndPublishesMessage() throws Exception {
         when(knowledgeService.getKnowledgeTree(userId1)).thenReturn(Map.of(
-            "Backend", Map.of("Spring", java.util.List.of("JPA", "Neo4j"))
+            "Backend", Map.of("Spring", java.util.List.of("JPA", "PostgreSQL"))
         ));
         doNothing().when(recommendTaskProducer).sendTaskRequest(any());
 
