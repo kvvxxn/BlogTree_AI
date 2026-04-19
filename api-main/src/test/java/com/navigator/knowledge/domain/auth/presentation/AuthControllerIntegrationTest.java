@@ -20,7 +20,6 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import org.neo4j.driver.Driver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,7 +28,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.data.neo4j.core.DatabaseSelectionProvider;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -92,12 +90,6 @@ class AuthControllerIntegrationTest {
 
     @MockBean
     private SseEmitterService sseEmitterService;
-
-    @MockBean
-    private Driver neo4jDriver;
-
-    @MockBean
-    private DatabaseSelectionProvider databaseSelectionProvider;
 
     @BeforeEach
     void setUp() {
