@@ -57,6 +57,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // 공개 엔드포인트만 명시적으로 허용하고 logout은 인증을 강제한다.
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/health", "/health/**").permitAll()
                         .requestMatchers("/api/auth/google", "/api/auth/reissue", "/api/auth/dev-token").permitAll()
                         .requestMatchers("/login/oauth2/code/**").permitAll()
 
