@@ -1,10 +1,7 @@
-import os
 import logging
-from dotenv import load_dotenv
 from typing import Dict, Any
 from langfuse import observe
 from langfuse.openai import OpenAI
-
 
 from fastapi_worker.app.services.llm.prompts import summarize_sys_prompt, make_summarize_user_prompt
 from fastapi_worker.app.services.llm.configs import T, OUTPUT_MAX_TOKENS, INPUT_MAX_TOKENS, MODEL_NAME

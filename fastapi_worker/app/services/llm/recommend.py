@@ -1,8 +1,5 @@
-import os
-import json
 import logging
-from dotenv import load_dotenv
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 from langfuse import observe
 from langfuse.openai import OpenAI
 

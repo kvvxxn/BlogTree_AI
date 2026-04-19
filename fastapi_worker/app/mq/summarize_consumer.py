@@ -179,7 +179,7 @@ async def start_consuming() -> None:
         connection: aio_pika.RobustConnection | None = None
 
         try:
-            connection = await aio_pika.connect_robust(settings.RABBITMQ_URL)
+            connection = await aio_pika.connect_robust(settings.rabbitmq_url)
             channel = await connection.channel()
 
             # prefetch_count를 1로 설정하여 한 번에 하나의 메시지만 처리하도록 최적화

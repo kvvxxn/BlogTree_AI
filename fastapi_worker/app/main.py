@@ -3,12 +3,12 @@ import asyncio
 import logging
 import signal
 from contextlib import asynccontextmanager
-from dotenv import load_dotenv
 from langfuse import get_client
 
 from fastapi import FastAPI
 
 from fastapi_worker.app.api.health import router as health_router
+from fastapi_worker.app.core.config import settings
 from fastapi_worker.app.mq.recommend_consumer import start_consuming as start_recommend_consumer
 from fastapi_worker.app.mq.summarize_consumer import start_consuming as start_summarize_consumer
 
@@ -19,8 +19,6 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
-
-load_dotenv() 
 
 def _mask_secret(value: str | None) -> str:
     """
@@ -46,17 +44,12 @@ def _debug_langfuse() -> None:
 
     return: None
     """
-    public_key = os.getenv("LANGFUSE_PUBLIC_KEY")
-    secret_key = os.getenv("LANGFUSE_SECRET_KEY")
-    host = os.getenv("LANGFUSE_HOST")
-    base_url = os.getenv("LANGFUSE_BASE_URL")
-
     logger.info(
         "[Langfuse Debug] PUBLIC=%s SECRET=%s HOST=%s BASE_URL=%s",
-        _mask_secret(public_key),
-        _mask_secret(secret_key),
-        host or "MISSING",
-        base_url or "MISSING",
+        _mask_secret(settings.LANGFUSE_PUBLIC_KEY),
+        _mask_secret(settings.LANGFUSE_SECRET_KEY),
+        settings.LANGFUSE_HOST or "MISSING",
+        settings.LANGFUSE_BASE_URL or "MISSING",
     )
 
     try:
