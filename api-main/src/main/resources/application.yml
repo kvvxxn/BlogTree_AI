@@ -1,33 +1,77 @@
-# 실제 운영 기본 설정
-# 기본적으로는 위쪽(전체 설정)을 다 믿되, 아래쪽에 같은 이름의 설정이 있으면 그것만 골라서 덮어씀.
-
 spring:
   application:
     name: api-main
   profiles:
-    active: dev
+    default: dev
 
-  # JPA/Hibernate 설정 (spring.jpa)
+  datasource:
+    driver-class-name: org.postgresql.Driver
+
   jpa:
     hibernate:
-      ddl-auto: none #update 였음
+      ddl-auto: validate
     show-sql: false
     properties:
       hibernate:
         format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  flyway:
+    enabled: true
+
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      base-url: https://api.openai.com
+      embedding:
+        options:
+          model: text-embedding-3-small
+
+  rabbitmq:
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+      retry:
+        enabled: true
+        initial-interval: 1000ms
+        max-attempts: 3
+        multiplier: 2.0
+        max-interval: 5000ms
+    summary:
+      exchange: summary.exchange
+      queue:
+        request: summary.request.queue
+        response: summary.response.queue
+      routing-key:
+        request: summary.request
+        response: summary.response
+    recommend:
+      exchange: recommend.exchange
+      queue:
+        request: recommend.request.queue
+        response: recommend.response.queue
+      routing-key:
+        request: recommend.request
+        response: recommend.response
+    listener:
+      simple:
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 1000ms
+          multiplier: 2.0
+          max-interval: 5000ms
+        default-requeue-rejected: false
 
 oauth2:
   google:
     client-id: ${GOOGLE_CLIENT_ID}
-    # 유출하면 안됨.
     client-secret: ${GOOGLE_CLIENT_SECRET}
-    # 주의: 프론트엔드가 구글에서 설정한 리다이렉트 URI와 똑같이 맞춰야 합니다! (일단 예시로 적어둠)
-    redirect-uri: http://localhost:8080/login/oauth2/code/google
-    # 구글과 직접 통신할 때 찌를 API 주소들 (고정값)
+    redirect-uri: ${GOOGLE_REDIRECT_URI}
     token-uri: https://oauth2.googleapis.com/token
     user-info-uri: https://www.googleapis.com/oauth2/v2/userinfo
 
-# 2. JWT 설정 (어제 만든 것 100% 그대로 유지)
 jwt:
   secret: ${JWT_SECRET}
   access-expiration: 3600000
@@ -35,18 +79,4 @@ jwt:
 
 app:
   cors:
-    allowed-origins:
-      - ${CORS_ALLOWED_ORIGINS:https://api.blogtree.com} # 환경변수가 없으면 기본값 사용
----
-
-# 개발 환경 전용 설정
-
-spring:
-  config:
-    activate:
-      on-profile: dev
-
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
+    allowed-origins: ${CORS_ALLOWED_ORIGINS}
