@@ -1,6 +1,7 @@
 import os
 import asyncio
 import logging
+import signal
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from langfuse import get_client
@@ -109,6 +110,7 @@ def task_error_handler(task: asyncio.Task):
         pass 
     except Exception as e:
         logger.error(f"🚨 Background Task '{task.get_name()}' crashed: {e}", exc_info=True)
+        os.kill(os.getpid(), signal.SIGTERM)
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):

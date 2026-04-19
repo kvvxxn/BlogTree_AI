@@ -24,6 +24,8 @@ from fastapi_worker.app.core.exceptions import (
 )
 
 logger = logging.getLogger(__name__)
+INITIAL_RETRY_DELAY_SECONDS = 1
+MAX_RETRY_DELAY_SECONDS = 5
 
 
 def _to_knowledge_tree(raw_keywords) -> KnowledgeTree | None:
@@ -171,26 +173,43 @@ async def start_consuming() -> None:
 
     return: None
     """
-    connection = await aio_pika.connect_robust(settings.RABBITMQ_URL)
-    channel = await connection.channel()
-    
-    # prefetch_count를 1로 설정하여 한 번에 하나의 메시지만 처리하도록 최적화
-    await channel.set_qos(prefetch_count=1)
-    
-    queue = await channel.declare_queue(
-        settings.SUMMARIZE_INPUT_QUEUE, 
-        durable=True,
-        arguments={
-            "x-dead-letter-exchange": "dlx.exchange",
-            "x-dead-letter-routing-key": "summary.request.dead"  
-        }
-    )
-    
-    logger.info("[*] '%s' 큐에서 메시지 대기 중...", settings.SUMMARIZE_INPUT_QUEUE)
-    await queue.consume(consume_message)
-    
-    # 커넥션 유지를 위해 무한 대기
-    try:
-        await asyncio.Future()
-    finally:
-        await connection.close()
+    retry_delay = INITIAL_RETRY_DELAY_SECONDS
+
+    while True:
+        connection: aio_pika.RobustConnection | None = None
+
+        try:
+            connection = await aio_pika.connect_robust(settings.RABBITMQ_URL)
+            channel = await connection.channel()
+
+            # prefetch_count를 1로 설정하여 한 번에 하나의 메시지만 처리하도록 최적화
+            await channel.set_qos(prefetch_count=1)
+
+            queue = await channel.declare_queue(
+                settings.SUMMARIZE_INPUT_QUEUE,
+                durable=True,
+                arguments={
+                    "x-dead-letter-exchange": "dlx.exchange",
+                    "x-dead-letter-routing-key": "summary.request.dead"
+                }
+            )
+
+            logger.info("[*] '%s' 큐에서 메시지 대기 중...", settings.SUMMARIZE_INPUT_QUEUE)
+            retry_delay = INITIAL_RETRY_DELAY_SECONDS
+            await queue.consume(consume_message)
+
+            # 커넥션 유지를 위해 무한 대기
+            await asyncio.Future()
+        except asyncio.CancelledError:
+            raise
+        except (aio_pika.exceptions.AMQPConnectionError, OSError) as exc:
+            logger.warning(
+                "RabbitMQ 연결에 실패했습니다. %s초 후 재시도합니다. error=%s",
+                retry_delay,
+                exc,
+            )
+            await asyncio.sleep(retry_delay)
+            retry_delay = min(retry_delay * 2, MAX_RETRY_DELAY_SECONDS)
+        finally:
+            if connection and not connection.is_closed:
+                await connection.close()
