@@ -25,17 +25,31 @@ export class ApiError extends Error {
   }
 }
 
+function isJsonResponse(response: Response) {
+  const contentType = response.headers.get("content-type") ?? "";
+  return contentType.includes("application/json");
+}
+
 async function parseResponse<T>(response: Response): Promise<T> {
   if (response.ok) {
     if (response.status === 204) {
       return undefined as T;
     }
 
-    return (await response.json()) as T;
+    if (isJsonResponse(response)) {
+      return (await response.json()) as T;
+    }
+
+    return (await response.text()) as T;
   }
 
-  const error = (await response.json().catch(() => null)) as ApiErrorResponse | null;
-  throw new ApiError(error?.message ?? "요청 처리 중 오류가 발생했습니다.", response.status, error?.code);
+  if (isJsonResponse(response)) {
+    const error = (await response.json().catch(() => null)) as ApiErrorResponse | null;
+    throw new ApiError(error?.message ?? "요청 처리 중 오류가 발생했습니다.", response.status, error?.code);
+  }
+
+  const message = await response.text().catch(() => "");
+  throw new ApiError(message || "요청 처리 중 오류가 발생했습니다.", response.status);
 }
 
 async function reissueTokens() {
@@ -93,7 +107,7 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
       saveRedirectAfterLogin(
         `${window.location.pathname}${window.location.search}${window.location.hash}`,
       );
-      window.location.href = "/login";
+      window.location.href = "/login?reason=session-expired";
     }
     throw new ApiError("인증이 만료되었습니다.", 401, "UNAUTHORIZED");
   }
