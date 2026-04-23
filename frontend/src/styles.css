@@ -364,6 +364,11 @@ textarea {
   gap: 6px;
 }
 
+.dashboard-inline-status--error {
+  border-color: rgba(255, 120, 120, 0.24);
+  background: rgba(255, 120, 120, 0.08);
+}
+
 .dashboard-inline-status strong,
 .dashboard-mini-stat strong,
 .dashboard-action-hint strong,
@@ -475,6 +480,12 @@ textarea {
   display: grid;
   gap: 18px;
   min-height: 720px;
+}
+
+.dashboard-tree-shell__stats {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .dashboard-canvas-status {
@@ -638,6 +649,144 @@ textarea {
 
 .tree-viewport--horizontal {
   min-height: 640px;
+}
+
+.tree-viewport--branch-grid {
+  min-height: 640px;
+  padding: 28px;
+}
+
+.tree-branch-list {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 28px;
+  min-height: 100%;
+}
+
+.tree-goal-column {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+}
+
+.tree-goal-column .tree-node-card--center {
+  transform: none;
+}
+
+.tree-branch-grid {
+  display: grid;
+  gap: 22px;
+  align-content: start;
+}
+
+.tree-branch-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 18px;
+  padding: 22px;
+  border-radius: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.04), transparent 42%),
+    rgba(10, 14, 18, 0.55);
+}
+
+.tree-branch-card::before {
+  content: "";
+  position: absolute;
+  left: -14px;
+  top: 50%;
+  width: 14px;
+  height: 1px;
+  background: rgba(251, 191, 36, 0.45);
+}
+
+.tree-branch-card__category {
+  display: grid;
+  align-content: start;
+}
+
+.tree-topic-list {
+  display: grid;
+  gap: 16px;
+}
+
+.tree-topic-card {
+  position: relative;
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.tree-topic-card::before {
+  content: "";
+  position: absolute;
+  left: -18px;
+  top: 34px;
+  width: 18px;
+  height: 1px;
+  background: rgba(244, 114, 182, 0.38);
+}
+
+.tree-keyword-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.tree-keyword-list .tree-node-card,
+.tree-topic-card > .tree-node-card,
+.tree-branch-card__category .tree-node-card {
+  position: relative;
+  transform: none;
+}
+
+.tree-keyword-list .tree-node-card {
+  min-width: 132px;
+}
+
+.tree-keyword-list .tree-node-card--interactive:hover {
+  transform: translateY(-2px);
+}
+
+@media (max-width: 980px) {
+  .tree-branch-list {
+    grid-template-columns: 1fr;
+  }
+
+  .tree-goal-column {
+    justify-items: start;
+  }
+
+  .tree-branch-card {
+    grid-template-columns: 1fr;
+  }
+
+  .tree-branch-card::before,
+  .tree-topic-card::before {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .tree-viewport--branch-grid {
+    padding: 18px;
+  }
+
+  .dashboard-tree-shell__stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .tree-keyword-list {
+    display: grid;
+  }
 }
 
 /* Tree Legend */

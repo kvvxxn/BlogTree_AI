@@ -1,75 +1,27 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { getKnowledgeTree } from "@/features/tree/api/tree.api";
+import type { KnowledgeTree } from "@/shared/types/api";
+import { ApiError } from "@/shared/api/http";
+import { logger } from "@/shared/lib/logger";
 
 type TreeKind = "goal" | "category" | "topic" | "keyword";
 
-type TreeNodeCard = {
+type TreeBranch = {
+  category: string;
+  topics: {
+    topic: string;
+    keywords: string[];
+  }[];
+};
+
+type SelectedKeyword = {
   id: string;
+  category: string;
+  topic: string;
   title: string;
-  subtitle: string;
-  kind: TreeKind;
-  summary?: string;
-  sourceUrl?: string;
 };
 
-// 왼쪽 Career Goal
-const careerGoal: TreeNodeCard = {
-  id: "career-goal",
-  title: "AI Backend Engineer",
-  subtitle: "Career Goal",
-  kind: "goal",
-};
-
-// 상단 브랜치 (Backend 계열)
-const upperBranch = {
-  category: { id: "backend", title: "Backend", subtitle: "Category", kind: "category" as TreeKind },
-  topics: [
-    { id: "spring", title: "Spring", subtitle: "Topic", kind: "topic" as TreeKind },
-  ],
-  keywords: [
-    {
-      id: "jpa",
-      title: "JPA",
-      subtitle: "Keyword",
-      kind: "keyword" as TreeKind,
-      summary: "Spring 기반 데이터 접근에서 ORM 매핑, 영속성 컨텍스트, 트랜잭션 경계를 이해하는 핵심 키워드.",
-      sourceUrl: "https://spring.io/projects/spring-data-jpa",
-    },
-    {
-      id: "querydsl",
-      title: "QueryDSL",
-      subtitle: "Keyword",
-      kind: "keyword" as TreeKind,
-      summary: "복잡한 동적 쿼리를 타입 안정성 있게 구성할 때 사용하는 도구로 JPA 학습 다음 단계에 자주 연결된다.",
-      sourceUrl: "https://querydsl.com/",
-    },
-  ],
-};
-
-// 하단 브랜치 (AI 계열)
-const lowerBranch = {
-  category: { id: "ai", title: "AI", subtitle: "Category", kind: "category" as TreeKind },
-  topics: [
-    { id: "rag", title: "RAG", subtitle: "Topic", kind: "topic" as TreeKind },
-  ],
-  keywords: [
-    {
-      id: "vector-index",
-      title: "Vector Index",
-      subtitle: "Keyword",
-      kind: "keyword" as TreeKind,
-      summary: "RAG 시스템에서 임베딩 기반 검색 품질과 성능을 좌우하는 인덱싱 전략에 대한 핵심 개념.",
-      sourceUrl: "https://www.pinecone.io/learn/vector-indexes/",
-    },
-    {
-      id: "reranking",
-      title: "Reranking",
-      subtitle: "Keyword",
-      kind: "keyword" as TreeKind,
-      summary: "1차 검색 결과를 다시 정렬해 문맥 적합도를 높이는 단계로, 검색 정확도 개선에 직접 연결된다.",
-      sourceUrl: "https://www.pinecone.io/learn/series/rag/rerankers/",
-    },
-  ],
-};
+type LoadStatus = "loading" | "success" | "error";
 
 function getNodeClassName(kind: TreeKind, isSelected: boolean = false) {
   const baseClass = `tree-node-card tree-node-card--${kind}`;
@@ -78,36 +30,108 @@ function getNodeClassName(kind: TreeKind, isSelected: boolean = false) {
   return `${baseClass}${interactiveClass}${selectedClass}`;
 }
 
+function createKeywordId(category: string, topic: string, keyword: string) {
+  return `${category}::${topic}::${keyword}`;
+}
+
+function toBranches(tree: KnowledgeTree): TreeBranch[] {
+  return Object.entries(tree).map(([category, topics]) => ({
+    category,
+    topics: Object.entries(topics).map(([topic, keywords]) => ({
+      topic,
+      keywords,
+    })),
+  }));
+}
+
 export function DashboardOverview() {
+  const [tree, setTree] = useState<KnowledgeTree>({});
+  const [status, setStatus] = useState<LoadStatus>("loading");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [selectedKeywordId, setSelectedKeywordId] = useState<string | null>(null);
-  
-  const allKeywords = [...upperBranch.keywords, ...lowerBranch.keywords];
-  const selectedKeyword = allKeywords.find((k) => k.id === selectedKeywordId) ?? null;
+  const [reloadToken, setReloadToken] = useState(0);
 
-  // 선택된 키워드의 경로 찾기 (Category -> Topic -> Keyword)
-  function getKeywordPath(keywordId: string | null) {
-    if (!keywordId) return null;
-    
-    if (upperBranch.keywords.some((k) => k.id === keywordId)) {
-      return {
-        category: upperBranch.category.title,
-        topic: upperBranch.topics[0].title,
-      };
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadTree() {
+      try {
+        logger.info("tree", "지식 트리 조회를 시작합니다.");
+        setStatus("loading");
+        setErrorMessage(null);
+        const response = await getKnowledgeTree();
+
+        if (cancelled) {
+          return;
+        }
+
+        logger.info("tree", "지식 트리 조회에 성공했습니다.", {
+          categoryCount: Object.keys(response).length,
+        });
+        setTree(response);
+        setStatus("success");
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+
+        logger.error("tree", "지식 트리 조회에 실패했습니다.", error);
+        setStatus("error");
+        setErrorMessage(
+          error instanceof ApiError
+            ? error.message
+            : "지식 트리를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.",
+        );
+      }
     }
-    if (lowerBranch.keywords.some((k) => k.id === keywordId)) {
-      return {
-        category: lowerBranch.category.title,
-        topic: lowerBranch.topics[0].title,
-      };
+
+    void loadTree();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [reloadToken]);
+
+  const branches = useMemo(() => toBranches(tree), [tree]);
+
+  const selectedKeyword = useMemo<SelectedKeyword | null>(() => {
+    if (!selectedKeywordId) {
+      return null;
     }
+
+    for (const branch of branches) {
+      for (const topic of branch.topics) {
+        for (const keyword of topic.keywords) {
+          const id = createKeywordId(branch.category, topic.topic, keyword);
+          if (id === selectedKeywordId) {
+            return {
+              id,
+              category: branch.category,
+              topic: topic.topic,
+              title: keyword,
+            };
+          }
+        }
+      }
+    }
+
     return null;
+  }, [branches, selectedKeywordId]);
+
+  const topicCount = branches.reduce((count, branch) => count + branch.topics.length, 0);
+  const keywordCount = branches.reduce(
+    (count, branch) =>
+      count + branch.topics.reduce((topicTotal, topic) => topicTotal + topic.keywords.length, 0),
+    0,
+  );
+
+  function handleRetry() {
+    setStatus("loading");
+    setErrorMessage(null);
+    setTree({});
+    setSelectedKeywordId(null);
+    setReloadToken((current) => current + 1);
   }
-
-  const keywordPath = getKeywordPath(selectedKeywordId);
-
-  // 수평 트리 레이아웃: Goal(왼쪽) -> Category(중앙 상하) -> Topic -> Keyword
-  // X 좌표: Goal 8%, Category 28%, Topic 52%, Keyword 78%
-  // Y 좌표: 상단 브랜치 25%, 하단 브랜치 75%
 
   return (
     <>
@@ -116,6 +140,7 @@ export function DashboardOverview() {
           <div className="dashboard-tree-shell__header">
             <div>
               <span className="section-label">Knowledge Tree</span>
+              <h2>카테고리부터 키워드까지 학습 지도를 탐색하세요</h2>
               <div className="tree-legend">
                 <span className="tree-legend__item tree-legend__item--category">카테고리</span>
                 <span className="tree-legend__arrow">→</span>
@@ -124,129 +149,111 @@ export function DashboardOverview() {
                 <span className="tree-legend__item tree-legend__item--keyword">키워드</span>
               </div>
             </div>
-          </div>
-
-          <div className="tree-viewport tree-viewport--horizontal">
-            <svg
-              className="tree-viewport__links"
-              viewBox="0 0 100 100"
-              preserveAspectRatio="none"
-              aria-hidden="true"
-            >
-              {/* Goal -> 수평 트렁크 -> 상하 분기 -> Categories */}
-              <line x1="16" y1="50" x2="22" y2="50" className="tree-link tree-link--goal" />
-              <line x1="22" y1="28" x2="22" y2="72" className="tree-link tree-link--goal" />
-              <line x1="22" y1="28" x2="28" y2="28" className="tree-link tree-link--goal" />
-              <line x1="22" y1="72" x2="28" y2="72" className="tree-link tree-link--goal" />
-              
-              {/* Upper: Category -> Topic */}
-              <line x1="36" y1="28" x2="50" y2="28" className="tree-link tree-link--category" />
-              
-              {/* Upper: Topic -> Keywords */}
-              <line x1="58" y1="28" x2="68" y2="28" className="tree-link tree-link--topic" />
-              <line x1="68" y1="28" x2="68" y2="18" className="tree-link tree-link--topic" />
-              <line x1="68" y1="28" x2="68" y2="38" className="tree-link tree-link--topic" />
-              <line x1="68" y1="18" x2="74" y2="18" className="tree-link tree-link--topic" />
-              <line x1="68" y1="38" x2="74" y2="38" className="tree-link tree-link--topic" />
-              
-              {/* Lower: Category -> Topic */}
-              <line x1="36" y1="72" x2="50" y2="72" className="tree-link tree-link--category" />
-              
-              {/* Lower: Topic -> Keywords */}
-              <line x1="58" y1="72" x2="68" y2="72" className="tree-link tree-link--topic" />
-              <line x1="68" y1="72" x2="68" y2="62" className="tree-link tree-link--topic" />
-              <line x1="68" y1="72" x2="68" y2="82" className="tree-link tree-link--topic" />
-              <line x1="68" y1="62" x2="74" y2="62" className="tree-link tree-link--topic" />
-              <line x1="68" y1="82" x2="74" y2="82" className="tree-link tree-link--topic" />
-            </svg>
-
-            {/* Left: Career Goal */}
-            <div
-              className="tree-node-card tree-node-card--goal"
-              style={{ left: "8%", top: "50%", transform: "translateY(-50%)" }}
-            >
-              <span>{careerGoal.subtitle}</span>
-              <strong>{careerGoal.title}</strong>
+            <div className="dashboard-tree-shell__stats">
+              <div className="dashboard-mini-stat">
+                <span>Categories</span>
+                <strong>{branches.length}</strong>
+              </div>
+              <div className="dashboard-mini-stat">
+                <span>Topics</span>
+                <strong>{topicCount}</strong>
+              </div>
+              <div className="dashboard-mini-stat">
+                <span>Keywords</span>
+                <strong>{keywordCount}</strong>
+              </div>
             </div>
-
-            {/* Upper Branch - Category */}
-            <button
-              className={getNodeClassName("category")}
-              style={{ left: "32%", top: "28%", transform: "translate(-50%, -50%)" }}
-              type="button"
-            >
-              <span>{upperBranch.category.subtitle}</span>
-              <strong>{upperBranch.category.title}</strong>
-            </button>
-
-            {/* Upper Branch - Topic */}
-            <button
-              className={getNodeClassName("topic")}
-              style={{ left: "54%", top: "28%", transform: "translate(-50%, -50%)" }}
-              type="button"
-            >
-              <span>{upperBranch.topics[0].subtitle}</span>
-              <strong>{upperBranch.topics[0].title}</strong>
-            </button>
-
-            {/* Upper Branch - Keywords */}
-            {upperBranch.keywords.map((keyword, index) => (
-              <button
-                key={keyword.id}
-                className={getNodeClassName("keyword", selectedKeywordId === keyword.id)}
-                style={{ 
-                  left: "80%", 
-                  top: `${18 + index * 20}%`, 
-                  transform: "translate(-50%, -50%)" 
-                }}
-                type="button"
-                onClick={() => setSelectedKeywordId(keyword.id)}
-                aria-pressed={selectedKeywordId === keyword.id}
-              >
-                <span>{keyword.subtitle}</span>
-                <strong>{keyword.title}</strong>
-              </button>
-            ))}
-
-            {/* Lower Branch - Category */}
-            <button
-              className={getNodeClassName("category")}
-              style={{ left: "32%", top: "72%", transform: "translate(-50%, -50%)" }}
-              type="button"
-            >
-              <span>{lowerBranch.category.subtitle}</span>
-              <strong>{lowerBranch.category.title}</strong>
-            </button>
-
-            {/* Lower Branch - Topic */}
-            <button
-              className={getNodeClassName("topic")}
-              style={{ left: "54%", top: "72%", transform: "translate(-50%, -50%)" }}
-              type="button"
-            >
-              <span>{lowerBranch.topics[0].subtitle}</span>
-              <strong>{lowerBranch.topics[0].title}</strong>
-            </button>
-
-            {/* Lower Branch - Keywords */}
-            {lowerBranch.keywords.map((keyword, index) => (
-              <button
-                key={keyword.id}
-                className={getNodeClassName("keyword", selectedKeywordId === keyword.id)}
-                style={{ 
-                  left: "80%", 
-                  top: `${62 + index * 20}%`, 
-                  transform: "translate(-50%, -50%)" 
-                }}
-                type="button"
-                onClick={() => setSelectedKeywordId(keyword.id)}
-                aria-pressed={selectedKeywordId === keyword.id}
-              >
-                <span>{keyword.subtitle}</span>
-                <strong>{keyword.title}</strong>
-              </button>
-            ))}
           </div>
+
+          {status === "loading" ? (
+            <div className="dashboard-inline-status">
+              <strong>트리를 불러오는 중입니다</strong>
+              <span>저장된 카테고리, 토픽, 키워드를 정리하고 있습니다.</span>
+            </div>
+          ) : null}
+
+          {status === "error" ? (
+            <div className="dashboard-inline-status dashboard-inline-status--error">
+              <strong>트리를 불러오지 못했습니다</strong>
+              <span>{errorMessage ?? "잠시 후 다시 시도해 주세요."}</span>
+              <button className="button button--primary" type="button" onClick={handleRetry}>
+                다시 시도
+              </button>
+            </div>
+          ) : null}
+
+          {status === "success" && branches.length === 0 ? (
+            <div className="dashboard-inline-status">
+              <strong>아직 생성된 지식 트리가 없습니다</strong>
+              <span>블로그를 요약하면 카테고리와 키워드가 이곳에 쌓입니다.</span>
+            </div>
+          ) : null}
+
+          {status === "success" && branches.length > 0 ? (
+            <div className="tree-viewport tree-viewport--branch-grid">
+              <div className="tree-branch-list">
+                <div className="tree-goal-column">
+                  <div className="tree-node-card tree-node-card--goal tree-node-card--center">
+                    <span>Knowledge Root</span>
+                    <strong>My Learning Tree</strong>
+                  </div>
+                </div>
+
+                <div className="tree-branch-grid">
+                  {branches.map((branch) => (
+                    <article key={branch.category} className="tree-branch-card">
+                      <div className="tree-branch-card__category">
+                        <div className={getNodeClassName("category")}>
+                          <span>Category</span>
+                          <strong>{branch.category}</strong>
+                        </div>
+                      </div>
+
+                      <div className="tree-topic-list">
+                        {branch.topics.map((topic) => (
+                          <section
+                            key={`${branch.category}-${topic.topic}`}
+                            className="tree-topic-card"
+                          >
+                            <div className={getNodeClassName("topic")}>
+                              <span>Topic</span>
+                              <strong>{topic.topic}</strong>
+                            </div>
+
+                            <div className="tree-keyword-list">
+                              {topic.keywords.map((keyword) => {
+                                const keywordId = createKeywordId(
+                                  branch.category,
+                                  topic.topic,
+                                  keyword,
+                                );
+
+                                return (
+                                  <button
+                                    key={keywordId}
+                                    className={getNodeClassName(
+                                      "keyword",
+                                      selectedKeywordId === keywordId,
+                                    )}
+                                    type="button"
+                                    onClick={() => setSelectedKeywordId(keywordId)}
+                                    aria-pressed={selectedKeywordId === keywordId}
+                                  >
+                                    <span>Keyword</span>
+                                    <strong>{keyword}</strong>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </section>
+                        ))}
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : null}
         </section>
       </section>
 
@@ -267,17 +274,11 @@ export function DashboardOverview() {
               <div>
                 <span className="section-label">Knowledge Card</span>
                 <h2 id="knowledge-card-title" className="knowledge-modal__title-path">
-                  {keywordPath ? (
-                    <>
-                      <span className="knowledge-title__category">{keywordPath.category}</span>
-                      <span className="knowledge-title__arrow">→</span>
-                      <span className="knowledge-title__topic">{keywordPath.topic}</span>
-                      <span className="knowledge-title__arrow">→</span>
-                      <span className="knowledge-title__keyword">{selectedKeyword.title}</span>
-                    </>
-                  ) : (
-                    selectedKeyword.title
-                  )}
+                  <span className="knowledge-title__category">{selectedKeyword.category}</span>
+                  <span className="knowledge-title__arrow">→</span>
+                  <span className="knowledge-title__topic">{selectedKeyword.topic}</span>
+                  <span className="knowledge-title__arrow">→</span>
+                  <span className="knowledge-title__keyword">{selectedKeyword.title}</span>
                 </h2>
               </div>
               <button
@@ -291,14 +292,16 @@ export function DashboardOverview() {
 
             <div className="knowledge-modal__body">
               <div className="knowledge-modal__section">
-                <strong>요약본</strong>
-                <p>{selectedKeyword.summary}</p>
+                <strong>현재 표시 가능한 정보</strong>
+                <p>
+                  이 화면은 `GET /api/tree` 응답으로 만든 구조 트리입니다. 현재 백엔드는
+                  category, topic, keyword 이름만 내려주므로 상세 요약과 원본 URL은 포함되지
+                  않습니다.
+                </p>
               </div>
               <div className="knowledge-modal__section">
-                <strong>원본 URL</strong>
-                <a href={selectedKeyword.sourceUrl} target="_blank" rel="noreferrer">
-                  {selectedKeyword.sourceUrl}
-                </a>
+                <strong>선택된 키워드</strong>
+                <p>{selectedKeyword.title}</p>
               </div>
             </div>
           </section>
