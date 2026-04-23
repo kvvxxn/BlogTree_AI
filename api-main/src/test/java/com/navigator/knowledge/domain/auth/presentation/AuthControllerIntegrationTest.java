@@ -20,6 +20,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,9 +29,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 import javax.crypto.SecretKey;
 import java.util.Map;
@@ -99,15 +102,15 @@ class AuthControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("POST /api/auth/google은 사용자 저장 후 refresh token을 저장하고 설정된 만료시간으로 발급한다")
-    void googleLogin_persistsUserAndRefreshTokenWithConfiguredExpiration() throws Exception {
+    @DisplayName("POST /api/auth/google은 사용자 저장 후 refresh token을 쿠키와 저장소에 반영한다")
+    void googleLogin_persistsUserAndRefreshTokenWithCookie() throws Exception {
         GoogleTokenResponse googleTokenResponse = createGoogleTokenResponse();
         when(googleAuthClient.getGoogleAccessToken("google-auth-code", null))
                 .thenReturn(googleTokenResponse);
         when(googleAuthClient.getGoogleUserInfo(googleTokenResponse))
                 .thenReturn(createGoogleUserInfo("user@example.com", "Tester"));
 
-        String responseBody = mockMvc.perform(post("/api/auth/google")
+        MvcResult result = mockMvc.perform(post("/api/auth/google")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
                                 "authorizationCode", "google-auth-code"
@@ -116,9 +119,10 @@ class AuthControllerIntegrationTest {
                 .andExpect(jsonPath("$.message").value("구글 로그인 및 토큰 발급 성공!"))
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
                 .andExpect(jsonPath("$.refreshToken").isNotEmpty())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
+                .andReturn();
+
+        String responseBody = result.getResponse().getContentAsString();
+        String setCookieHeader = result.getResponse().getHeader(HttpHeaders.SET_COOKIE);
 
         Map<String, String> tokenResponse = objectMapper.readValue(responseBody, objectMapper.getTypeFactory()
                 .constructMapType(Map.class, String.class, String.class));
@@ -128,17 +132,53 @@ class AuthControllerIntegrationTest {
         Claims refreshClaims = parseClaims(savedRefreshToken);
 
         assertThat(savedRefreshToken).isEqualTo(tokenResponse.get("refreshToken"));
+        assertThat(setCookieHeader).contains("refreshToken=" + tokenResponse.get("refreshToken"));
+        assertThat(setCookieHeader).contains("HttpOnly");
+        assertThat(setCookieHeader).contains("Path=/api/auth");
         assertThat(refreshClaims.getSubject()).isEqualTo(String.valueOf(savedUser.getId()));
         assertThat(refreshClaims.getExpiration().getTime() - refreshClaims.getIssuedAt().getTime())
                 .isEqualTo(REFRESH_EXPIRATION);
     }
 
     @Test
-    @DisplayName("POST /api/auth/reissue는 저장된 refresh token으로 access token과 refresh token을 재발급한다")
-    void reissue_rotatesStoredRefreshToken() throws Exception {
+    @DisplayName("POST /api/auth/reissue는 refresh token 쿠키로 access token과 refresh token을 재발급한다")
+    void reissue_rotatesStoredRefreshTokenFromCookie() throws Exception {
         User user = userRepository.save(User.builder()
                 .email("reissue@example.com")
                 .name("Reissue User")
+                .profileImageUrl("https://example.com/profile.png")
+                .role(Role.USER)
+                .build());
+        String refreshToken = jwtProvider.createRefreshToken(user.getId());
+        refreshTokenRepository.save(user.getId(), refreshToken);
+
+        MvcResult result = mockMvc.perform(post("/api/auth/reissue")
+                        .cookie(new Cookie("refreshToken", refreshToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("토큰 재발급 성공!"))
+                .andExpect(jsonPath("$.accessToken").isNotEmpty())
+                .andExpect(jsonPath("$.refreshToken").isNotEmpty())
+                .andReturn();
+
+        Map<String, String> tokenResponse = objectMapper.readValue(
+                result.getResponse().getContentAsString(),
+                objectMapper.getTypeFactory().constructMapType(Map.class, String.class, String.class)
+        );
+        String storedRefreshToken = refreshTokenRepository.findByUserId(user.getId()).orElseThrow();
+
+        assertThat(storedRefreshToken).isNotBlank();
+        assertThat(storedRefreshToken).isEqualTo(tokenResponse.get("refreshToken"));
+        assertThat(result.getResponse().getHeader(HttpHeaders.SET_COOKIE))
+                .contains("refreshToken=" + storedRefreshToken);
+        assertThat(parseClaims(storedRefreshToken).getSubject()).isEqualTo(String.valueOf(user.getId()));
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/reissue는 기존 Refresh-Token 헤더도 계속 지원한다")
+    void reissue_acceptsLegacyRefreshTokenHeader() throws Exception {
+        User user = userRepository.save(User.builder()
+                .email("legacy-reissue@example.com")
+                .name("Legacy Reissue User")
                 .profileImageUrl("https://example.com/profile.png")
                 .role(Role.USER)
                 .build());
@@ -151,10 +191,6 @@ class AuthControllerIntegrationTest {
                 .andExpect(jsonPath("$.message").value("토큰 재발급 성공!"))
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
                 .andExpect(jsonPath("$.refreshToken").isNotEmpty());
-
-        String storedRefreshToken = refreshTokenRepository.findByUserId(user.getId()).orElseThrow();
-        assertThat(storedRefreshToken).isNotBlank();
-        assertThat(parseClaims(storedRefreshToken).getSubject()).isEqualTo(String.valueOf(user.getId()));
     }
 
     @Test
@@ -167,8 +203,8 @@ class AuthControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("POST /api/auth/logout은 인증된 사용자의 refresh token을 삭제한다")
-    void logout_deletesRefreshToken() throws Exception {
+    @DisplayName("POST /api/auth/logout은 인증된 사용자의 refresh token을 삭제하고 쿠키를 만료시킨다")
+    void logout_deletesRefreshTokenAndExpiresCookie() throws Exception {
         User user = userRepository.save(User.builder()
                 .email("logout@example.com")
                 .name("Logout User")
@@ -178,12 +214,16 @@ class AuthControllerIntegrationTest {
         String accessToken = jwtProvider.createAccessToken(user.getId(), user.getRole().getKey());
         refreshTokenRepository.save(user.getId(), jwtProvider.createRefreshToken(user.getId()));
 
-        mockMvc.perform(post("/api/auth/logout")
+        MvcResult result = mockMvc.perform(post("/api/auth/logout")
                         .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").value("성공적으로 로그아웃 되었습니다."));
+                .andExpect(jsonPath("$").value("성공적으로 로그아웃 되었습니다."))
+                .andReturn();
 
         assertThat(refreshTokenRepository.findByUserId(user.getId())).isEmpty();
+        assertThat(result.getResponse().getHeader(HttpHeaders.SET_COOKIE))
+                .contains("refreshToken=")
+                .contains("Max-Age=0");
     }
 
     private GoogleTokenResponse createGoogleTokenResponse() {
