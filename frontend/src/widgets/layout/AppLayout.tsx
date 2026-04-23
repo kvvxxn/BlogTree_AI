@@ -110,16 +110,10 @@ export function AppLayout() {
           </div>
         </header>
 
-        <div className="content-body">
-          {renderSidebarPanel() && (
-            <aside className="content-panel">
-              {renderSidebarPanel()}
-            </aside>
-          )}
-          <main className="page-container">
-            <Outlet />
-          </main>
-        </div>
+        <main className="page-container page-container--full">
+          {renderSidebarPanel()}
+          <Outlet />
+        </main>
       </div>
     </div>
   );
