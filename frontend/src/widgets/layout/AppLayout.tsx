@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { logout } from "@/features/auth/api/auth.api";
+import { useAuthSession } from "@/features/auth/providers/AuthSessionProvider";
 import { SummaryPanel } from "@/features/summary/ui/SummaryPanel";
 import { RecommendPanel } from "@/features/recommend/ui/RecommendPanel";
 
@@ -13,12 +14,14 @@ const navItems = [
 
 export function AppLayout() {
   const location = useLocation();
+  const { markLoggedOut } = useAuthSession();
   const currentPath = location.pathname;
 
   async function handleLogout() {
     try {
       await logout();
     } finally {
+      markLoggedOut();
       window.location.href = "/login";
     }
   }

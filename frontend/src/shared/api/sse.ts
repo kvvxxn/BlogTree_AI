@@ -7,6 +7,7 @@ export async function subscribeTask(taskId: string, onEvent: TaskEventHandler) {
   const accessToken = getAccessToken();
   const response = await fetch(`${env.apiBaseUrl}/api/tasks/subscribe/${taskId}`, {
     headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+    credentials: "include",
   });
 
   if (!response.ok || !response.body) {
