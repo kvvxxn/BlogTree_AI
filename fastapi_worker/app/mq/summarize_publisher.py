@@ -15,7 +15,7 @@ async def publish_message(queue_name: str, message_body: BaseModel) -> None:
 
     return: None
     """
-    connection = await aio_pika.connect_robust(settings.RABBITMQ_URL)
+    connection = await aio_pika.connect_robust(settings.rabbitmq_url)
     
     async with connection:
         channel = await connection.channel()

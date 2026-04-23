@@ -1,7 +1,7 @@
 services:
   postgres:
     image: pgvector/pgvector:pg16
-    container_name: postgres_blogtree
+    container_name: postgres
     ports:
       - "5432:5432"
     environment:
@@ -41,7 +41,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    container_name: blogtree-api
+    container_name: api
     restart: unless-stopped
     depends_on:
       postgres:
@@ -64,7 +64,7 @@ services:
     build:
       context: ..
       dockerfile: fastapi_worker/Dockerfile.dev
-    container_name: blogtree-worker
+    container_name: worker
     restart: unless-stopped
     depends_on:
       rabbitmq:

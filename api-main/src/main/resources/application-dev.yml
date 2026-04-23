@@ -1,77 +1,26 @@
 spring:
-  application:
-    name: api-main
-
   datasource:
     url: jdbc:postgresql://localhost:5432/blogtree
-    driver-class-name: org.postgresql.Driver
     username: postgres_user
     password: postgres_password
 
   jpa:
-    hibernate:
-      ddl-auto: validate
     show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-
-  flyway:
-    enabled: true
 
   ai:
     openai:
-      api-key: ${OPENAI_API_KEY:dummy} # 테스트를 위해 :dummy로 설정
-      base-url: https://api.openai.com
-      embedding:
-        options:
-          model: text-embedding-3-small
+      api-key: ${OPENAI_API_KEY:dummy}
 
-  # RabbitMQ
   rabbitmq:
     host: localhost
     port: 5672
     username: rabbitmq_user
     password: rabbitmq_password
-    # Producer 전송 보장 설정
-    publisher-confirm-type: correlated
-    publisher-returns: true
-    template:
-      mandatory: true # Unroutable 메시지 발생 시 예외 발생 또는 ReturnCallback 호출
-      retry:
-        enabled: true
-        initial-interval: 1000ms
-        max-attempts: 3
-        multiplier: 2.0
-        max-interval: 5000ms
-    summary:
-      exchange: summary.exchange
-      queue:
-        request: summary.request.queue
-        response: summary.response.queue
-      routing-key:
-        request: summary.request
-        response: summary.response
-    recommend:
-      exchange: recommend.exchange
-      queue:
-        request: recommend.request.queue
-        response: recommend.response.queue
-      routing-key:
-        request: recommend.request
-        response: recommend.response
-    listener:
-      simple:
-        retry:
-          enabled: true
-          max-attempts: 3          # 최대 3번까지 재시도
-          initial-interval: 1000ms    # 처음 실패 후 1초 대기
-          multiplier: 2.0          # 대기 시간을 2배씩 늘림 (3초 -> 6초 -> 12초)
-          max-interval: 5000ms        # 최대 대기 시간은 15초까지만
-        default-requeue-rejected: false
 
-# CORS
+oauth2:
+  google:
+    redirect-uri: ${GOOGLE_REDIRECT_URI:http://localhost:8080/login/oauth2/code/google}
+
 app:
   cors:
-    allowed-origins: http://localhost:3000, http://localhost:5173 # Vite 기본
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
