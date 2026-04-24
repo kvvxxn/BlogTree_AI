@@ -2,6 +2,7 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { logout } from "@/features/auth/api/auth.api";
 import { useAuthSession } from "@/features/auth/providers/AuthSessionProvider";
 import { SummaryPanel } from "@/features/summary/ui/SummaryPanel";
+import { SummaryFlowProvider } from "@/features/summary/ui/SummaryFlowProvider";
 import { RecommendPanel } from "@/features/recommend/ui/RecommendPanel";
 
 const navItems = [
@@ -16,6 +17,7 @@ export function AppLayout() {
   const location = useLocation();
   const { markLoggedOut } = useAuthSession();
   const currentPath = location.pathname;
+  const isSummaryPage = currentPath === "/summary";
 
   async function handleLogout() {
     try {
@@ -113,10 +115,19 @@ export function AppLayout() {
           </div>
         </header>
 
-        <main className="page-container page-container--full">
-          {renderSidebarPanel()}
-          <Outlet />
-        </main>
+        {isSummaryPage ? (
+          <SummaryFlowProvider>
+            <main className="page-container page-container--full">
+              {renderSidebarPanel()}
+              <Outlet />
+            </main>
+          </SummaryFlowProvider>
+        ) : (
+          <main className="page-container page-container--full">
+            {renderSidebarPanel()}
+            <Outlet />
+          </main>
+        )}
       </div>
     </div>
   );

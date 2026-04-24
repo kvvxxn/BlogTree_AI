@@ -1,102 +1,55 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-type SummaryStatus = "idle" | "collecting" | "analyzing" | "mapping" | "success" | "error";
-
-type SummaryResult = {
-  title: string;
-  summary: string;
-  sourceUrl: string;
-  category: string;
-  topic: string;
-  keyword: string;
-};
-
-const STATUS_MESSAGES: Record<SummaryStatus, string> = {
-  idle: "",
-  collecting: "URL 수집 중...",
-  analyzing: "블로그 내용 분석 중...",
-  mapping: "트리에 매핑 중...",
-  success: "요약이 완료되었습니다!",
-  error: "",
-};
+import { useSummaryFlow } from "@/features/summary/ui/SummaryFlowProvider";
 
 export function SummaryPanel() {
   const navigate = useNavigate();
   const [url, setUrl] = useState("");
-  const [status, setStatus] = useState<SummaryStatus>("idle");
-  const [errorMessage, setErrorMessage] = useState("");
-  const [result, setResult] = useState<SummaryResult | null>(null);
+  const [validationMessage, setValidationMessage] = useState("");
+  const {
+    completionState,
+    errorMessage,
+    isBusy,
+    resetSummary,
+    result,
+    sourceUrl,
+    status,
+    streamStatus,
+    submitSummary,
+    taskId,
+  } = useSummaryFlow();
 
-  const isProcessing = status === "collecting" || status === "analyzing" || status === "mapping";
+  const isSuccess = status === "success" && result;
 
   async function handleSubmit() {
     if (!url.trim()) {
-      setStatus("error");
-      setErrorMessage("URL을 입력해주세요.");
+      setValidationMessage("URL을 입력해주세요.");
       return;
     }
 
-    // URL 형식 검증
-    try {
-      new URL(url);
-    } catch {
-      setStatus("error");
-      setErrorMessage("지원하지 않는 URL 형식입니다.");
+    const validationError = validateSummaryUrl(url);
+    if (validationError) {
+      setValidationMessage(validationError);
       return;
     }
 
-    // 지원 블로그 검증 (Tistory, Velog)
-    const supportedDomains = ["tistory.com", "velog.io"];
-    const urlObj = new URL(url);
-    const isSupportedBlog = supportedDomains.some((domain) => urlObj.hostname.includes(domain));
-    
-    if (!isSupportedBlog) {
-      setStatus("error");
-      setErrorMessage("현재 Tistory, Velog 블로그의 URL만 지원합니다.");
-      return;
-    }
-
-    setErrorMessage("");
-    setResult(null);
-
-    // 단계별 진행 시뮬레이션 (실제 구현 시 SSE 이벤트로 대체)
-    try {
-      setStatus("collecting");
-      await delay(1500);
-
-      setStatus("analyzing");
-      await delay(2000);
-
-      setStatus("mapping");
-      await delay(1500);
-
-      // 성공 시 결과 설정 (데모 데이터)
-      setResult({
-        title: "Vector Index 최적화 전략",
-        summary: "RAG 시스템에서 임베딩 기반 검색 품질과 성능을 좌우하는 인덱싱 전략에 대한 핵심 개념을 다룹니다. HNSW, IVF 등 다양한 인덱싱 방법의 장단점을 비교합니다.",
-        sourceUrl: url,
-        category: "AI",
-        topic: "RAG",
-        keyword: "Vector Index",
-      });
-      setStatus("success");
-    } catch {
-      setStatus("error");
-      setErrorMessage("블로그 내용을 가져올 수 없습니다. 잠시 후 다시 시도해주세요.");
-    }
+    setValidationMessage("");
+    await submitSummary(url);
   }
 
   function handleReset() {
     setUrl("");
-    setStatus("idle");
-    setErrorMessage("");
-    setResult(null);
+    setValidationMessage("");
+    resetSummary();
   }
 
   function handleGoToKnowledgeGraph() {
     navigate("/knowledge-graph");
   }
+
+  const panelErrorMessage = validationMessage || errorMessage;
+  const completionMessage = getCompletionMessage(completionState);
+  const streamMessage = getStreamMessage(streamStatus);
 
   return (
     <section className="sidebar__panel">
@@ -111,7 +64,7 @@ export function SummaryPanel() {
         * 현재 Tistory, Velog 블로그의 URL 입력을 권장합니다.
       </p>
 
-      {status !== "success" && (
+      {!isSuccess && (
         <>
           <label className="field">
             <span>Article URL</span>
@@ -120,21 +73,24 @@ export function SummaryPanel() {
               type="url"
               placeholder="https://example.com/article"
               value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              disabled={isProcessing}
+              onChange={(e) => {
+                setUrl(e.target.value);
+                setValidationMessage("");
+              }}
+              disabled={isBusy}
             />
           </label>
 
           <button
             className="button button--primary summary-button"
             type="button"
-            onClick={handleSubmit}
-            disabled={isProcessing}
+            onClick={() => void handleSubmit()}
+            disabled={isBusy}
           >
-            {isProcessing ? (
+            {isBusy ? (
               <>
                 <span className="summary-button__spinner" />
-                {STATUS_MESSAGES[status]}
+                {getSubmitButtonLabel(status, streamStatus)}
               </>
             ) : (
               "요약 요청 보내기"
@@ -143,31 +99,39 @@ export function SummaryPanel() {
         </>
       )}
 
-      {status === "error" && errorMessage && (
-        <div className="summary-status summary-status--error">
-          <span>{errorMessage}</span>
+      {status === "processing" && (
+        <div className="summary-status summary-status--success">
+          <span>{streamMessage}</span>
+          {sourceUrl && <span className="summary-status__meta">{sourceUrl}</span>}
+          {taskId && <span className="summary-status__meta">Task ID: {taskId}</span>}
         </div>
       )}
 
-      {status === "success" && result && (
+      {(validationMessage || status === "error") && panelErrorMessage && (
+        <div className="summary-status summary-status--error">
+          <span>{panelErrorMessage}</span>
+        </div>
+      )}
+
+      {isSuccess && result && (
         <>
+          {completionMessage && (
+            <div className="summary-status summary-status--success">
+              <span>{completionMessage}</span>
+            </div>
+          )}
+
           <hr className="summary-divider" />
           <div className="summary-result-card">
             <div className="summary-result-card__header">
               <span className="section-label">Knowledge Card</span>
-              <h3 className="summary-result-card__title-path">
-                <span className="knowledge-title__category">{result.category}</span>
-                <span className="knowledge-title__arrow">→</span>
-                <span className="knowledge-title__topic">{result.topic}</span>
-                <span className="knowledge-title__arrow">→</span>
-                <span className="knowledge-title__keyword">{result.keyword}</span>
-              </h3>
+              {renderKnowledgePath(result.category, result.topic, result.keyword)}
             </div>
 
             <div className="summary-result-card__body">
               <div className="summary-result-card__section">
                 <strong>요약본</strong>
-                <p>{result.summary}</p>
+                <p>{result.content}</p>
               </div>
 
               <div className="summary-result-card__section">
@@ -204,6 +168,74 @@ export function SummaryPanel() {
   );
 }
 
-function delay(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+function validateSummaryUrl(value: string) {
+  try {
+    const url = new URL(value);
+    const supportedDomains = ["tistory.com", "velog.io"];
+    const isSupportedBlog = supportedDomains.some((domain) => url.hostname.includes(domain));
+
+    if (!isSupportedBlog) {
+      return "현재 Tistory, Velog 블로그의 URL만 지원합니다.";
+    }
+
+    return "";
+  } catch {
+    return "지원하지 않는 URL 형식입니다.";
+  }
+}
+
+function getSubmitButtonLabel(status: "idle" | "submitting" | "processing" | "success" | "error", streamStatus: "idle" | "connecting" | "live" | "error") {
+  if (status === "submitting") {
+    return "요약 작업 생성 중...";
+  }
+
+  if (status === "processing") {
+    if (streamStatus === "connecting") {
+      return "실시간 연결 중...";
+    }
+
+    return "요약 결과 수신 대기 중...";
+  }
+
+  return "요약 요청 보내기";
+}
+
+function getStreamMessage(streamStatus: "idle" | "connecting" | "live" | "error") {
+  if (streamStatus === "connecting") {
+    return "작업은 생성되었습니다. 실시간 결과 스트림에 연결하는 중입니다.";
+  }
+
+  if (streamStatus === "live") {
+    return "실시간 연결이 열렸습니다. 백엔드 작업 완료 이벤트를 기다리는 중입니다.";
+  }
+
+  return "작업 진행 상태를 확인하는 중입니다.";
+}
+
+function getCompletionMessage(completionState: "success" | "partial" | null) {
+  if (completionState === "partial") {
+    return "요약은 완료되었고, 가장 유사한 기존 키워드에 연결되었습니다.";
+  }
+
+  if (completionState === "success") {
+    return "요약이 완료되어 새로운 지식 경로가 반영되었습니다.";
+  }
+
+  return "";
+}
+
+function renderKnowledgePath(category: string | null, topic: string | null, keyword: string | null) {
+  if (!category || !topic || !keyword) {
+    return <p className="summary-path-note">아직 트리 경로가 연결되지 않았습니다.</p>;
+  }
+
+  return (
+    <h3 className="summary-result-card__title-path">
+      <span className="knowledge-title__category">{category}</span>
+      <span className="knowledge-title__arrow">→</span>
+      <span className="knowledge-title__topic">{topic}</span>
+      <span className="knowledge-title__arrow">→</span>
+      <span className="knowledge-title__keyword">{keyword}</span>
+    </h3>
+  );
 }
