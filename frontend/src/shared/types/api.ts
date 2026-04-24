@@ -24,6 +24,30 @@ export type UserProfileUpdateRequest = {
 
 export type KnowledgeTree = Record<string, Record<string, string[]>>;
 
+export type StatsCategory = {
+  category: string;
+  count: number;
+  percentage: number;
+};
+
+export type StatsTopic = {
+  topic: string;
+  count: number;
+};
+
+export type StatsRecentKeyword = {
+  keyword: string;
+  readAt: string;
+};
+
+export type StatsResponse = {
+  careerGoal: string | null;
+  totalReadCount: number;
+  categoryStats: StatsCategory[];
+  topTopics: StatsTopic[];
+  recentKeywords: StatsRecentKeyword[];
+};
+
 export type SummaryRequest = {
   sourceUrl: string;
 };

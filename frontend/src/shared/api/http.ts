@@ -25,6 +25,8 @@ export class ApiError extends Error {
   }
 }
 
+let reissueRequest: Promise<boolean> | null = null;
+
 function isJsonResponse(response: Response) {
   const contentType = response.headers.get("content-type") ?? "";
   return contentType.includes("application/json");
@@ -53,22 +55,35 @@ async function parseResponse<T>(response: Response): Promise<T> {
 }
 
 export async function reissueAccessToken() {
-  logger.info("auth", "access token 만료로 재발급을 시도합니다.");
-  const response = await fetch(`${env.apiBaseUrl}/api/auth/reissue`, {
-    method: "POST",
-    credentials: "include",
-  });
-
-  if (!response.ok) {
-    logger.warn("auth", "토큰 재발급에 실패했습니다.", { status: response.status });
-    clearAuthTokens();
-    return false;
+  if (reissueRequest) {
+    logger.info("auth", "진행 중인 토큰 재발급 요청 결과를 재사용합니다.");
+    return reissueRequest;
   }
 
-  const data = (await response.json()) as LoginResponse;
-  logger.info("auth", "토큰 재발급에 성공했습니다.");
-  setAccessToken(data.accessToken);
-  return true;
+  reissueRequest = (async () => {
+    logger.info("auth", "access token 만료로 재발급을 시도합니다.");
+    const response = await fetch(`${env.apiBaseUrl}/api/auth/reissue`, {
+      method: "POST",
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      logger.warn("auth", "토큰 재발급에 실패했습니다.", { status: response.status });
+      clearAuthTokens();
+      return false;
+    }
+
+    const data = (await response.json()) as LoginResponse;
+    logger.info("auth", "토큰 재발급에 성공했습니다.");
+    setAccessToken(data.accessToken);
+    return true;
+  })();
+
+  try {
+    return await reissueRequest;
+  } finally {
+    reissueRequest = null;
+  }
 }
 
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
