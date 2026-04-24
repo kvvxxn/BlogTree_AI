@@ -94,14 +94,15 @@ public class RecommendTaskListener {
     private void handleSuccess(Task task, RecommendTaskResponseMessage responseMessage) {
         RecommendTaskResponseMessage.ResultData data = requireResultData(responseMessage);
         Long userId = requireUserId(responseMessage);
+        RecommendTaskResponseMessage.KnowledgeTree knowledgeTree = requireKnowledgeTree(data);
 
         Recommendation recommendation = recommendationService.findOrCreateRecommendation(
             task,
             userId,
-            requireText(data.reason(), "reason"),
-            requireText(data.category(), "category"),
-            requireText(data.topic(), "topic"),
-            requireText(data.keyword(), "keyword")
+            requireText(data.recommendReason(), "recommendReason"),
+            requireText(knowledgeTree.category(), "category"),
+            requireText(knowledgeTree.topic(), "topic"),
+            requireText(knowledgeTree.keyword(), "keyword")
         );
 
         taskService.updateTaskStatus(task.getTaskId(), TaskStatus.SUCCESS);
@@ -137,7 +138,15 @@ public class RecommendTaskListener {
         if (responseMessage.data() == null) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "data must not be null");
         }
+        requireText(responseMessage.data().recommendReason(), "recommendReason");
         return responseMessage.data();
+    }
+
+    private RecommendTaskResponseMessage.KnowledgeTree requireKnowledgeTree(RecommendTaskResponseMessage.ResultData data) {
+        if (data.knowledgeTree() == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "knowledgeTree must not be null");
+        }
+        return data.knowledgeTree();
     }
 
     private RecommendTaskResponseMessage.ErrorData requireErrorData(RecommendTaskResponseMessage responseMessage) {
