@@ -1,10 +1,10 @@
 package com.navigator.knowledge.domain.task.sse.event;
 
 public enum TaskSseEventName {
-    SUCCESS("success", true),
-    PARTIAL_SUCCESS("partial_success", true),
-    FAILED("failed", true),
-    EXPIRED("expired", true);
+    SUCCESS("SUCCESS", true),
+    PARTIAL_SUCCESS("PARTIAL_SUCCESS", true),
+    FAILED("FAILED", true),
+    EXPIRED("EXPIRED", true);
 
     private final String value;
     private final boolean terminal;
