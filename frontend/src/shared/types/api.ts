@@ -6,15 +6,15 @@ export type LoginRequest = {
 export type LoginResponse = {
   message: string;
   accessToken: string;
-  refreshToken: string;
+  refreshToken?: string;
 };
 
 export type UserProfile = {
   id: number;
   email: string;
   name: string;
-  profileImageUrl: string;
-  careerGoal: string;
+  profileImageUrl: string | null;
+  careerGoal: string | null;
 };
 
 export type UserProfileUpdateRequest = {
@@ -29,6 +29,11 @@ export type SummaryRequest = {
 };
 
 export type SummaryResponse = {
+  summaryId: number;
+  taskId: string;
+  category: string | null;
+  topic: string | null;
+  keyword: string | null;
   sourceUrl: string;
   content: string;
   createdAt: string;
@@ -58,6 +63,15 @@ export type SummaryTaskSuccessEvent = {
   summaryContent: string;
 };
 
+export type SummaryTaskPartialSuccessEvent = {
+  taskId: string;
+  summaryId: number;
+  category: string;
+  topic: string;
+  keyword: string;
+  summaryContent: string;
+};
+
 export type RecommendationTaskSuccessEvent = {
   taskId: string;
   recommendationId: number;
@@ -68,6 +82,12 @@ export type RecommendationTaskSuccessEvent = {
 };
 
 export type TaskFailureEvent = {
+  taskId: string;
+  code: string;
+  message: string;
+};
+
+export type TaskExpiredEvent = {
   taskId: string;
   code: string;
   message: string;

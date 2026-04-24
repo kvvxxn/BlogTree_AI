@@ -14,9 +14,9 @@ import { PublicOnlyRoute } from "@/features/auth/ui/PublicOnlyRoute";
 export function AppRouter() {
   return (
     <Routes>
+      <Route path="/auth/callback" element={<AuthCallbackPage />} />
       <Route element={<PublicOnlyRoute />}>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/auth/callback" element={<AuthCallbackPage />} />
       </Route>
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>

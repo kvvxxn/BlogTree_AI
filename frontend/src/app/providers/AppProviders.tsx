@@ -1,5 +1,6 @@
 import type { PropsWithChildren } from "react";
 import { BrowserRouter } from "react-router-dom";
+import { AuthSessionProvider } from "@/features/auth/providers/AuthSessionProvider";
 
 export function AppProviders({ children }: PropsWithChildren) {
   return (
@@ -9,7 +10,7 @@ export function AppProviders({ children }: PropsWithChildren) {
         v7_relativeSplatPath: true,
       }}
     >
-      {children}
+      <AuthSessionProvider>{children}</AuthSessionProvider>
     </BrowserRouter>
   );
 }

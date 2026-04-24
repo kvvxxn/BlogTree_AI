@@ -364,6 +364,11 @@ textarea {
   gap: 6px;
 }
 
+.dashboard-inline-status--error {
+  border-color: rgba(255, 120, 120, 0.24);
+  background: rgba(255, 120, 120, 0.08);
+}
+
 .dashboard-inline-status strong,
 .dashboard-mini-stat strong,
 .dashboard-action-hint strong,
@@ -475,6 +480,12 @@ textarea {
   display: grid;
   gap: 18px;
   min-height: 720px;
+}
+
+.dashboard-tree-shell__stats {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .dashboard-canvas-status {
@@ -638,6 +649,144 @@ textarea {
 
 .tree-viewport--horizontal {
   min-height: 640px;
+}
+
+.tree-viewport--branch-grid {
+  min-height: 640px;
+  padding: 28px;
+}
+
+.tree-branch-list {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 28px;
+  min-height: 100%;
+}
+
+.tree-goal-column {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+}
+
+.tree-goal-column .tree-node-card--center {
+  transform: none;
+}
+
+.tree-branch-grid {
+  display: grid;
+  gap: 22px;
+  align-content: start;
+}
+
+.tree-branch-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 18px;
+  padding: 22px;
+  border-radius: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.04), transparent 42%),
+    rgba(10, 14, 18, 0.55);
+}
+
+.tree-branch-card::before {
+  content: "";
+  position: absolute;
+  left: -14px;
+  top: 50%;
+  width: 14px;
+  height: 1px;
+  background: rgba(251, 191, 36, 0.45);
+}
+
+.tree-branch-card__category {
+  display: grid;
+  align-content: start;
+}
+
+.tree-topic-list {
+  display: grid;
+  gap: 16px;
+}
+
+.tree-topic-card {
+  position: relative;
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.tree-topic-card::before {
+  content: "";
+  position: absolute;
+  left: -18px;
+  top: 34px;
+  width: 18px;
+  height: 1px;
+  background: rgba(244, 114, 182, 0.38);
+}
+
+.tree-keyword-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.tree-keyword-list .tree-node-card,
+.tree-topic-card > .tree-node-card,
+.tree-branch-card__category .tree-node-card {
+  position: relative;
+  transform: none;
+}
+
+.tree-keyword-list .tree-node-card {
+  min-width: 132px;
+}
+
+.tree-keyword-list .tree-node-card--interactive:hover {
+  transform: translateY(-2px);
+}
+
+@media (max-width: 980px) {
+  .tree-branch-list {
+    grid-template-columns: 1fr;
+  }
+
+  .tree-goal-column {
+    justify-items: start;
+  }
+
+  .tree-branch-card {
+    grid-template-columns: 1fr;
+  }
+
+  .tree-branch-card::before,
+  .tree-topic-card::before {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .tree-viewport--branch-grid {
+    padding: 18px;
+  }
+
+  .dashboard-tree-shell__stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .tree-keyword-list {
+    display: grid;
+  }
 }
 
 /* Tree Legend */
@@ -998,6 +1147,11 @@ textarea {
   cursor: pointer;
 }
 
+.button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 .button--primary {
   background: var(--accent);
   color: #1d130d;
@@ -1058,6 +1212,30 @@ textarea {
   gap: 16px;
 }
 
+.profile-overview-card {
+  display: grid;
+  gap: 18px;
+}
+
+.profile-overview-card__header,
+.profile-overview-card__meta,
+.profile-form-note--split {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.profile-overview-card__header {
+  align-items: flex-start;
+}
+
+.profile-overview-card__meta,
+.profile-form-note {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
 .profile-info {
   display: flex;
   flex-direction: column;
@@ -1096,6 +1274,13 @@ textarea {
   font-weight: 700;
   background: linear-gradient(135deg, var(--accent), #ffb36a);
   color: #2e1707;
+  overflow: hidden;
+}
+
+.avatar__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 @media (max-width: 1080px) {
@@ -1116,6 +1301,13 @@ textarea {
   .dashboard-tree-shell__header,
   .dashboard-canvas__heading {
     display: grid;
+  }
+
+  .profile-overview-card__header,
+  .profile-overview-card__meta,
+  .profile-form-note--split {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .sidebar {
@@ -1203,6 +1395,8 @@ textarea {
   padding: 12px 16px;
   border-radius: 14px;
   font-size: 0.92rem;
+  display: grid;
+  gap: 6px;
 }
 
 .summary-status--error {
@@ -1282,6 +1476,89 @@ textarea {
   display: block;
   color: var(--secondary);
   word-break: break-all;
+}
+
+.summary-status__meta,
+.summary-path-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.summary-workspace {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.summary-workspace__hero,
+.summary-workspace__card {
+  padding: 24px 28px;
+  border-radius: 24px;
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
+    rgba(0, 0, 0, 0.16);
+}
+
+.summary-workspace__hero {
+  display: grid;
+  gap: 12px;
+}
+
+.summary-workspace__title,
+.summary-workspace__card h3 {
+  margin: 0;
+}
+
+.summary-workspace__copy,
+.summary-workspace__card p,
+.summary-workspace__meta-line {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.summary-workspace__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.summary-workspace__grid--result {
+  align-items: start;
+}
+
+.summary-workspace__card {
+  display: grid;
+  gap: 16px;
+}
+
+.summary-workspace__card--error {
+  border-color: rgba(255, 120, 120, 0.35);
+  background:
+    linear-gradient(180deg, rgba(255, 120, 120, 0.08), rgba(255, 120, 120, 0.03)),
+    rgba(0, 0, 0, 0.18);
+}
+
+.summary-workspace__meta {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.summary-workspace__result-card {
+  height: 100%;
+}
+
+.summary-workspace__actions {
+  margin-top: 0;
+}
+
+@media (max-width: 960px) {
+  .summary-workspace__grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .summary-result-card__tags {

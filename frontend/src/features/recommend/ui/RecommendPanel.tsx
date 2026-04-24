@@ -1,71 +1,22 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-type RecommendStatus = "idle" | "analyzing" | "generating" | "success" | "error";
-
-type RecommendResult = {
-  category: string;
-  topic: string;
-  keyword: string;
-  reason: string;
-  searchTerms: string[];
-};
-
-const STATUS_MESSAGES: Record<RecommendStatus, string> = {
-  idle: "",
-  analyzing: "블로그 트리 분석 중...",
-  generating: "맞춤형 키워드 생성 중...",
-  success: "추천이 완료되었습니다!",
-  error: "",
-};
+import { useRecommendFlow } from "@/features/recommend/ui/RecommendFlowProvider";
 
 export function RecommendPanel() {
   const navigate = useNavigate();
-  const [status, setStatus] = useState<RecommendStatus>("idle");
-  const [errorMessage, setErrorMessage] = useState("");
-  const [result, setResult] = useState<RecommendResult | null>(null);
+  const { errorMessage, isBusy, requestRecommend, resetRecommend, result, status, streamStatus, taskId } =
+    useRecommendFlow();
 
-  const isProcessing = status === "analyzing" || status === "generating";
-
-  async function handleGenerate() {
-    setErrorMessage("");
-    setResult(null);
-
-    try {
-      setStatus("analyzing");
-      await delay(2000);
-
-      setStatus("generating");
-      await delay(2000);
-
-      // 성공 시 결과 설정 (데모 데이터)
-      setResult({
-        category: "Backend",
-        topic: "Spring",
-        keyword: "Spring Security",
-        reason: "현재 JPA와 QueryDSL을 학습하셨으니, 다음 단계로 인증/인가 처리를 위한 Spring Security를 학습하시면 백엔드 개발 역량을 더욱 강화할 수 있습니다. 특히 JWT 기반 인증과 OAuth2 연동은 실무에서 자주 사용됩니다.",
-        searchTerms: [
-          "Spring Security 기초",
-          "Spring Security JWT 인증",
-          "Spring Boot OAuth2 소셜 로그인",
-        ],
-      });
-      setStatus("success");
-    } catch {
-      setStatus("error");
-      setErrorMessage("추천을 생성하는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
-    }
-  }
+  const isSuccess = status === "success" && result;
 
   function handleReset() {
-    setStatus("idle");
-    setErrorMessage("");
-    setResult(null);
+    resetRecommend();
   }
 
   function handleGoToKnowledgeGraph() {
     navigate("/knowledge-graph");
   }
+
+  const progressMessage = getProgressMessage(streamStatus);
 
   return (
     <section className="sidebar__panel">
@@ -77,22 +28,29 @@ export function RecommendPanel() {
         현재까지 구축한 블로그 트리와 설정하신 커리어 목표를 분석하여, 다음으로 학습하기 좋은 맞춤형 키워드를 추천합니다.
       </p>
 
-      {status !== "success" && (
+      {!isSuccess && (
         <button
           className="button button--primary summary-button"
           type="button"
-          onClick={handleGenerate}
-          disabled={isProcessing}
+          onClick={() => void requestRecommend()}
+          disabled={isBusy}
         >
-          {isProcessing ? (
+          {isBusy ? (
             <>
               <span className="summary-button__spinner" />
-              {STATUS_MESSAGES[status]}
+              {getSubmitButtonLabel(status, streamStatus)}
             </>
           ) : (
             "추천 키워드 생성"
           )}
         </button>
+      )}
+
+      {status === "processing" && (
+        <div className="summary-status summary-status--success">
+          <span>{progressMessage}</span>
+          {taskId && <span className="summary-status__meta">Task ID: {taskId}</span>}
+        </div>
       )}
 
       {status === "error" && errorMessage && (
@@ -101,36 +59,23 @@ export function RecommendPanel() {
         </div>
       )}
 
-      {status === "success" && result && (
+      {isSuccess && result && (
         <>
+          <div className="summary-status summary-status--success">
+            <span>추천 결과가 저장되었고 상세 조회까지 완료되었습니다.</span>
+          </div>
+
           <hr className="summary-divider" />
           <div className="summary-result-card">
             <div className="summary-result-card__header">
               <span className="section-label">Recommend Card</span>
-              <h3 className="summary-result-card__title-path">
-                <span className="knowledge-title__category">{result.category}</span>
-                <span className="knowledge-title__arrow">→</span>
-                <span className="knowledge-title__topic">{result.topic}</span>
-                <span className="knowledge-title__arrow">→</span>
-                <span className="knowledge-title__keyword">{result.keyword}</span>
-              </h3>
+              {renderKnowledgePath(result.category, result.topic, result.keyword)}
             </div>
 
             <div className="summary-result-card__body">
               <div className="summary-result-card__section">
                 <strong>추천 이유</strong>
                 <p>{result.reason}</p>
-              </div>
-
-              <div className="summary-result-card__section">
-                <strong>추천 검색어</strong>
-                <ul className="recommend-blog-list">
-                  {result.searchTerms.map((term, index) => (
-                    <li key={index}>
-                      <span>{term}</span>
-                    </li>
-                  ))}
-                </ul>
               </div>
             </div>
           </div>
@@ -158,6 +103,45 @@ export function RecommendPanel() {
   );
 }
 
-function delay(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+function getSubmitButtonLabel(
+  status: "idle" | "submitting" | "processing" | "success" | "error",
+  streamStatus: "idle" | "connecting" | "live" | "error",
+) {
+  if (status === "submitting") {
+    return "추천 작업 생성 중...";
+  }
+
+  if (status === "processing") {
+    if (streamStatus === "connecting") {
+      return "실시간 연결 중...";
+    }
+
+    return "추천 결과 수신 대기 중...";
+  }
+
+  return "추천 키워드 생성";
+}
+
+function getProgressMessage(streamStatus: "idle" | "connecting" | "live" | "error") {
+  if (streamStatus === "connecting") {
+    return "작업은 생성되었습니다. 실시간 결과 스트림에 연결하는 중입니다.";
+  }
+
+  if (streamStatus === "live") {
+    return "실시간 연결이 열렸습니다. 백엔드 작업 완료 이벤트를 기다리는 중입니다.";
+  }
+
+  return "작업 진행 상태를 확인하는 중입니다.";
+}
+
+function renderKnowledgePath(category: string, topic: string, keyword: string) {
+  return (
+    <h3 className="summary-result-card__title-path">
+      <span className="knowledge-title__category">{category}</span>
+      <span className="knowledge-title__arrow">→</span>
+      <span className="knowledge-title__topic">{topic}</span>
+      <span className="knowledge-title__arrow">→</span>
+      <span className="knowledge-title__keyword">{keyword}</span>
+    </h3>
+  );
 }

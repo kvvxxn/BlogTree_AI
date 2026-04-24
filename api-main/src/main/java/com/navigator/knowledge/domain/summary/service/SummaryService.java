@@ -39,7 +39,7 @@ public class SummaryService {
 
     @Transactional(transactionManager = JPA_TRANSACTION_MANAGER, readOnly = true)
     public SummaryResponseDto getSummary(Long userId, Long summaryId) {
-        Summary summary = summaryRepository.findById(summaryId)
+        Summary summary = summaryRepository.findDetailedBySummaryId(summaryId)
                 .orElseThrow(() -> new SummaryNotFoundException(summaryId));
         if (!Objects.equals(summary.getUserId(), userId)) {
             throw new SummaryAccessDeniedException(summaryId, userId);
