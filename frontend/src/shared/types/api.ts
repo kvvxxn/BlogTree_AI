@@ -6,15 +6,15 @@ export type LoginRequest = {
 export type LoginResponse = {
   message: string;
   accessToken: string;
-  refreshToken: string;
+  refreshToken?: string;
 };
 
 export type UserProfile = {
   id: number;
   email: string;
   name: string;
-  profileImageUrl: string;
-  careerGoal: string;
+  profileImageUrl: string | null;
+  careerGoal: string | null;
 };
 
 export type UserProfileUpdateRequest = {
@@ -24,11 +24,40 @@ export type UserProfileUpdateRequest = {
 
 export type KnowledgeTree = Record<string, Record<string, string[]>>;
 
+export type StatsCategory = {
+  category: string;
+  count: number;
+  percentage: number;
+};
+
+export type StatsTopic = {
+  topic: string;
+  count: number;
+};
+
+export type StatsRecentKeyword = {
+  keyword: string;
+  readAt: string;
+};
+
+export type StatsResponse = {
+  careerGoal: string | null;
+  totalReadCount: number;
+  categoryStats: StatsCategory[];
+  topTopics: StatsTopic[];
+  recentKeywords: StatsRecentKeyword[];
+};
+
 export type SummaryRequest = {
   sourceUrl: string;
 };
 
 export type SummaryResponse = {
+  summaryId: number;
+  taskId: string;
+  category: string | null;
+  topic: string | null;
+  keyword: string | null;
   sourceUrl: string;
   content: string;
   createdAt: string;
@@ -58,6 +87,15 @@ export type SummaryTaskSuccessEvent = {
   summaryContent: string;
 };
 
+export type SummaryTaskPartialSuccessEvent = {
+  taskId: string;
+  summaryId: number;
+  category: string;
+  topic: string;
+  keyword: string;
+  summaryContent: string;
+};
+
 export type RecommendationTaskSuccessEvent = {
   taskId: string;
   recommendationId: number;
@@ -68,6 +106,12 @@ export type RecommendationTaskSuccessEvent = {
 };
 
 export type TaskFailureEvent = {
+  taskId: string;
+  code: string;
+  message: string;
+};
+
+export type TaskExpiredEvent = {
   taskId: string;
   code: string;
   message: string;

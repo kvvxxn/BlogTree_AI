@@ -2,7 +2,6 @@ package com.navigator.knowledge.domain.auth.service;
 
 import com.navigator.knowledge.domain.auth.dto.AuthDto;
 import com.navigator.knowledge.domain.auth.repository.RefreshTokenRepository;
-import com.navigator.knowledge.domain.tree.service.KnowledgeService;
 import com.navigator.knowledge.domain.user.entity.Role;
 import com.navigator.knowledge.domain.user.entity.User;
 import com.navigator.knowledge.domain.user.repository.UserRepository;
@@ -23,7 +22,6 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,17 +37,14 @@ class OAuth2ServiceTest {
     private UserRepository userRepository;
 
     @Mock
-    private KnowledgeService knowledgeService;
-
-    @Mock
     private JwtProvider jwtProvider;
 
     @InjectMocks
     private OAuth2Service oAuth2Service;
 
     @Test
-    @DisplayName("구글 첫 로그인 시 신규 사용자를 저장한 뒤 Neo4j UserNode를 생성한다")
-    void googleLogin_createsUserNodeForNewUser() {
+    @DisplayName("구글 첫 로그인 시 신규 사용자를 저장한 뒤 토큰을 발급한다")
+    void googleLogin_savesNewUserAndIssuesTokens() {
         GoogleTokenResponse tokenResponse = new GoogleTokenResponse();
         GoogleUserInfoDto userInfo = createGoogleUserInfo("new-user@example.com", "New User");
         User savedUser = User.builder()
@@ -71,13 +66,12 @@ class OAuth2ServiceTest {
 
         assertThat(response.getAccessToken()).isEqualTo("access-token");
         assertThat(response.getRefreshToken()).isEqualTo("refresh-token");
-        verify(knowledgeService).createUserNode(1L);
         verify(refreshTokenRepository).save(1L, "refresh-token");
     }
 
     @Test
-    @DisplayName("기존 사용자가 다시 로그인하면 Neo4j UserNode를 다시 생성하지 않는다")
-    void googleLogin_doesNotCreateUserNodeForExistingUser() {
+    @DisplayName("기존 사용자가 다시 로그인하면 사용자 정보를 갱신하고 토큰을 저장한다")
+    void googleLogin_updatesExistingUserAndStoresTokens() {
         GoogleTokenResponse tokenResponse = new GoogleTokenResponse();
         GoogleUserInfoDto userInfo = createGoogleUserInfo("existing-user@example.com", "Existing User");
         User existingUser = User.builder()
@@ -97,7 +91,6 @@ class OAuth2ServiceTest {
 
         oAuth2Service.googleLogin("code", null);
 
-        verify(knowledgeService, never()).createUserNode(any());
         verify(refreshTokenRepository).save(2L, "refresh-token");
         assertThat(existingUser.getName()).isEqualTo("Existing User");
         assertThat(existingUser.getProfileImageUrl()).isEqualTo("https://example.com/new.png");

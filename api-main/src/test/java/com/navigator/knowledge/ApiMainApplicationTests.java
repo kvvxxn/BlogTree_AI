@@ -7,12 +7,10 @@ import com.navigator.knowledge.domain.summary.messaging.producer.SummaryTaskProd
 import com.navigator.knowledge.domain.task.sse.SseEmitterService;
 import com.navigator.knowledge.domain.tree.service.KnowledgeService;
 import com.navigator.knowledge.global.infra.ai.TextEmbeddingService;
-import org.neo4j.driver.Driver;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.data.neo4j.core.DatabaseSelectionProvider;
 import org.springframework.test.context.ActiveProfiles;
 
 @ActiveProfiles("test")
@@ -42,12 +40,6 @@ class ApiMainApplicationTests {
 
     @MockBean
     private SseEmitterService sseEmitterService;
-
-    @MockBean
-    private Driver neo4jDriver;
-
-    @MockBean
-    private DatabaseSelectionProvider databaseSelectionProvider;
 
     @Test
     void contextLoads() {

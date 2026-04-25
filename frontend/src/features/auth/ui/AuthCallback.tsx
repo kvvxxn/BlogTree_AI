@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginWithGoogle } from "@/features/auth/api/auth.api";
 import { consumeRedirectAfterLogin } from "@/features/auth/lib/auth-redirect";
-import { setAuthTokens } from "@/shared/api/token-storage";
+import { useAuthSession } from "@/features/auth/providers/AuthSessionProvider";
 import { env } from "@/shared/config/env";
 import { logger } from "@/shared/lib/logger";
 
@@ -10,6 +10,7 @@ type CallbackState = "loading" | "error";
 
 export function AuthCallback() {
   const navigate = useNavigate();
+  const { markAuthenticated } = useAuthSession();
   const [status, setStatus] = useState<CallbackState>("loading");
   const [message, setMessage] = useState("Google 인가 코드를 처리하고 있습니다.");
 
@@ -54,7 +55,7 @@ export function AuthCallback() {
         }
 
         logger.info("auth", "로그인 성공, 토큰을 저장합니다.");
-        setAuthTokens(response.accessToken, response.refreshToken);
+        markAuthenticated(response.accessToken);
         const redirectPath = consumeRedirectAfterLogin();
         logger.info("auth", "로그인 후 이동 경로를 결정했습니다.", { redirectPath });
         navigate(redirectPath, { replace: true });
@@ -79,7 +80,7 @@ export function AuthCallback() {
       logger.debug("auth", "OAuth callback effect를 정리합니다.");
       cancelled = true;
     };
-  }, [navigate]);
+  }, [markAuthenticated, navigate]);
 
   return (
     <main className="login-shell">

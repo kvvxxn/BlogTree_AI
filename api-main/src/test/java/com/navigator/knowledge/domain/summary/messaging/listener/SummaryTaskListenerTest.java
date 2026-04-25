@@ -217,7 +217,7 @@ class SummaryTaskListenerTest {
 
         when(taskService.getTask(taskId)).thenReturn(task);
         when(summaryService.findOrCreateSummary(task, userId, task.getSourceUrl(), "summary"))
-            .thenThrow(new RuntimeException("neo4j connection refused"));
+            .thenThrow(new RuntimeException("database connection refused"));
 
         summaryTaskListener.receiveSummaryResponse(response);
 

@@ -10,7 +10,11 @@ public record RecommendTaskResponseMessage(
     @JsonProperty("error") ErrorData error
 ) {
     public record ResultData(
-        @JsonProperty("reason") String reason,
+        @JsonProperty("recommend_reason") String recommendReason,
+        @JsonProperty("knowledge_tree") KnowledgeTree knowledgeTree
+    ) {}
+
+    public record KnowledgeTree(
         @JsonProperty("category") String category,
         @JsonProperty("topic") String topic,
         @JsonProperty("keyword") String keyword

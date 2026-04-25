@@ -78,7 +78,10 @@ class RecommendTaskListenerTest {
             taskId,
             userId,
             "SUCCESS",
-            new RecommendTaskResponseMessage.ResultData("reason", "Backend", "Database", "PostgreSQL"),
+            new RecommendTaskResponseMessage.ResultData(
+                "reason",
+                new RecommendTaskResponseMessage.KnowledgeTree("Backend", "Database", "PostgreSQL")
+            ),
             null
         );
 
@@ -143,7 +146,10 @@ class RecommendTaskListenerTest {
             taskId,
             userId,
             "SUCCESS",
-            new RecommendTaskResponseMessage.ResultData("reason", "Backend", "Infra", "Redis"),
+            new RecommendTaskResponseMessage.ResultData(
+                "reason",
+                new RecommendTaskResponseMessage.KnowledgeTree("Backend", "Infra", "Redis")
+            ),
             null
         );
 

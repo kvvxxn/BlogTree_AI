@@ -1,5 +1,4 @@
 import { request } from "@/shared/api/http";
-import { clearAuthTokens } from "@/shared/api/token-storage";
 import type { LoginRequest, LoginResponse } from "@/shared/types/api";
 import { logger } from "@/shared/lib/logger";
 
@@ -18,8 +17,5 @@ export function logout() {
   logger.info("auth", "로그아웃을 요청합니다.");
   return request<string>("/api/auth/logout", {
     method: "POST",
-  }).finally(() => {
-    logger.info("auth", "로그아웃 후 로컬 토큰을 제거합니다.");
-    clearAuthTokens();
   });
 }

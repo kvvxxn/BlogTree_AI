@@ -1,11 +1,21 @@
 package com.navigator.knowledge.domain.tree.service;
 
+import com.navigator.knowledge.domain.summary.entity.Summary;
+import com.navigator.knowledge.domain.summary.repository.SummaryRepository;
 import com.navigator.knowledge.domain.tree.dto.KnowledgePathDto;
+import com.navigator.knowledge.domain.tree.entity.KnowledgeCategory;
+import com.navigator.knowledge.domain.tree.entity.KnowledgeKeyword;
+import com.navigator.knowledge.domain.tree.entity.KnowledgeTopic;
 import com.navigator.knowledge.domain.tree.exception.SimilarKeywordNotFoundException;
-import com.navigator.knowledge.domain.tree.repository.KnowledgeRepository;
+import com.navigator.knowledge.domain.tree.repository.KnowledgeCategoryRepository;
+import com.navigator.knowledge.domain.tree.repository.KnowledgeKeywordRepository;
+import com.navigator.knowledge.domain.tree.repository.KnowledgeTopicRepository;
+import com.navigator.knowledge.domain.tree.repository.SummaryVectorRepository;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -17,6 +27,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -24,10 +35,27 @@ import static org.mockito.Mockito.when;
 class KnowledgeServiceTest {
 
     @Mock
-    private KnowledgeRepository knowledgeRepository;
+    private KnowledgeCategoryRepository knowledgeCategoryRepository;
+
+    @Mock
+    private KnowledgeTopicRepository knowledgeTopicRepository;
+
+    @Mock
+    private KnowledgeKeywordRepository knowledgeKeywordRepository;
+
+    @Mock
+    private SummaryRepository summaryRepository;
+
+    @Mock
+    private SummaryVectorRepository summaryVectorRepository;
 
     @InjectMocks
     private KnowledgeService knowledgeService;
+
+    @BeforeEach
+    void setUp() {
+        ReflectionTestUtils.setField(knowledgeService, "embeddingModel", "test-model");
+    }
 
     @Test
     @DisplayName("지식 경로 저장 테스트")
@@ -39,12 +67,25 @@ class KnowledgeServiceTest {
         String keyword = "MySQL";
         Long summaryId = 100L;
         List<Double> embedding = Arrays.asList(0.1, 0.2, 0.3);
+        KnowledgeCategory savedCategory = KnowledgeCategory.builder().userId(userId).name(category).build();
+        KnowledgeTopic savedTopic = KnowledgeTopic.builder().category(savedCategory).name(topic).build();
+        KnowledgeKeyword savedKeyword = KnowledgeKeyword.builder().topic(savedTopic).name(keyword).build();
+        Summary summary = Summary.builder().userId(userId).sourceUrl("https://example.com").content("content").build();
+
+        when(knowledgeCategoryRepository.findByUserIdAndName(userId, category)).thenReturn(Optional.empty());
+        when(knowledgeCategoryRepository.save(any(KnowledgeCategory.class))).thenReturn(savedCategory);
+        when(knowledgeTopicRepository.findByCategoryAndName(savedCategory, topic)).thenReturn(Optional.empty());
+        when(knowledgeTopicRepository.save(any(KnowledgeTopic.class))).thenReturn(savedTopic);
+        when(knowledgeKeywordRepository.findByTopicAndName(savedTopic, keyword)).thenReturn(Optional.empty());
+        when(knowledgeKeywordRepository.save(any(KnowledgeKeyword.class))).thenReturn(savedKeyword);
+        when(summaryRepository.findById(summaryId)).thenReturn(Optional.of(summary));
 
         // When
         knowledgeService.saveKnowledgePath(userId, category, topic, keyword, summaryId, embedding);
 
         // Then
-        verify(knowledgeRepository).addKnowledgeWithSummary(userId, category, topic, keyword, summaryId, embedding);
+        assertThat(summary.getKeyword()).isEqualTo(savedKeyword);
+        verify(summaryVectorRepository).updateEmbedding(summaryId, embedding, "test-model");
     }
 
     @Test
@@ -55,16 +96,26 @@ class KnowledgeServiceTest {
         Long summaryId = 100L;
         List<Double> embedding = Arrays.asList(0.1, 0.2, 0.3);
         Long expectedKeywordId = 10L;
+        KnowledgeKeyword savedKeyword = KnowledgeKeyword.builder()
+            .topic(KnowledgeTopic.builder()
+                .category(KnowledgeCategory.builder().userId(userId).name("Backend").build())
+                .name("Database")
+                .build())
+            .name("MySQL")
+            .build();
+        Summary summary = Summary.builder().userId(userId).sourceUrl("https://example.com").content("content").build();
 
-        when(knowledgeRepository.findMostSimilarKeywordId(userId, embedding))
+        when(summaryVectorRepository.findNearestKeywordId(userId, embedding))
             .thenReturn(Optional.of(expectedKeywordId));
+        when(knowledgeKeywordRepository.findById(expectedKeywordId)).thenReturn(Optional.of(savedKeyword));
+        when(summaryRepository.findById(summaryId)).thenReturn(Optional.of(summary));
 
         // When
         knowledgeService.addSummaryToSimilarKeyword(userId, summaryId, embedding);
 
         // Then
-        verify(knowledgeRepository).findMostSimilarKeywordId(userId, embedding);
-        verify(knowledgeRepository).createAndAttachSummaryToKeyword(userId, expectedKeywordId, summaryId, embedding);
+        assertThat(summary.getKeyword()).isEqualTo(savedKeyword);
+        verify(summaryVectorRepository).updateEmbedding(summaryId, embedding, "test-model");
     }
 
     @Test
@@ -75,7 +126,7 @@ class KnowledgeServiceTest {
         Long summaryId = 100L;
         List<Double> embedding = Arrays.asList(0.1, 0.2, 0.3);
 
-        when(knowledgeRepository.findMostSimilarKeywordId(userId, embedding))
+        when(summaryVectorRepository.findNearestKeywordId(userId, embedding))
             .thenReturn(Optional.empty());
 
         // When & Then
@@ -83,7 +134,7 @@ class KnowledgeServiceTest {
             .isInstanceOf(SimilarKeywordNotFoundException.class)
             .hasMessage("유사한 키워드를 찾을 수 없습니다. userId=" + userId);
 
-        verify(knowledgeRepository).findMostSimilarKeywordId(userId, embedding);
+        verify(summaryVectorRepository).findNearestKeywordId(userId, embedding);
     }
 
     @Test
@@ -98,7 +149,7 @@ class KnowledgeServiceTest {
             new KnowledgePathDto("Frontend", "React", "Hooks")
         );
 
-        when(knowledgeRepository.findAllKnowledgeByUserId(userId)).thenReturn(mockPaths);
+        when(knowledgeKeywordRepository.findAllKnowledgePathsByUserId(userId)).thenReturn(mockPaths);
 
         // When
         Map<String, Map<String, List<String>>> result = knowledgeService.getKnowledgeTree(userId);
@@ -112,25 +163,5 @@ class KnowledgeServiceTest {
         
         assertThat(result.get("Frontend")).containsKeys("React");
         assertThat(result.get("Frontend").get("React")).contains("Hooks");
-    }
-
-    @Test
-    @DisplayName("사용자 지식 트리 조회 - Topic이 없는 경우")
-    void getKnowledgeTree_NoTopicTest() {
-        // Given
-        Long userId = 1L;
-        List<KnowledgePathDto> mockPaths = Arrays.asList(
-            new KnowledgePathDto("Backend", null, null)
-        );
-
-        when(knowledgeRepository.findAllKnowledgeByUserId(userId)).thenReturn(mockPaths);
-
-        // When
-        Map<String, Map<String, List<String>>> result = knowledgeService.getKnowledgeTree(userId);
-
-        // Then
-        assertThat(result).containsKeys("Backend");
-        assertThat(result.get("Backend")).containsKeys("No Topic");
-        assertThat(result.get("Backend").get("No Topic")).contains("No Keyword");
     }
 }

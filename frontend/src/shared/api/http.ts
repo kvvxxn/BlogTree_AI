@@ -1,5 +1,5 @@
 import { env } from "@/shared/config/env";
-import { clearAuthTokens, getAccessToken, getRefreshToken, setAuthTokens } from "@/shared/api/token-storage";
+import { clearAuthTokens, getAccessToken, setAccessToken } from "@/shared/api/token-storage";
 import type { ApiErrorResponse, LoginResponse } from "@/shared/types/api";
 import { saveRedirectAfterLogin } from "@/features/auth/lib/auth-redirect";
 import { logger } from "@/shared/lib/logger";
@@ -25,45 +25,65 @@ export class ApiError extends Error {
   }
 }
 
+let reissueRequest: Promise<boolean> | null = null;
+
+function isJsonResponse(response: Response) {
+  const contentType = response.headers.get("content-type") ?? "";
+  return contentType.includes("application/json");
+}
+
 async function parseResponse<T>(response: Response): Promise<T> {
   if (response.ok) {
     if (response.status === 204) {
       return undefined as T;
     }
 
-    return (await response.json()) as T;
+    if (isJsonResponse(response)) {
+      return (await response.json()) as T;
+    }
+
+    return (await response.text()) as T;
   }
 
-  const error = (await response.json().catch(() => null)) as ApiErrorResponse | null;
-  throw new ApiError(error?.message ?? "요청 처리 중 오류가 발생했습니다.", response.status, error?.code);
+  if (isJsonResponse(response)) {
+    const error = (await response.json().catch(() => null)) as ApiErrorResponse | null;
+    throw new ApiError(error?.message ?? "요청 처리 중 오류가 발생했습니다.", response.status, error?.code);
+  }
+
+  const message = await response.text().catch(() => "");
+  throw new ApiError(message || "요청 처리 중 오류가 발생했습니다.", response.status);
 }
 
-async function reissueTokens() {
-  const refreshToken = getRefreshToken();
-  if (!refreshToken) {
-    logger.warn("auth", "refresh token이 없어 재발급을 진행할 수 없습니다.");
-    clearAuthTokens();
-    return false;
+export async function reissueAccessToken() {
+  if (reissueRequest) {
+    logger.info("auth", "진행 중인 토큰 재발급 요청 결과를 재사용합니다.");
+    return reissueRequest;
   }
 
-  logger.info("auth", "access token 만료로 재발급을 시도합니다.");
-  const response = await fetch(`${env.apiBaseUrl}/api/auth/reissue`, {
-    method: "POST",
-    headers: {
-      "Refresh-Token": refreshToken,
-    },
-  });
+  reissueRequest = (async () => {
+    logger.info("auth", "access token 만료로 재발급을 시도합니다.");
+    const response = await fetch(`${env.apiBaseUrl}/api/auth/reissue`, {
+      method: "POST",
+      credentials: "include",
+    });
 
-  if (!response.ok) {
-    logger.warn("auth", "토큰 재발급에 실패했습니다.", { status: response.status });
-    clearAuthTokens();
-    return false;
+    if (!response.ok) {
+      logger.warn("auth", "토큰 재발급에 실패했습니다.", { status: response.status });
+      clearAuthTokens();
+      return false;
+    }
+
+    const data = (await response.json()) as LoginResponse;
+    logger.info("auth", "토큰 재발급에 성공했습니다.");
+    setAccessToken(data.accessToken);
+    return true;
+  })();
+
+  try {
+    return await reissueRequest;
+  } finally {
+    reissueRequest = null;
   }
-
-  const data = (await response.json()) as LoginResponse;
-  logger.info("auth", "토큰 재발급에 성공했습니다.");
-  setAuthTokens(data.accessToken, data.refreshToken);
-  return true;
 }
 
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
@@ -77,6 +97,7 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...headers,
     },
+    credentials: "include",
     body: body ? JSON.stringify(body) : undefined,
   });
 
@@ -85,7 +106,7 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   }
 
   logger.warn("auth", "인증 요청이 401을 반환해 토큰 재발급을 시작합니다.", { path });
-  const reissued = await reissueTokens();
+  const reissued = await reissueAccessToken();
   if (!reissued) {
     clearAuthTokens();
     if (window.location.pathname !== "/login") {
@@ -93,7 +114,7 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
       saveRedirectAfterLogin(
         `${window.location.pathname}${window.location.search}${window.location.hash}`,
       );
-      window.location.href = "/login";
+      window.location.href = "/login?reason=session-expired";
     }
     throw new ApiError("인증이 만료되었습니다.", 401, "UNAUTHORIZED");
   }
@@ -107,6 +128,7 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
       ...(retriedAccessToken ? { Authorization: `Bearer ${retriedAccessToken}` } : {}),
       ...headers,
     },
+    credentials: "include",
     body: body ? JSON.stringify(body) : undefined,
   });
 

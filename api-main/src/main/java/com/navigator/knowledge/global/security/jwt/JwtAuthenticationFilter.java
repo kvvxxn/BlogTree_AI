@@ -26,6 +26,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtProvider jwtProvider;
 
     @Override
+    protected boolean shouldNotFilterAsyncDispatch() {
+        // SSE complete() 이후 발생하는 async redispatch에서도 같은 JWT로 인증 컨텍스트를 복원한다.
+        return false;
+    }
+
+    @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
         // 1. 프론트엔드가 보낸 편지 봉투(헤더)에서 출입증(토큰)만 쏙 꺼냅니다.
