@@ -1,7 +1,7 @@
-const ACCESS_TOKEN_KEY = "blogtree.accessToken";
+let inMemoryAccessToken: string | null = null;
 
 export function getAccessToken() {
-  return window.localStorage.getItem(ACCESS_TOKEN_KEY);
+  return inMemoryAccessToken;
 }
 
 function decodeBase64Url(value: string) {
@@ -32,11 +32,11 @@ function isExpiredAccessToken(accessToken: string) {
 }
 
 export function setAccessToken(accessToken: string) {
-  window.localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+  inMemoryAccessToken = accessToken;
 }
 
 export function clearAccessToken() {
-  window.localStorage.removeItem(ACCESS_TOKEN_KEY);
+  inMemoryAccessToken = null;
 }
 
 export function clearAuthTokens() {
