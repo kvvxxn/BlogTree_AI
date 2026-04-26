@@ -83,7 +83,7 @@ app:
   auth:
     refresh-cookie:
       name: ${REFRESH_COOKIE_NAME:refreshToken}
-      secure: ${REFRESH_COOKIE_SECURE:false}
-      same-site: ${REFRESH_COOKIE_SAME_SITE:Lax}
+      secure: ${REFRESH_COOKIE_SECURE:true}
+      same-site: ${REFRESH_COOKIE_SAME_SITE:None}
       path: ${REFRESH_COOKIE_PATH:/api/auth}
       domain: ${REFRESH_COOKIE_DOMAIN:}
