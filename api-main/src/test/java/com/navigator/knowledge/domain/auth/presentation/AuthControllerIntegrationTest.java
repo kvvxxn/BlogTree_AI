@@ -119,7 +119,7 @@ class AuthControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("구글 로그인 및 토큰 발급 성공!"))
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
-                .andExpect(jsonPath("$.refreshToken").isNotEmpty())
+                .andExpect(jsonPath("$.refreshToken").doesNotExist())
                 .andReturn();
 
         String responseBody = result.getResponse().getContentAsString();
@@ -132,8 +132,8 @@ class AuthControllerIntegrationTest {
         String savedRefreshToken = refreshTokenRepository.findByUserId(savedUser.getId()).orElseThrow();
         Claims refreshClaims = parseClaims(savedRefreshToken);
 
-        assertThat(savedRefreshToken).isEqualTo(tokenResponse.get("refreshToken"));
-        assertThat(setCookieHeader).contains("refreshToken=" + tokenResponse.get("refreshToken"));
+        assertThat(tokenResponse).doesNotContainKey("refreshToken");
+        assertThat(setCookieHeader).contains("refreshToken=" + savedRefreshToken);
         assertThat(setCookieHeader).contains("HttpOnly");
         assertThat(setCookieHeader).contains("Path=/api/auth");
         assertThat(refreshClaims.getSubject()).isEqualTo(String.valueOf(savedUser.getId()));
@@ -175,7 +175,7 @@ class AuthControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("토큰 재발급 성공!"))
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
-                .andExpect(jsonPath("$.refreshToken").isNotEmpty())
+                .andExpect(jsonPath("$.refreshToken").doesNotExist())
                 .andReturn();
 
         Map<String, String> tokenResponse = objectMapper.readValue(
@@ -184,8 +184,8 @@ class AuthControllerIntegrationTest {
         );
         String storedRefreshToken = refreshTokenRepository.findByUserId(user.getId()).orElseThrow();
 
+        assertThat(tokenResponse).doesNotContainKey("refreshToken");
         assertThat(storedRefreshToken).isNotBlank();
-        assertThat(storedRefreshToken).isEqualTo(tokenResponse.get("refreshToken"));
         assertThat(result.getResponse().getHeader(HttpHeaders.SET_COOKIE))
                 .contains("refreshToken=" + storedRefreshToken);
         assertThat(parseClaims(storedRefreshToken).getSubject()).isEqualTo(String.valueOf(user.getId()));
@@ -208,7 +208,7 @@ class AuthControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("토큰 재발급 성공!"))
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
-                .andExpect(jsonPath("$.refreshToken").isNotEmpty());
+                .andExpect(jsonPath("$.refreshToken").doesNotExist());
     }
 
     @Test

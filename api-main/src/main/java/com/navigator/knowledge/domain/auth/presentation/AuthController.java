@@ -19,16 +19,16 @@ public class AuthController {
 
     // 로그인
     @PostMapping("/google")
-    public ResponseEntity<AuthDto.LoginResponse> googleLogin(@RequestBody AuthDto.LoginRequest request) {
+    public ResponseEntity<AuthDto.TokenResponse> googleLogin(@RequestBody AuthDto.LoginRequest request) {
         String authcode = request.getAuthorizationCode();
         String redirectUri = request.getRedirectUri();
 
         AuthDto.LoginResponse response = oAuth2Service.googleLogin(authcode, redirectUri);
         
-        // 서비스가 만들어온 토큰(access, refresh)을 200 ok 상태코드와 함께 프론트에 던져줌
+        // refresh token은 HttpOnly 쿠키로만 전달하고, 응답 본문에는 access token만 담는다.
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, refreshTokenCookieManager.createRefreshTokenCookie(response.getRefreshToken()))
-                .body(response);
+                .body(new AuthDto.TokenResponse(response.getMessage(), response.getAccessToken()));
     }
 
     // HashMap 테스트용 메서드
@@ -39,7 +39,7 @@ public class AuthController {
 
     // --- [토큰 재발급 API] ---
     @PostMapping("/reissue")
-    public ResponseEntity<AuthDto.LoginResponse> reissue(
+    public ResponseEntity<AuthDto.TokenResponse> reissue(
             @RequestHeader(value = "Refresh-Token", required = false) String refreshTokenHeader,
             HttpServletRequest request
     ) {
@@ -47,7 +47,7 @@ public class AuthController {
         AuthDto.LoginResponse response = oAuth2Service.reissue(refreshToken);
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, refreshTokenCookieManager.createRefreshTokenCookie(response.getRefreshToken()))
-                .body(response);
+                .body(new AuthDto.TokenResponse(response.getMessage(), response.getAccessToken()));
     }
 
     // --- [로그아웃 API] ---
