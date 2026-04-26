@@ -1,3 +1,5 @@
 .env
 .codex
 __pycache__/
+deploy/ec2/*.env
+env/
