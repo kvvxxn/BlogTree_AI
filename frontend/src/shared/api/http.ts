@@ -1,5 +1,9 @@
 import { env } from "@/shared/config/env";
-import { clearAuthTokens, getAccessToken, setAccessToken } from "@/shared/api/token-storage";
+import {
+  clearAuthTokens,
+  getAccessToken,
+  setAccessToken,
+} from "@/shared/api/token-storage";
 import type { ApiErrorResponse, LoginResponse } from "@/shared/types/api";
 import { saveRedirectAfterLogin } from "@/features/auth/lib/auth-redirect";
 import { logger } from "@/shared/lib/logger";

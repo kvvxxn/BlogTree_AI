@@ -6,7 +6,6 @@ export type LoginRequest = {
 export type LoginResponse = {
   message: string;
   accessToken: string;
-  refreshToken?: string;
 };
 
 export type UserProfile = {

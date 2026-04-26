@@ -2,6 +2,7 @@ package com.navigator.knowledge.global.security.oauth2;
 
 import com.navigator.knowledge.global.security.oauth2.dto.GoogleTokenResponse;
 import com.navigator.knowledge.global.security.oauth2.dto.GoogleUserInfoDto;
+import com.navigator.knowledge.global.security.oauth2.exception.GoogleOAuthException;
 import com.navigator.knowledge.global.security.oauth2.properties.GoogleOAuthProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,6 +12,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 
 @Slf4j
@@ -28,7 +31,7 @@ public class GoogleAuthClient {
         // 인가 코드가 제대로 왔는지 확인
         if (code == null || code.isBlank()) {
             log.warn("Google access token code is null or empty");
-            throw new IllegalArgumentException("인가 코드(code)가 비어있습니다. 정상적인 OAuth2 흐름이 아닙니다.");
+            throw new GoogleOAuthException("Google 로그인 요청에 인가 코드가 없습니다. 다시 로그인해 주세요.");
         }
 
         String resolvedRedirectUri = StringUtils.hasText(redirectUri)
@@ -50,7 +53,20 @@ public class GoogleAuthClient {
 
         log.info("[Google OAuth] Requesting Access Token... (tokenUri: {})", googleOAuthProperties.tokenUri());
 
-        ResponseEntity<GoogleTokenResponse> response = restTemplate.postForEntity(googleOAuthProperties.tokenUri(), request, GoogleTokenResponse.class);
+        ResponseEntity<GoogleTokenResponse> response;
+        try {
+            response = restTemplate.postForEntity(googleOAuthProperties.tokenUri(), request, GoogleTokenResponse.class);
+        } catch (RestClientResponseException e) {
+            log.warn(
+                    "[Google OAuth] Access token request failed. status={}, response={}",
+                    e.getStatusCode().value(),
+                    e.getResponseBodyAsString()
+            );
+            throw new GoogleOAuthException("Google 로그인 요청이 만료되었거나 이미 사용되었습니다. 다시 로그인해 주세요.", e);
+        } catch (RestClientException e) {
+            log.warn("[Google OAuth] Access token request failed.", e);
+            throw new GoogleOAuthException("Google 로그인 처리 중 외부 인증 요청에 실패했습니다. 다시 시도해 주세요.", e);
+        }
 
         GoogleTokenResponse responseBody = response.getBody();
 
@@ -58,7 +74,7 @@ public class GoogleAuthClient {
         // 하지만 구글 서버 자체의 오류로 인해 null이 될 수 있음
         if (responseBody == null) {
             log.error("[Google OAuth] Google Access Token response is null");
-            throw new RuntimeException("Failed to retrieve access token from Google: Response body is null");
+            throw new GoogleOAuthException("Google 로그인 처리 중 토큰 응답이 비어있습니다. 다시 시도해 주세요.");
         }
 
         log.info("[Google OAuth] Google Access Token request successful");
@@ -68,7 +84,7 @@ public class GoogleAuthClient {
     public GoogleUserInfoDto getGoogleUserInfo(GoogleTokenResponse accessTokenResponse) {
         if (accessTokenResponse == null || accessTokenResponse.getAccessToken() == null) {
             log.warn("Google access token response is null or empty");
-            throw new IllegalArgumentException("유효하지 않은 구글 액세스 토큰입니다.");
+            throw new GoogleOAuthException("유효하지 않은 Google 액세스 토큰입니다. 다시 로그인해 주세요.");
         }
 
         HttpHeaders headers = new HttpHeaders();
@@ -76,20 +92,34 @@ public class GoogleAuthClient {
 
         HttpEntity<Void> request = new HttpEntity<>(headers);
 
-        ResponseEntity<GoogleUserInfoDto> response = restTemplate.exchange(
-                googleOAuthProperties.userInfoUri(),
-                HttpMethod.GET,
-                request,
-                GoogleUserInfoDto.class
-        );
+        ResponseEntity<GoogleUserInfoDto> response;
+        try {
+            response = restTemplate.exchange(
+                    googleOAuthProperties.userInfoUri(),
+                    HttpMethod.GET,
+                    request,
+                    GoogleUserInfoDto.class
+            );
+        } catch (RestClientResponseException e) {
+            log.warn(
+                    "[Google OAuth] UserInfo request failed. status={}, response={}",
+                    e.getStatusCode().value(),
+                    e.getResponseBodyAsString()
+            );
+            throw new GoogleOAuthException("Google 사용자 정보를 가져오지 못했습니다. 다시 로그인해 주세요.", e);
+        } catch (RestClientException e) {
+            log.warn("[Google OAuth] UserInfo request failed.", e);
+            throw new GoogleOAuthException("Google 사용자 정보 요청에 실패했습니다. 다시 시도해 주세요.", e);
+        }
 
         GoogleUserInfoDto userInfo = response.getBody();
         if (userInfo == null) {
             log.error("[Google OAuth] Google User Info response is null");
-            throw new RuntimeException("구글 유저 정보를 불러오는데 실패했습니다. (Empty Body)");
+            throw new GoogleOAuthException("Google 사용자 정보 응답이 비어있습니다. 다시 시도해 주세요.");
         }
 
         log.info("[Google OAuth] Google UserInfo request successful");
+
         return userInfo;
     }
 }

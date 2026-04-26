@@ -16,6 +16,7 @@ import com.navigator.knowledge.global.security.jwt.JwtProvider;
 import com.navigator.knowledge.global.security.oauth2.GoogleAuthClient;
 import com.navigator.knowledge.global.security.oauth2.dto.GoogleTokenResponse;
 import com.navigator.knowledge.global.security.oauth2.dto.GoogleUserInfoDto;
+import com.navigator.knowledge.global.security.oauth2.exception.GoogleOAuthException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -118,7 +119,7 @@ class AuthControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("구글 로그인 및 토큰 발급 성공!"))
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
-                .andExpect(jsonPath("$.refreshToken").isNotEmpty())
+                .andExpect(jsonPath("$.refreshToken").doesNotExist())
                 .andReturn();
 
         String responseBody = result.getResponse().getContentAsString();
@@ -131,13 +132,30 @@ class AuthControllerIntegrationTest {
         String savedRefreshToken = refreshTokenRepository.findByUserId(savedUser.getId()).orElseThrow();
         Claims refreshClaims = parseClaims(savedRefreshToken);
 
-        assertThat(savedRefreshToken).isEqualTo(tokenResponse.get("refreshToken"));
-        assertThat(setCookieHeader).contains("refreshToken=" + tokenResponse.get("refreshToken"));
+        assertThat(tokenResponse).doesNotContainKey("refreshToken");
+        assertThat(setCookieHeader).contains("refreshToken=" + savedRefreshToken);
         assertThat(setCookieHeader).contains("HttpOnly");
         assertThat(setCookieHeader).contains("Path=/api/auth");
         assertThat(refreshClaims.getSubject()).isEqualTo(String.valueOf(savedUser.getId()));
         assertThat(refreshClaims.getExpiration().getTime() - refreshClaims.getIssuedAt().getTime())
                 .isEqualTo(REFRESH_EXPIRATION);
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/google은 Google OAuth 실패를 400 응답으로 반환한다")
+    void googleLogin_returnsBadRequestWhenGoogleOAuthFails() throws Exception {
+        when(googleAuthClient.getGoogleAccessToken("used-google-auth-code", null))
+                .thenThrow(new GoogleOAuthException("Google 로그인 요청이 만료되었거나 이미 사용되었습니다. 다시 로그인해 주세요."));
+
+        mockMvc.perform(post("/api/auth/google")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "authorizationCode", "used-google-auth-code"
+                        ))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("GOOGLE_OAUTH_FAILED"))
+                .andExpect(jsonPath("$.message").value("Google 로그인 요청이 만료되었거나 이미 사용되었습니다. 다시 로그인해 주세요."))
+                .andExpect(jsonPath("$.path").value("/api/auth/google"));
     }
 
     @Test
@@ -157,7 +175,7 @@ class AuthControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("토큰 재발급 성공!"))
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
-                .andExpect(jsonPath("$.refreshToken").isNotEmpty())
+                .andExpect(jsonPath("$.refreshToken").doesNotExist())
                 .andReturn();
 
         Map<String, String> tokenResponse = objectMapper.readValue(
@@ -166,8 +184,8 @@ class AuthControllerIntegrationTest {
         );
         String storedRefreshToken = refreshTokenRepository.findByUserId(user.getId()).orElseThrow();
 
+        assertThat(tokenResponse).doesNotContainKey("refreshToken");
         assertThat(storedRefreshToken).isNotBlank();
-        assertThat(storedRefreshToken).isEqualTo(tokenResponse.get("refreshToken"));
         assertThat(result.getResponse().getHeader(HttpHeaders.SET_COOKIE))
                 .contains("refreshToken=" + storedRefreshToken);
         assertThat(parseClaims(storedRefreshToken).getSubject()).isEqualTo(String.valueOf(user.getId()));
@@ -190,7 +208,7 @@ class AuthControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("토큰 재발급 성공!"))
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
-                .andExpect(jsonPath("$.refreshToken").isNotEmpty());
+                .andExpect(jsonPath("$.refreshToken").doesNotExist());
     }
 
     @Test

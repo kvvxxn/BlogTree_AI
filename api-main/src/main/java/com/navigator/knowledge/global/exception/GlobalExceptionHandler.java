@@ -1,6 +1,7 @@
 package com.navigator.knowledge.global.exception;
 
 import com.navigator.knowledge.global.exception.dto.ApiErrorResponse;
+import com.navigator.knowledge.global.security.oauth2.exception.GoogleOAuthException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +18,23 @@ import java.util.stream.Collectors;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(GoogleOAuthException.class)
+    public ResponseEntity<ApiErrorResponse> handleGoogleOAuthException(GoogleOAuthException e, HttpServletRequest request) {
+        ErrorCode errorCode = e.getErrorCode();
+        log.warn(
+                "Google OAuth exception occurred. code={}, status={}, path={}, message={}",
+                errorCode.getCode(),
+                errorCode.getStatus().value(),
+                request.getRequestURI(),
+                e.getMessage()
+        );
+        return ResponseEntity.status(errorCode.getStatus()).body(ApiErrorResponse.of(
+                errorCode,
+                e.getMessage(),
+                request.getRequestURI()
+        ));
+    }
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiErrorResponse> handleBusinessException(BusinessException e, HttpServletRequest request) {

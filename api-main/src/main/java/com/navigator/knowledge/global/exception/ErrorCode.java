@@ -15,6 +15,7 @@ public enum ErrorCode {
     TASK_ACCESS_DENIED(HttpStatus.FORBIDDEN, "TASK_ACCESS_DENIED", "해당 작업에 접근할 수 없습니다."),
     SUMMARY_ACCESS_DENIED(HttpStatus.FORBIDDEN, "SUMMARY_ACCESS_DENIED", "해당 요약에 접근할 수 없습니다."),
     RECOMMENDATION_ACCESS_DENIED(HttpStatus.FORBIDDEN, "RECOMMENDATION_ACCESS_DENIED", "해당 추천 결과에 접근할 수 없습니다."),
+    GOOGLE_OAUTH_FAILED(HttpStatus.BAD_REQUEST, "GOOGLE_OAUTH_FAILED", "Google 로그인 요청이 유효하지 않거나 만료되었습니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_SERVER_ERROR", "서버 내부 오류가 발생했습니다."),
 
     EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "EXPIRED_TOKEN", "토큰이 만료되었습니다. 다시 로그인해주세요."),

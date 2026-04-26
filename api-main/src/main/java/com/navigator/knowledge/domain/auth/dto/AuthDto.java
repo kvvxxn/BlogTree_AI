@@ -22,8 +22,14 @@ public class AuthDto {
     public static class LoginResponse {
         private String message;
         private String accessToken;
-        // 두 토큰 모두 사용자에게 넘겨주되 refresh는 좀 더 보안을 깐깐하게
-        // 그래야 refresh를 쓰는 의미가 있음
         private String refreshToken;
+    }
+
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class TokenResponse {
+        private String message;
+        private String accessToken;
     }
 }
