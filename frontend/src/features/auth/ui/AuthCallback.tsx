@@ -5,8 +5,33 @@ import { consumeRedirectAfterLogin } from "@/features/auth/lib/auth-redirect";
 import { useAuthSession } from "@/features/auth/providers/AuthSessionProvider";
 import { env } from "@/shared/config/env";
 import { logger } from "@/shared/lib/logger";
+import type { LoginResponse } from "@/shared/types/api";
 
 type CallbackState = "loading" | "error";
+
+const pendingExchangeByCode = new Map<string, Promise<LoginResponse>>();
+const completedAuthorizationCodes = new Set<string>();
+let activeCallbackHandlerId = 0;
+
+function exchangeAuthorizationCode(authorizationCode: string) {
+  const pendingExchange = pendingExchangeByCode.get(authorizationCode);
+
+  if (pendingExchange) {
+    logger.debug("auth", "진행 중인 OAuth 인가 코드 교환 요청을 재사용합니다.");
+    return pendingExchange;
+  }
+
+  logger.info("auth", "백엔드로 인가 코드 교환을 요청합니다.");
+  const exchangePromise = loginWithGoogle({
+    authorizationCode,
+    redirectUri: env.googleRedirectUri,
+  }).finally(() => {
+    pendingExchangeByCode.delete(authorizationCode);
+  });
+
+  pendingExchangeByCode.set(authorizationCode, exchangePromise);
+  return exchangePromise;
+}
 
 export function AuthCallback() {
   const navigate = useNavigate();
@@ -38,25 +63,29 @@ export function AuthCallback() {
       return;
     }
 
+    if (completedAuthorizationCodes.has(authorizationCode)) {
+      logger.debug("auth", "이미 처리한 OAuth 인가 코드 요청을 건너뜁니다.");
+      return;
+    }
+
     const confirmedAuthorizationCode = authorizationCode;
 
     let cancelled = false;
+    const callbackHandlerId = ++activeCallbackHandlerId;
 
     async function exchangeCode() {
       try {
-        logger.info("auth", "백엔드로 인가 코드 교환을 요청합니다.");
-        const response = await loginWithGoogle({
-          authorizationCode: confirmedAuthorizationCode,
-          redirectUri: env.googleRedirectUri,
-        });
+        const response = await exchangeAuthorizationCode(confirmedAuthorizationCode);
 
-        if (cancelled) {
+        if (cancelled || callbackHandlerId !== activeCallbackHandlerId) {
           return;
         }
 
         logger.info("auth", "로그인 성공, 토큰을 저장합니다.");
         markAuthenticated(response.accessToken);
         const redirectPath = consumeRedirectAfterLogin();
+        completedAuthorizationCodes.add(confirmedAuthorizationCode);
+        window.history.replaceState({}, document.title, window.location.pathname);
         logger.info("auth", "로그인 후 이동 경로를 결정했습니다.", { redirectPath });
         navigate(redirectPath, { replace: true });
       } catch (error) {

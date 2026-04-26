@@ -1,5 +1,5 @@
 import type { PropsWithChildren } from "react";
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { reissueAccessToken } from "@/shared/api/http";
 import { clearAuthTokens, isAuthenticated, setAccessToken } from "@/shared/api/token-storage";
 import { logger } from "@/shared/lib/logger";
@@ -21,6 +21,11 @@ export function AuthSessionProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     if (isAuthenticated()) {
+      return;
+    }
+
+    if (window.location.pathname === "/auth/callback") {
+      setStatus("unauthenticated");
       return;
     }
 
@@ -54,19 +59,23 @@ export function AuthSessionProvider({ children }: PropsWithChildren) {
     };
   }, []);
 
+  const markAuthenticated = useCallback((accessToken: string) => {
+    setAccessToken(accessToken);
+    setStatus("authenticated");
+  }, []);
+
+  const markLoggedOut = useCallback(() => {
+    clearAuthTokens();
+    setStatus("unauthenticated");
+  }, []);
+
   const value = useMemo<AuthSessionContextValue>(
     () => ({
       status,
-      markAuthenticated(accessToken: string) {
-        setAccessToken(accessToken);
-        setStatus("authenticated");
-      },
-      markLoggedOut() {
-        clearAuthTokens();
-        setStatus("unauthenticated");
-      },
+      markAuthenticated,
+      markLoggedOut,
     }),
-    [status],
+    [markAuthenticated, markLoggedOut, status],
   );
 
   return <AuthSessionContext.Provider value={value}>{children}</AuthSessionContext.Provider>;
