@@ -16,6 +16,7 @@ import com.navigator.knowledge.global.security.jwt.JwtProvider;
 import com.navigator.knowledge.global.security.oauth2.GoogleAuthClient;
 import com.navigator.knowledge.global.security.oauth2.dto.GoogleTokenResponse;
 import com.navigator.knowledge.global.security.oauth2.dto.GoogleUserInfoDto;
+import com.navigator.knowledge.global.security.oauth2.exception.GoogleOAuthException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -138,6 +139,23 @@ class AuthControllerIntegrationTest {
         assertThat(refreshClaims.getSubject()).isEqualTo(String.valueOf(savedUser.getId()));
         assertThat(refreshClaims.getExpiration().getTime() - refreshClaims.getIssuedAt().getTime())
                 .isEqualTo(REFRESH_EXPIRATION);
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/google은 Google OAuth 실패를 400 응답으로 반환한다")
+    void googleLogin_returnsBadRequestWhenGoogleOAuthFails() throws Exception {
+        when(googleAuthClient.getGoogleAccessToken("used-google-auth-code", null))
+                .thenThrow(new GoogleOAuthException("Google 로그인 요청이 만료되었거나 이미 사용되었습니다. 다시 로그인해 주세요."));
+
+        mockMvc.perform(post("/api/auth/google")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "authorizationCode", "used-google-auth-code"
+                        ))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("GOOGLE_OAUTH_FAILED"))
+                .andExpect(jsonPath("$.message").value("Google 로그인 요청이 만료되었거나 이미 사용되었습니다. 다시 로그인해 주세요."))
+                .andExpect(jsonPath("$.path").value("/api/auth/google"));
     }
 
     @Test
