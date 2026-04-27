@@ -29,7 +29,7 @@
 - `api-main`, `fastapi_worker`용 ECR 리포지토리를 각각 생성합니다.
 - 저장소의 Dockerfile로 이미지를 빌드하고 push 합니다.
   - `docker build -f api-main/Dockerfile -t blogtree-api .`
-  - `docker build -f fastapi_worker/Dockerfile -t blogtree-worker .`
+  - `docker build -f fastapi_worker/Dockerfile -t blogtree-worker fastapi_worker`
 
 ## 6. RDS PostgreSQL
 - private PostgreSQL 인스턴스를 생성합니다.

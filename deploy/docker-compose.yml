@@ -49,9 +49,7 @@ services:
       start_period: 10s
 
   api:
-    build:
-      context: ./api-main
-      dockerfile: Dockerfile
+    image: ${API_IMAGE:ghcr.io/hwanjung/blogtree-api:latest}
     container_name: blogtree-api
     restart: unless-stopped
     depends_on:
@@ -69,9 +67,7 @@ services:
       TZ: Asia/Seoul
 
   worker:
-    build:
-      context: .
-      dockerfile: fastapi_worker/Dockerfile
+    image: ${WORKER_IMAGE:ghcr.io/hwanjung/blogtree-worker:latest}
     container_name: blogtree-worker
     restart: unless-stopped
     depends_on:

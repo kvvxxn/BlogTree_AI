@@ -4,10 +4,10 @@ WORKDIR /app
 
 ENV PYTHONUNBUFFERED=1
 
-COPY fastapi_worker/requirements.txt /tmp/requirements.txt
+COPY requirements.txt /tmp/requirements.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
-COPY fastapi_worker /app/fastapi_worker
+COPY . /app/fastapi_worker
 
 EXPOSE 8000
 
