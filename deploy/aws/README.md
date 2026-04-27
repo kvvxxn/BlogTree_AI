@@ -10,7 +10,7 @@
 
 ## 컨테이너 빌드
 - Spring API: `docker build -f api-main/Dockerfile -t blogtree-api .`
-- FastAPI worker: `docker build -f fastapi_worker/Dockerfile -t blogtree-worker .`
+- FastAPI worker: `docker build -f fastapi_worker/Dockerfile -t blogtree-worker fastapi_worker`
 
 ## ECS 구성
 - `api-main` service: 인터넷 공개 ALB 뒤에 배치, target group type은 `ip`, container port는 `8080`, health check 경로는 `/health`

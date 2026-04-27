@@ -1,0 +1,88 @@
+services:
+  caddy:
+    image: caddy:2.8-alpine
+    container_name: blogtree-caddy
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_started
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./env/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: blogtree-postgres
+    restart: unless-stopped
+    env_file:
+      - ./env/postgres.env
+    environment:
+      TZ: Asia/Seoul
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: blogtree-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: "-rabbitmq_management load_definitions \"/etc/rabbitmq/definitions.json\""
+      TZ: Asia/Seoul
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - ./env/rabbitmq-definitions.json:/etc/rabbitmq/definitions.json:ro
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  api:
+    image: ${API_IMAGE:-ghcr.io/hwanjung/blogtree-api:latest}
+    container_name: blogtree-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    env_file:
+      - ./env/api-main.env
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/blogtree
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      TZ: Asia/Seoul
+
+  worker:
+    image: ${WORKER_IMAGE:-ghcr.io/hwanjung/blogtree-worker:latest}
+    container_name: blogtree-worker
+    restart: unless-stopped
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    env_file:
+      - ./env/fastapi_worker.env
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_SSL: "false"
+      TZ: Asia/Seoul
+
+volumes:
+  caddy_data:
+  caddy_config:
+  postgres_data:
+  rabbitmq_data:
