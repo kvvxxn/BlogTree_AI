@@ -33,7 +33,7 @@ export function AuthSessionProvider({ children }: PropsWithChildren) {
 
     async function restoreSession() {
       try {
-        logger.info("auth", "저장된 access token이 없어 cookie 기반 세션 복구를 시도합니다.");
+        logger.info("auth", "메모리 access token이 없어 cookie 기반 세션 복구를 시도합니다.");
         const restored = await reissueAccessToken();
 
         if (cancelled) {

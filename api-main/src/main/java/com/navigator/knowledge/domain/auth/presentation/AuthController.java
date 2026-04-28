@@ -39,11 +39,8 @@ public class AuthController {
 
     // --- [토큰 재발급 API] ---
     @PostMapping("/reissue")
-    public ResponseEntity<AuthDto.TokenResponse> reissue(
-            @RequestHeader(value = "Refresh-Token", required = false) String refreshTokenHeader,
-            HttpServletRequest request
-    ) {
-        String refreshToken = resolveRefreshToken(refreshTokenHeader, request);
+    public ResponseEntity<AuthDto.TokenResponse> reissue(HttpServletRequest request) {
+        String refreshToken = resolveRefreshToken(request);
         AuthDto.LoginResponse response = oAuth2Service.reissue(refreshToken);
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, refreshTokenCookieManager.createRefreshTokenCookie(response.getRefreshToken()))
@@ -60,14 +57,10 @@ public class AuthController {
                 .body("성공적으로 로그아웃 되었습니다.");
     }
 
-    private String resolveRefreshToken(String refreshTokenHeader, HttpServletRequest request) {
+    private String resolveRefreshToken(HttpServletRequest request) {
         String refreshTokenFromCookie = refreshTokenCookieManager.extractRefreshToken(request);
         if (StringUtils.hasText(refreshTokenFromCookie)) {
             return refreshTokenFromCookie;
-        }
-
-        if (StringUtils.hasText(refreshTokenHeader)) {
-            return refreshTokenHeader;
         }
 
         throw new IllegalArgumentException("refresh token이 없습니다.");

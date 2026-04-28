@@ -41,7 +41,9 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -136,6 +138,7 @@ class AuthControllerIntegrationTest {
         assertThat(setCookieHeader).contains("refreshToken=" + savedRefreshToken);
         assertThat(setCookieHeader).contains("HttpOnly");
         assertThat(setCookieHeader).contains("Path=/api/auth");
+        assertThat(setCookieHeader).contains("SameSite=Lax");
         assertThat(refreshClaims.getSubject()).isEqualTo(String.valueOf(savedUser.getId()));
         assertThat(refreshClaims.getExpiration().getTime() - refreshClaims.getIssuedAt().getTime())
                 .isEqualTo(REFRESH_EXPIRATION);
@@ -187,16 +190,19 @@ class AuthControllerIntegrationTest {
         assertThat(tokenResponse).doesNotContainKey("refreshToken");
         assertThat(storedRefreshToken).isNotBlank();
         assertThat(result.getResponse().getHeader(HttpHeaders.SET_COOKIE))
-                .contains("refreshToken=" + storedRefreshToken);
+                .contains("refreshToken=" + storedRefreshToken)
+                .contains("HttpOnly")
+                .contains("Path=/api/auth")
+                .contains("SameSite=Lax");
         assertThat(parseClaims(storedRefreshToken).getSubject()).isEqualTo(String.valueOf(user.getId()));
     }
 
     @Test
-    @DisplayName("POST /api/auth/reissue는 기존 Refresh-Token 헤더도 계속 지원한다")
-    void reissue_acceptsLegacyRefreshTokenHeader() throws Exception {
+    @DisplayName("POST /api/auth/reissue는 Refresh-Token 헤더만으로는 재발급하지 않는다")
+    void reissue_rejectsRefreshTokenHeaderWithoutCookie() throws Exception {
         User user = userRepository.save(User.builder()
-                .email("legacy-reissue@example.com")
-                .name("Legacy Reissue User")
+                .email("header-reissue@example.com")
+                .name("Header Reissue User")
                 .profileImageUrl("https://example.com/profile.png")
                 .role(Role.USER)
                 .build());
@@ -205,10 +211,8 @@ class AuthControllerIntegrationTest {
 
         mockMvc.perform(post("/api/auth/reissue")
                         .header("Refresh-Token", refreshToken))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("토큰 재발급 성공!"))
-                .andExpect(jsonPath("$.accessToken").isNotEmpty())
-                .andExpect(jsonPath("$.refreshToken").doesNotExist());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("refresh token이 없습니다."));
     }
 
     @Test
@@ -241,7 +245,32 @@ class AuthControllerIntegrationTest {
         assertThat(refreshTokenRepository.findByUserId(user.getId())).isEmpty();
         assertThat(result.getResponse().getHeader(HttpHeaders.SET_COOKIE))
                 .contains("refreshToken=")
-                .contains("Max-Age=0");
+                .contains("Max-Age=0")
+                .contains("HttpOnly")
+                .contains("Path=/api/auth")
+                .contains("SameSite=Lax");
+    }
+
+    @Test
+    @DisplayName("CORS는 허용된 origin의 credentials 요청을 허용한다")
+    void cors_allowsCredentialsForConfiguredOrigin() throws Exception {
+        mockMvc.perform(options("/api/auth/reissue")
+                        .header(HttpHeaders.ORIGIN, "http://localhost:3000")
+                        .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "POST"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "http://localhost:3000"))
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true"));
+    }
+
+    @Test
+    @DisplayName("CORS는 설정되지 않은 origin을 허용하지 않는다")
+    void cors_rejectsUnconfiguredOrigin() throws Exception {
+        mockMvc.perform(options("/api/auth/reissue")
+                        .header(HttpHeaders.ORIGIN, "https://evil.example")
+                        .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "POST"))
+                .andExpect(status().isForbidden())
+                .andExpect(header().doesNotExist(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN))
+                .andExpect(header().doesNotExist(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS));
     }
 
     private GoogleTokenResponse createGoogleTokenResponse() {
