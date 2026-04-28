@@ -21,37 +21,54 @@ Do not expose `8080`, `8000`, `5432`, `5672`, or `15672` publicly. The Compose s
 
 ## First Deploy
 
-Run from the repository root, `BlogTree_AI`.
+Run from the repository root, `BlogTree_AI`. Prepare these files on the production host:
 
-```bash
-cp deploy/ec2/postgres.env.example deploy/ec2/postgres.env
-cp deploy/ec2/api-main.env.example deploy/ec2/api-main.env
-cp deploy/ec2/fastapi_worker.env.example deploy/ec2/fastapi_worker.env
-```
+- `deploy/env/postgres.env`
+- `deploy/env/api-main.env`
+- `deploy/env/fastapi_worker.env`
+- `deploy/env/rabbitmq-definitions.json`
+- `deploy/env/Caddyfile`
 
-Edit the three `.env` files and replace every `change-me` value.
+Edit the three `.env` files and replace every local placeholder value.
 
-Also edit `deploy/ec2/rabbitmq-definitions.json` and replace `change-me-rabbitmq-password` with the same RabbitMQ password used in:
+Also edit `deploy/env/rabbitmq-definitions.json` and set the RabbitMQ password to the same value used in:
 
-- `deploy/ec2/api-main.env`
-- `deploy/ec2/fastapi_worker.env`
+- `deploy/env/api-main.env`
+- `deploy/env/fastapi_worker.env`
 
 RabbitMQ imports this definitions file on first boot. If you change the RabbitMQ password after the volume already exists, update the user from the RabbitMQ management UI or recreate the `rabbitmq_data` volume intentionally.
 
 Then start the stack:
 
 ```bash
-docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f deploy/docker-compose.yml up -d
 ```
 
 ## Verify
 
 ```bash
-docker compose -f docker-compose.prod.yml ps
-docker compose -f docker-compose.prod.yml logs -f api
-docker compose -f docker-compose.prod.yml logs -f worker
+docker compose -f deploy/docker-compose.yml ps
+docker compose -f deploy/docker-compose.yml logs -f api
+docker compose -f deploy/docker-compose.yml logs -f worker
 curl https://54.153.236.215.nip.io/health
 ```
+
+## GitHub Actions CD
+
+The backend CD workflow publishes these images to GHCR and restarts the `api` and `worker` services on the production host:
+
+- `ghcr.io/<github-owner>/blogtree-api:sha-<commit>`
+- `ghcr.io/<github-owner>/blogtree-worker:sha-<commit>`
+
+Set these repository secrets before enabling production deployment:
+
+- `PROD_SSH_HOST`: production host address
+- `PROD_SSH_USER`: SSH user
+- `PROD_SSH_KEY`: private SSH key for the user
+- `PROD_DEPLOY_PATH`: absolute path to the checked-out `BlogTree_AI` repository on the host
+- `PROD_SSH_PORT`: optional, defaults to `22`
+- `GHCR_READ_TOKEN`: optional if GHCR packages are public or the host is already logged in; otherwise use a PAT with `read:packages`
+- `GHCR_USERNAME`: optional GHCR username for `GHCR_READ_TOKEN`; defaults to the GitHub repository owner
 
 ## Vercel Environment Variables
 
@@ -76,7 +93,8 @@ https://blog-tree-ai.vercel.app/auth/callback
 
 ```bash
 git pull
-docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f deploy/docker-compose.yml pull api worker
+docker compose -f deploy/docker-compose.yml up -d api worker
 docker image prune -f
 ```
 
@@ -85,5 +103,5 @@ docker image prune -f
 At minimum, configure EC2 EBS snapshots. For logical database backups:
 
 ```bash
-docker compose -f docker-compose.prod.yml exec postgres pg_dump -U blogtree_app blogtree > blogtree.sql
+docker compose -f deploy/docker-compose.yml exec postgres pg_dump -U blogtree_app blogtree > blogtree.sql
 ```
