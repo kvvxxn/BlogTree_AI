@@ -32,7 +32,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // 1. CORS 설정 (프론트엔드 연동을 위한 대문 개방)
+                // 1. CORS 설정
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
                 // 2. CSRF, FormLogin, HttpBasic 끄기 (REST API 기본 세팅 유지)
@@ -71,12 +71,12 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // CORS 세부 설정 (프론트엔드 localhost:3000과 통신하기 위한 필수 설정)
+    // CORS 세부 설정
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.setAllowedOriginPatterns(allowedOrigins); // 프론트엔드 주소: 3000이 아닐 수 있음
+        config.setAllowedOrigins(allowedOrigins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization")); // 프론트가 응답 헤더에서 토큰을 읽을 수 있게 허용
