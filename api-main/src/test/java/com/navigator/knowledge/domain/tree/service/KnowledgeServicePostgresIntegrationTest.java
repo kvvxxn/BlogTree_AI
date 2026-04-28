@@ -40,6 +40,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @TestPropertySource(properties = {
     "spring.flyway.enabled=true",
     "spring.jpa.hibernate.ddl-auto=validate",
+    "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect",
     "spring.ai.openai.embedding.options.model=test-model"
 })
 class KnowledgeServicePostgresIntegrationTest {
