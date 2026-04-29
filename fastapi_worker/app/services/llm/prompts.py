@@ -36,9 +36,9 @@ Read the provided 'Career Goal', 'Blog Content', and 'Current Knowledge Tree Dat
 """
 
 def make_summarize_user_prompt(career_goal: str, blog_text: str, knowledge_tree: str):
-    user_prompt = f"""제공된 [Blog Content]와 [Current Knowledge Tree Data]를 읽고, 사용자의 [Career Goal]을 달성하는 데 도움이 되는 관점에서 블로그 내용을 분석해 주세요. 
-시스템 프롬프트의 규칙에 따라 요약(summary)을 작성하고, 지식 트리 확장 규칙(Category, Topic, Keyword의 넓이와 생성 빈도 조건)을 엄격히 준수하여 키워드(keywords)를 추출해 주세요.
-결과는 어떠한 부연 설명 없이 오직 JSON 형식으로만 출력해야 하며, 모든 내용은 한국어로 작성해 주세요.
+    user_prompt = f"""제공된 [Blog Content]와 [Current Knowledge Tree Data]를 읽고, 사용자의 [Career Goal]을 달성하는 데 도움이 되는 관점에서 블로그 내용을 분석하세요. 
+시스템 프롬프트의 규칙에 따라 요약(summary)을 작성하고, 지식 트리 확장 규칙(Category, Topic, Keyword의 넓이와 생성 빈도 조건)을 엄격히 준수하여 키워드(keywords)를 추출하세요.
+결과는 어떠한 부연 설명 없이 오직 JSON 형식으로만 출력해야 하며, 모든 내용은 한국어로 작성하세요.
 
 [Career Goal]
 {career_goal}   
@@ -85,8 +85,8 @@ Analyze the user's [Career Goal] and current [Knowledge Tree] data, and output t
 """
 
 def make_recommend_user_prompt(career_goal: str, knowledge_tree: str):
-    user_prompt = f"""다음 제공된 사용자의 커리어 목표([Career Goal])와 현재 지식 트리 데이터([Current Knowledge Tree 단 Data])를 분석해 주세요.
-시스템 프롬프트에 명시된 규칙([STRICT RULES])과 출력 형식([OUTPUT FORMAT])을 완벽하게 준수하여, 어떠한 인사말이나 부연 설명 없이 오직 JSON 객체로만 결과를 반환해야 합니다. 모든 텍스트 값은 한국어로 작성해 주세요.
+    user_prompt = f"""다음 제공된 사용자의 커리어 목표([Career Goal])와 현재 지식 트리 데이터([Current Knowledge Tree])를 분석하세요.
+시스템 프롬프트에 명시된 규칙([STRICT RULES])과 출력 형식([OUTPUT FORMAT])을 완벽하게 준수하여, 어떠한 인사말이나 부연 설명 없이 오직 JSON 객체로만 결과를 반환해야 합니다. 모든 텍스트 값은 한국어로 작성하세요.
 
 [Career Goal]
 {career_goal}
