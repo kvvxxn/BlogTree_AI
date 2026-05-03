@@ -1,122 +1,64 @@
-# BlogTree_AI
+# BlogTree AI
 
-Repository for AI-driven Technical Blog Summarization and Knowledge Graph Visualization
+AI 기반 기술 블로그 요약 및 지식 그래프 시각화 서비스입니다. 사용자가 기술 아티클 URL을 입력하면 핵심 내용을 요약하고, 요약 결과를 바탕으로 관련 콘텐츠를 추천하며, 사용자의 학습 흐름을 지식 트리 형태로 시각화합니다.
 
-# Git Convention
+## 주요 기능
 
-### 기본 흐름 (GitHub Flow)
+- Google OAuth 기반 소셜 로그인
+- 기술 블로그 URL 기반 AI 요약 생성
+- 사용자 학습 키워드 기반 추천 콘텐츠 생성
+- 작업 진행 상태 실시간 알림
+- 사용자별 지식 트리 및 키워드 그래프 조회
+- 카테고리, 토픽, 최근 키워드 기반 학습 통계 제공
+- OpenAI 임베딩과 pgvector를 활용한 유사 키워드 검색
 
-1. `main` 브랜치는 항상 배포 가능한 상태 유지
-2. 새로운 작업은 `feature/*` 브랜치에서 진행
-3. 작업 완료 후 Pull Request 생성
-4. 코드 리뷰 후 `main`으로 merge
+## 기술 스택
 
-# Branch Naming Convention
+| 영역 | 기술 |
+| --- | --- |
+| Frontend | React, TypeScript, Vite, React Router |
+| Backend | Java 17, Spring Boot, Spring Security, Spring Data JPA |
+| AI Worker | Python, FastAPI, OpenAI API, BeautifulSoup, Trafilatura |
+| Database | PostgreSQL, pgvector, Flyway |
+| Messaging | RabbitMQ |
+| Auth | Google OAuth 2.0, JWT |
+| Infra | Docker, Docker Compose, Caddy, AWS EC2, Vercel |
 
-### 1. 기본구조
+## 아키텍처
 
-```bash
-type/short-description
+```text
+React Frontend
+      |
+      v
+Spring Boot API  <---->  PostgreSQL + pgvector
+      |
+      v
+   RabbitMQ
+      |
+      v
+FastAPI AI Worker  <---->  OpenAI API
 ```
 
-- Branch Type
-    
-    개발 시에는 feature type하면 됨. 기능 하나마다 feature branch 하나
-    
-    | Type | Description |
-    | --- | --- |
-    | `feature` | 새로운 기능 개발 |
-    | `fix` | 버그 수정 |
-    | `refactor` | 리팩토링 (기능 변화 없음) |
-    | `docs` | 문서 수정 |
-    | `test` | 테스트 코드 추가/수정 |
-    | `chore` | 빌드 설정, 패키지 수정 등 |
-    | `hotfix` | 긴급 배포 수정 |
-- Example
+## 프로젝트 구조
 
-```bash
-feature/user-login
-feature/payment-api
-fix/jwt-token-expiration
-refactor/auth-service
-docs/readme-update
+```text
+BlogTree_AI/
+├── frontend/        # React 클라이언트
+├── api-main/        # Spring Boot API 서버
+├── fastapi_worker/  # AI 요약/추천 워커
+└── deploy/          # 배포 설정
 ```
 
-### 2. 규칙
+## 핵심 구현 포인트
 
-- 소문자 사용
-- 공백 대신 `-`사용
-- 최대한 간결하고 목적이 드러나도록 작성
-- 하나의 브랜치는 하나의 작업만 담당
+- 요약/추천 작업을 비동기 메시지 큐 기반으로 분리해 API 응답성과 AI 처리 안정성을 개선했습니다.
+- SSE를 사용해 장시간 실행되는 AI 작업의 진행/완료/실패 상태를 프론트엔드에 실시간으로 전달했습니다.
+- Flyway 기반 DB 마이그레이션과 pgvector 저장소를 구성해 지식 검색 기능을 확장 가능하게 설계했습니다.
+- JWT 액세스 토큰과 리프레시 쿠키를 분리해 인증 흐름을 구성했습니다.
+- 프론트엔드는 기능 단위 API 클라이언트와 페이지를 분리해 유지보수성을 높였습니다.
 
-# Commit Message Convention
+## 배포
 
-### 1. 기본 구조
-
-description은 굳이 안해도 됨.
-
-```bash
-type: short summary
-
-(optional) detailed description
-```
-
-- Type 종류
-    
-    개발 시 기능 하나마다 feat type으로 커밋. 추후 fix나 refactor, test 사용
-    
-    | Type | Description |
-    | --- | --- |
-    | `feat` | 새로운 기능 추가 |
-    | `fix` | 버그 수정 |
-    | `refactor` | 코드 구조 개선 |
-    | `docs` | 문서 수정 |
-    | `test` | 테스트 코드 |
-    | `chore` | 설정, 빌드 관련 |
-    | `style` | 코드 스타일 변경 (로직 변경 없음) |
-    | `perf` | 성능 개선 |
-
-### 2. 규칙
-
-- 한 커밋은 하나의 논리적 변경만 포함
-- 커밋 메시지는 영어로 작성
-- 요약은 50자 이내
-- 명령형으로 작성 (`add`, `fix`, `update`)
-- 마침표 사용하지 않음
-
-# Pull Request Convention
-
-### 1. Pull Request란
-
-: 내 브랜치의 변경 내용을 대상 브랜치에 합쳐달라고 요청하는 것
-
-- example
-feature/login  →  main
-
-### 2. PR 흐름
-
-1️⃣ 브랜치 생성
-
-2️⃣ 기능 개발
-
-3️⃣ commit & push
-
-4️⃣ GitHub에서 Pull Request 생성
-
-5️⃣ 코드 리뷰
-
-6️⃣ 수정 요청 반영
-
-7️⃣ CI 통과 ← 이건 나중에 Github actions 도입 후
-
-8️⃣ merge
-
-### 3. 기본 구조
-
-```bash
-[type] short summary
-
-// example
-[feat] implement user registration API
-[fix] resolve token validation bug
-```
+- Frontend: Vercel
+- Backend/Worker/DB/MQ: AWS EC2 + Docker Compose
+- Reverse Proxy: Caddy
